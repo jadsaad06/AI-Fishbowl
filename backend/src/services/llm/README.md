@@ -1,16 +1,16 @@
-# 📘 LLM Agent Setup Guide
+# LLM + RAG Setup Guide
 
 ## Overview
 
 This project contains an **LLM Model and a RAG Database**
 There is only **one** entrypoint file, and there is **one** test file in a Test directory.
 
-⚠️ **Important:**  
+ **Important:**  
 Not all Python files are meant to be executed directly with `python file.py`.
 
 ---
 
-## 📂 LLM Structure
+## LLM Structure
 
 ```
 
@@ -37,9 +37,9 @@ Not all Python files are meant to be executed directly with `python file.py`.
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
-### 1️⃣ Create `.env`
+### 1.  Create `.env`
 
 Copy the example file:
 
@@ -47,7 +47,7 @@ Copy the example file:
 cp .env.example .env
 ```
 
-### 2️⃣ Required Keys
+### 2. Required Keys
 
 Add the following keys to `.env`:
 
@@ -56,7 +56,7 @@ PATH_NAME="computer-science"
 GOOGLE_API_KEY="YOUR-GOOGLE-AI-API-KEY"
 ```
 
-📍 The `.env` file **must live here**:
+ The `.env` file **must live here**:
 
 ```
 backend/src/services/llm/.env
@@ -68,7 +68,7 @@ The project uses `python-dotenv`, so environment variables are loaded automatica
 
 ## Some scripts cannot be ran directly here's why
 
-### ❌ This will FAIL:
+### This will FAIL:
 
 ```bash
 python Test/test_chain.py
@@ -81,7 +81,7 @@ python Test/test_chain.py
 
 ---
 
-## ✅ Correct Way to Run Test Scripts
+## Correct Way to Run Test Scripts
 
 ### Step 1. Install requirements
 
@@ -131,7 +131,7 @@ python entrypoint.py
 ```
 
 
-## 🗂 Vector Store Behavior
+## Vector Store Behavior
 
 The vector database is persisted at:
 
@@ -146,9 +146,9 @@ This ensures:
 
 ---
 
-## 🧠 Common Errors & Fixes
+## Common Errors & Fixes
 
-### ❌ `attempted relative import with no known parent package`
+### `attempted relative import with no known parent package`
 
 Fix:
 
@@ -159,7 +159,7 @@ python -m Test.test_chain
 
 ---
 
-### ❌ Vector DB recreated unexpectedly
+### Vector DB recreated unexpectedly
 
 Ensure:
 - `persist_directory` is absolute or project-root relative
@@ -167,7 +167,7 @@ Ensure:
 
 ---
 
-## 📌 Quick Reference
+## Quick Reference
 
 | Task | Command |
 |----|----|
