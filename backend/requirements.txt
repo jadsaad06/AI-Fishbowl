@@ -1,0 +1,10 @@
+langchain
+langchain-community
+langchain_google_genai
+langchain-chroma
+langchainhub
+grpcio
+chromadb
+unidecode
+bs4
+langchain-text-splitters
