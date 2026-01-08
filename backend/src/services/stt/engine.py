@@ -34,7 +34,14 @@ def transcribe_streaming_v2(
         audio_content = f.read()
 
     # In practice, stream should be a generator yielding chunks of audio data
-    chunk_length = len(audio_content) // 5      # Divides audio into 5 equal chunks
+
+    # I had to comment this out as my chunks were too big
+    # chunk_length = len(audio_content) // 5      # Divides audio into 5 equal chunks
+    
+    max_chunk_size = 25000                                                      # It said that 25600 is the byte limit, so we're just a bit under. Plus 25000 is a nicer number.
+    num_chunks = (len(audio_content) + max_chunk_size - 1) // max_chunk_size    # ceiling division formula: so we round up for partial chunks but avoid adding an extra chunk when it is exact
+    chunk_length = len(audio_content) // num_chunks                             # ex: without -1: (100,000 + 25,000) // 25,000 = 5 (incorrect, should be 4)
+    
     stream = [                                  # In a real-time application, these would come from a microphone
         audio_content[start : start + chunk_length]
         for start in range(0, len(audio_content), chunk_length)
@@ -46,7 +53,7 @@ def transcribe_streaming_v2(
     recognition_config = cloud_speech_types.RecognitionConfig(                  # Configure speech recognition parameters:
         auto_decoding_config=cloud_speech_types.AutoDetectDecodingConfig(),     # - auto_decoding_config: Automatically detects audio encoding
         language_codes=["en-US"],                                               # - language_codes: Specifies what language to recognize
-        model="chirp_3",                                                        # - model: what model we are using, here we are using "chirp_3"
+        model="latest_long",                                                    # - model: it complains when I do chirp_3 (the default) so Google told me to use latest_long and it works
     )
     streaming_config = cloud_speech_types.StreamingRecognitionConfig(
         config=recognition_config
