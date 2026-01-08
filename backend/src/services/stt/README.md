@@ -6,15 +6,20 @@ This module provides speech-to-text functionality using Google Cloud Speech-to-T
 
 ## Authentication
 
-**Important:** Google Cloud Speech-to-Text requires OAuth authentication with a service account, not just an API key.
+**Important:** Google Cloud Speech-to-Text (v2, streaming) does **not** support API keys.
+It requires OAuth authentication using a **service account**.
+
+This is because streaming STT is a long-running, high-cost API, and Google locks it behind
+IAM/OAuth instead of simple API keys.
 
 ### Setting Up Authentication
 
-Honestly, when I was setting this up, I kind of just fumbled through it and figured it out. So I don't have exact instructions of how to set it up, but please let me know if you want any help and I'll try my best to help.
+You’ll need a **service account JSON key** from the Google Cloud Console.
 
-Also note, that the project id can be found in the json file that you download from the Google Cloud Console.
+Set the following environment variables:
+
 ```
-GOOGLE_APPLICATION_CREDENTIALS="path/to/your-credentials-file.json"
+GOOGLE_APPLICATION_CREDENTIALS="path/to/your-service-account.json"
 GOOGLE_CLOUD_PROJECT="your-google-cloud-project-id"
 ```
 
