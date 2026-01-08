@@ -1,0 +1,11 @@
+{
+  "name": "ai-fishbowl",
+  "version": "0.1.0",
+  "main": "main/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "pixi.js": "^8.15.0"
+  }
+}
