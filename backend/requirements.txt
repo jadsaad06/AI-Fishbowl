@@ -8,3 +8,6 @@ chromadb
 unidecode
 bs4
 langchain-text-splitters
+python-dotenv
+simpleaudio
+google-genai
