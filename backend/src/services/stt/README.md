@@ -74,12 +74,6 @@ python -m Test.test_transcribe
 - [Google OAuth 2.0 for Server-to-Server Applications](https://developers.google.com/identity/protocols/oauth2/service-account)
 - [IAM Documentation](https://cloud.google.com/iam/docs)
 
-## Required OAuth Scope
-
-```
-https://www.googleapis.com/auth/cloud-platform
-```
-
 ## Required IAM roles for service account
 
 ```
