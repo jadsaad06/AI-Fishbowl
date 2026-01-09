@@ -8,3 +8,4 @@ chromadb
 unidecode
 bs4
 langchain-text-splitters
+google-cloud-speech
