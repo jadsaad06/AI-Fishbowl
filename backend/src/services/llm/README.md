@@ -37,6 +37,15 @@ Not all Python files are meant to be executed directly with `python file.py`.
 
 ---
 
+## Requirements
+
+Ensure that you are using 
+``
+3.12 <= python version <= 3.13.9
+``
+Anything outside of this range has not been tested yet, and the libraries for this script are not up to date with the constraints in the newer python versions, or the older ones.
+
+
 ## Environment Variables
 
 ### 1.  Create `.env`
