@@ -19,7 +19,7 @@ async function init() {
     /** Displays the application document */
     await app.init({
       resizeTo: window,
-      background: "#0bf7ecff",
+      background: "#0b62f7ff",
     });
     document.body.appendChild(app.canvas);
 

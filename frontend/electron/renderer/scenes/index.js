@@ -38,7 +38,7 @@ export function setScene(app, state) {
       currentScene = new ErrorScene();
       break;
     default:
-      currentScene = new IdleScene();
+      currentScene = new IdleScene(app);
   }
 
   app.stage.addChild(currentScene.container);
