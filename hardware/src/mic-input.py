@@ -6,9 +6,9 @@ import soundfile as sf
 
 
 # Recording parameters
-DURATION = 10
-SAMPLE_RATE = 16000
-MIC_NAME = "LavMicro" #testing the script will require changing this to match the system microphone
+DURATION = 10 #number of seconds to record audio
+SAMPLE_RATE = 48000 #hardware-specific, for the LavMicro mic on Jetson this MUST be 48000
+MIC_NAME = "LavMicro" #hardware-specific to LavMicro mic on Jetson
 FILENAME = "mic-output.wav"
 
 
@@ -26,9 +26,9 @@ def get_device(mic_name: str) -> int:
     # Enumerate hardware devices and look for a match with mic_name
     for index, device in enumerate(sd.query_devices()):
         name = device["name"].lower()
-        print(name)
         if mic_name in name and device["max_input_channels"] > 0:
             matches.append((index, device["name"]))
+            print(f"found mic: {name}")
 
     # Raise error is no device found
     if not matches:
