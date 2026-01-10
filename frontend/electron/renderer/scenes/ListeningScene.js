@@ -1,30 +1,70 @@
 import * as PIXI from "pixi.js";
+import {
+  FishSwarm,
+  createFancyFish,
+  createEnvironment,
+  createFishSprite,
+} from "../assets/sprites.js";
 
 export class ListeningScene {
-  constructor() {
+  constructor(app) {
     this.container = new PIXI.Container();
 
-    this.text = new PIXI.Text("Listening...", {
-      fill: "#ffffff",
-      fontSize: 32,
-      align: "center",
-      fontWeight: "bold",
-    });
+    this.swarm = new FishSwarm(25);
+    this.container.addChild(this.swarm.container);
 
-    this.text.anchor.set(0.5);
-    this.text.x = window.innerWidth / 2;
-    this.text.y = window.innerHeight / 2;
+    this.swarm.scatter();
 
-    this.container.addChild(this.text);
+    this.bigFish = null;
+    this.bigFishSpawned = false;
 
-    this.ticker = (ticker) => {
-      this.text.alpha = 0.5 + 0.5 * Math.sin(ticker.lastTime / 200);
+    this.ticker = PIXI.Ticker.shared;
+    this.ticker.add(this.update, this);
+  }
+
+  spawnBigFish() {
+    this.bigFish = createFishSprite(0xff88cc, 300, 150);
+    this.bigFish.position.set(window.innerWidth / 2, window.innerHeight / 2);
+
+    this.bigFish.scale.set(0);
+    this.container.addChild(this.bigFish);
+
+    const grow = () => {
+      this.bigFish.scale.x += 0.02;
+      this.bigFish.scale.y += 0.02;
+
+      if (this.bigFish.scale.x < 1) {
+        requestAnimationFrame(grow);
+      } else {
+        this.bigFish.scale.set(1);
+      }
     };
-    PIXI.Ticker.shared.add(this.ticker);
+
+    this.ticker.add(grow);
+  }
+
+  update() {
+    this.swarm.update();
+
+    if (!this.bigFishSpawned && this.swarm.isScattering) {
+      const margin = 100;
+      const allGone = this.swarm.fishData.every(
+        (f) =>
+          f.x < -margin ||
+          f.x > window.innerWidth + margin ||
+          f.y < -margin ||
+          f.y > window.innerHeight + margin
+      );
+
+      if (allGone) {
+        this.spawnBigFish();
+        this.bigFishSpawned = true;
+      }
+    }
   }
 
   destroy() {
-    PIXI.Ticker.shared.remove(this.ticker);
+    this.ticker.remove(this.update, this);
     this.container.destroy({ children: true });
   }
 }
