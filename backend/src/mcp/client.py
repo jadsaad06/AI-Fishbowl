@@ -7,7 +7,7 @@ from mcp.client.stdio import stdio_client
 
 async def run_client():
     backend_src = Path(__file__).resolve().parent
-    server_path = backend_src / "mcp" / "server.py"
+    server_path = backend_src / "server.py"
     if not server_path.exists():
         raise FileNotFoundError(
             f"Could not find server.py at {server_path}."
