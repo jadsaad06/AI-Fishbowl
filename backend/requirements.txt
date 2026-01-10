@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 langchain
 langchain-community
 langchain_google_genai
@@ -8,6 +9,11 @@ chromadb
 unidecode
 bs4
 langchain-text-splitters
+google-cloud-speech
+=======
+fastmcp
+mcp
+>>>>>>> Stashed changes
 python-dotenv
 simpleaudio
 google-genai
