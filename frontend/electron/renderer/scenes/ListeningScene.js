@@ -4,6 +4,7 @@ import {
   createFancyFish,
   createEnvironment,
   createFishSprite,
+  CommonStyles,
 } from "../assets/sprites.js";
 
 export class ListeningScene {
@@ -39,6 +40,14 @@ export class ListeningScene {
         this.bigFish.scale.set(1);
       }
     };
+
+    this.statusText = new PIXI.Text("Listening...", CommonStyles.header);
+    this.statusText.anchor.set(0.5);
+    this.statusText.position.set(
+      window.innerWidth / 2,
+      window.innerHeight / 2 + 150
+    );
+    this.container.addChild(this.statusText);
 
     this.ticker.add(grow);
   }

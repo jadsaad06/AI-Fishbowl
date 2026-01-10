@@ -135,7 +135,7 @@ export class FishSwarm {
 
       f.angle = Math.atan2(dy, dx);
 
-      f.speed = 30 + Math.random() * 15;
+      f.speed = 40 + Math.random() * 20;
     });
   }
 }
