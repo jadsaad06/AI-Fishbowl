@@ -11,3 +11,6 @@ langchain-text-splitters
 google-cloud-speech
 fastmcp
 mcp
+python-dotenv
+simpleaudio
+google-genai

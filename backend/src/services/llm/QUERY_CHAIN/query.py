@@ -1,10 +1,12 @@
 from langchain_chroma import Chroma
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import GoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from dotenv import load_dotenv
 from pathlib import Path
+from langchain_core.tools import tool
+
 
 
 load_dotenv()
@@ -32,7 +34,7 @@ vectorstore = Chroma(
 llm = GoogleGenerativeAI(model="gemini-2.5-flash") #LLM we will use 
 retriever = vectorstore.as_retriever() #Instantiate a retriever from the chroma vector DB to perform queries
 
-prompt_template = """
+agent_prompt_template = """
 You are a helpful, and conversational AI assistant.
 
 You should respond in a naturally, and respectfully, like a normal conversation.
@@ -54,19 +56,22 @@ Safety Rules:
 -   Do not provide links unless explicitly asked.
 
 
-Question:
-{question}
-
-Context:
-{context}
-
 Answer: 
 """
 
+
+
+
+"""
+@tool
+def get_context(question: str) -> str:
+    docs = 
+"""
+
 # create a prompt example from above template
-prompt = PromptTemplate(
-    input_variables=["question"],
-    template=prompt_template
+prompt = ChatPromptTemplate(
+    ("system", agent_prompt_template),
+    ("human", "Question:\n{question}\nContext:\n{context}")
 )
 
 
