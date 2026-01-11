@@ -1,8 +1,9 @@
 import os
 import wave
 import time
-import simpleaudio as sa
+import simpleaudio as sa   #This must be simpleaudio-312compat
 import google.genai as genai
+import numpy as np
 from google.genai import types
 from dotenv import load_dotenv
 
@@ -49,10 +50,16 @@ def text_to_wav(text: str):
 
     play_obj = speak_wav("output.wav")
 
+    play_obj = play_audio_bytes(audio_bytes)
+
     print(f"Audio saved to output.wav")
 
-    while play_obj.is_playing():    #Keeps program running until audio is finished playing
-        time.sleep(0.05)
+    return play_obj
+
+def play_audio_bytes(audio_bytes):
+    audio_np = np.frombuffer(audio_bytes, dtype = np.int16)
+    play_obj = sa.play_buffer(audio_np, 1, 2, 24000)
+    return play_obj
 
 def speak_wav(file: str):
     wave_obj = sa.WaveObject.from_wave_file(file)
@@ -61,14 +68,16 @@ def speak_wav(file: str):
 
 if __name__ == "__main__":
     poem_test = "I met a traveller from an antique land who said-'Two vast and trunkless legs of stone Stand in the desert..."
-    mistake_test = "I met a traveller from an antique land who said-'Two vast and trunkless legs of stone Stand in the dessert.... - I mean desert! [laughter] Can we get another take?",
-    flub_test = "I met a... guy - I mean traveller! [laughter] Can we get another take?",
-    sarcastic_test = "[sarcastic] I met a traveller from an antique land who said-'Two vast and trunkless legs of stone Stand in the desert...",
-    accent_test = "[American accent] I met a traveller from an antique land who said-[immitating an Australian accent] 'Two vast and trunkless legs of stoneStand in the desert...",
-    silent_test = " ",
-    gibberish_test = "Aasdakh fijoadjuire aodood! Skojnasdiosj jdappid jdadsdii opbgob!",
+    mistake_test = "I met a traveller from an antique land who said-'Two vast and trunkless legs of stone Stand in the dessert.... - I mean desert! [laughter] Can we get another take?"
+    flub_test = "I met a... guy - I mean traveller! [laughter] Can we get another take?"
+    sarcastic_test = "[sarcastic] I met a traveller from an antique land who said-'Two vast and trunkless legs of stone Stand in the desert..."
+    accent_test = "[American accent] I met a traveller from an antique land who said-[immitating an Australian accent] 'Two vast and trunkless legs of stone Stand in the desert..."
+    silent_test = " "
+    gibberish_test = "Aasdakh fijoadjuire aodood! Skojnasdiosj jdappid jdadsdii opbgob!"
     number_test = "1. 2. 3. 4. 5. 6. 7."
     custom_test = "Enter your own text here..."
+
+    print("This is simpleaudio: ", sa.__file__)
 
     print("Choose a test:")
     print("1 = poem text")
@@ -106,4 +115,7 @@ if __name__ == "__main__":
         text = None
 
     if text:
-        text_to_wav(text)
+        play_obj = text_to_wav(text)
+        play_obj.wait_done()
+
+    print("Test complete!")

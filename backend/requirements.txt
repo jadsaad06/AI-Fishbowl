@@ -9,5 +9,5 @@ unidecode
 bs4
 langchain-text-splitters
 python-dotenv
-simpleaudio
+simpleaudio312-compat
 google-genai

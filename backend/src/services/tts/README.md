@@ -6,8 +6,8 @@ My test were all done using Gemini's default voice models, mainly Aoede, Charon,
 
 Dependencies: 
 python-dotenv
-simpleaudio
 google-genai
+simpleaudio-312compat (basic simpleaudio is incompatable with modern versions of Python)
 
 It should be noted that this program requires a Gemini API Key assigned to the variable "KEY" in a .env file. For security purposes, I have not committed my .env file to git, but I have tested it using my own API key, and it appears to be mostly working as intended, outside of edge cases like the silence tests.
 
