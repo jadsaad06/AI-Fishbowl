@@ -1,6 +1,7 @@
 langchain
 langchain-community
 langchain_google_genai
+langchain-mcp-adapters
 langchain-chroma
 langchainhub
 grpcio
