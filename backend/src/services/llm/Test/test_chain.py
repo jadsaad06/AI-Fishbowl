@@ -1,31 +1,41 @@
-from QUERY_CHAIN.query import rag_chain
+from mcp_stack.client import run_client
+import asyncio
 
 
-def test_agent_GO():
-    answer = rag_chain.invoke("What is the deadline date for GO-16")
-    answer = answer.lower()
-    assert answer.find("go-16") != -1
-    print(answer)
 
 
-def test_agent_term():
-    answer = rag_chain.invoke("When is the fall term")
-    answer = answer.lower()
-    assert answer.find("fall term") != -1
-    print(answer)
+async def test_agent_GO():
+    response = await run_client(Test=True, test_prompt="What is the deadline date for GO-16")
+    response = response.lower()
+    print(response)
+
+    assert response.find("go-16") != -1
+
+
+async def test_agent_term():
+    response = await run_client(Test=True, test_prompt="When is the fall term")
+    response = response.lower()
+    print(response)
+
+    assert response.find("fall term") != -1
     
 
-def test_agent_doesnt_know():
-    answer = rag_chain.invoke("What do you call an elephant that's name is John Doe")
-    answer = answer.lower()
-    assert answer.find("don't know") != -1
-    print(answer)
+async def test_agent_doesnt_know():
+    response = await run_client(Test=True, test_prompt="What do you call an elephant that's name is John Doe")
+    response = response.lower()
+    print(response)
 
+    assert response.find("don't know") != -1
+
+
+
+async def calling_routine():
+    await test_agent_GO()
+    await test_agent_term()
+    await test_agent_doesnt_know()
 
 
 def main():
-    test_agent_GO()
-    test_agent_term()
-    test_agent_doesnt_know()
+    asyncio.run(calling_routine())
 
 main()
