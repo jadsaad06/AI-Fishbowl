@@ -3,7 +3,6 @@ import wave
 import time
 import simpleaudio as sa   #This must be simpleaudio-312compat
 import google.genai as genai
-import numpy as np
 from google.genai import types
 from dotenv import load_dotenv
 
@@ -50,16 +49,9 @@ def text_to_wav(text: str):
 
     play_obj = speak_wav("output.wav")
 
-    play_obj = play_audio_bytes(audio_bytes)
+    play_obj.wait_done()
 
     print(f"Audio saved to output.wav")
-
-    return play_obj
-
-def play_audio_bytes(audio_bytes):
-    audio_np = np.frombuffer(audio_bytes, dtype = np.int16)
-    play_obj = sa.play_buffer(audio_np, 1, 2, 24000)
-    return play_obj
 
 def speak_wav(file: str):
     wave_obj = sa.WaveObject.from_wave_file(file)
@@ -76,8 +68,6 @@ if __name__ == "__main__":
     gibberish_test = "Aasdakh fijoadjuire aodood! Skojnasdiosj jdappid jdadsdii opbgob!"
     number_test = "1. 2. 3. 4. 5. 6. 7."
     custom_test = "Enter your own text here..."
-
-    print("This is simpleaudio: ", sa.__file__)
 
     print("Choose a test:")
     print("1 = poem text")
@@ -116,6 +106,5 @@ if __name__ == "__main__":
 
     if text:
         play_obj = text_to_wav(text)
-        play_obj.wait_done()
 
     print("Test complete!")
