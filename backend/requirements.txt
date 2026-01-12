@@ -12,5 +12,5 @@ google-cloud-speech
 fastmcp
 mcp
 python-dotenv
-simpleaudio
+simpleaudio312-compat
 google-genai
