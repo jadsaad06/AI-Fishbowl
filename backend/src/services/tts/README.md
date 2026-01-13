@@ -11,4 +11,4 @@ simpleaudio-312compat (basic simpleaudio is incompatable with modern versions of
 
 It should be noted that this program requires a Gemini API Key assigned to the variable "KEY" in a .env file. For security purposes, I have not committed my .env file to git, but I have tested it using my own API key, and it appears to be mostly working as intended, outside of edge cases like the silence tests.
 
-Possible next steps: Catch or avoid TypeErrors. Add the ability to receive interruptions, terminating speech early. Investigate ways to track where speech is terminated. Investigate ways to decrease processing time. Work with UI team to determine what outputs are needed for subtitles.
+Possible next steps: Add the ability to receive interruptions, terminating speech early. Investigate ways to track where speech is terminated. Investigate ways to decrease processing time. Work with UI team to determine what outputs are needed for subtitles.
