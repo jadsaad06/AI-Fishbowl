@@ -3,10 +3,11 @@ import sys
 from pathlib import Path
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+
 from services.llm.QUERY_CHAIN.query import agent_prompt_template, get_context, welcome_text
+
 from langchain.agents import create_agent
 from langchain_mcp_adapters.tools import load_mcp_tools
-
 
 
 
@@ -79,4 +80,4 @@ async def run_client(*, Test: bool = False, test_prompt : str = ""): # An async 
 
 
 if __name__ == "__main__":
-    asyncio.run(run_client(Test=False, message=""))
+    asyncio.run(run_client(Test=False, test_prompt=""))
