@@ -1,6 +1,6 @@
 tts_test.py contains two related functions: text_to_wav() and speak_wav(). text_to_wav() takes text input and sends it to Google's Gemini API. Gemini returns the audio in the form of raw Pulse-Code Modulation (PCM), which placed in an easier to use .wav file ("output.wav") The program then sends output.wav to the speak_wav() function, a function which plays audio from inputed .wav files.
 
-The main function contains a menu with some of the tests I ran the model, testing vocal range and inflection as well a spot to enter custom text. It is important to note that the silence/whitespace test currently causes a TypeError. I intend to fix this soon.
+The main function contains a menu with some of the tests I ran the model, testing vocal range and inflection as well a spot to enter custom text.
 
 My test were all done using Gemini's default voice models, mainly Aoede, Charon, Despina and Umbriel (the current model). All testing occured in a virtual environement on Windows.
 
