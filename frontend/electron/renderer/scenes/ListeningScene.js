@@ -1,7 +1,6 @@
 import * as PIXI from "pixi.js";
 import {
   FishSwarm,
-  createFancyFish,
   createFishSprite,
   CommonStyles,
 } from "../assets/sprites.js";

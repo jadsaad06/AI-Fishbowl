@@ -23,7 +23,17 @@ async function init() {
     });
     document.body.appendChild(app.canvas);
 
-    await PIXI.Assets.load(["./assets/images/Underwater BG Blank.png"]);
+    await PIXI.Assets.load([
+      "assets/images/Underwater BG Blank.png",
+      "assets/images/fish_blue.png",
+      "assets/images/fish_brown.png",
+      "assets/images/fish_green.png",
+      "assets/images/fish_orange.png",
+      "assets/images/fish_red.png",
+      "assets/images/fish_pink.png",
+      "assets/images/fish_grey.png",
+      "assets/images/Red_Fish_AnarkaliArt.png",
+    ]);
 
     /**
      * If the main process broadcasts a new UI state, this IPC listener is triggered.

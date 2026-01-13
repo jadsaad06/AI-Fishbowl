@@ -1,5 +1,7 @@
 import * as PIXI from "pixi.js";
 import {
+  createFishSprite,
+  BigFish,
   FishSwarm,
   CommonStyles,
   createBackground,
@@ -18,14 +20,19 @@ export class IdleScene {
     this.initBackground(app);
 
     this.swarm = new FishSwarm(50, app.screen.width, app.screen.height);
+    this.bigFish = new BigFish(app.screen.width, app.screen.height);
     this.container.addChild(this.swarm.container);
+    this.container.addChild(this.bigFish.sprite);
 
     const label = new PIXI.Text("Idle State", CommonStyles.header);
     label.anchor.set(0.5);
-    label.position.set(app.screen.width / 2, app.screen.height / 2 - 50);
+    label.position.set(app.screen.width / 2, app.screen.height / 2 - 60);
     this.container.addChild(label);
 
-    this.update = () => this.swarm.update();
+    this.update = () => {
+      this.swarm.update();
+      this.bigFish.update();
+    };
     PIXI.Ticker.shared.add(this.update);
   }
 
