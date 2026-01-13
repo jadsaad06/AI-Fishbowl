@@ -10,14 +10,6 @@ const FISH_TEXTURE_PATHS = [
   "assets/images/fish_grey.png",
 ];
 
-// export function createDiver() {
-//   const texture = PIXI.Texture.from("assets/images/diver.png");
-//   const diver = new PIXI.Sprite(texture);
-//   diver.anchor.set(0.5);
-//   diver.scale.set(0.5);
-//   return diver;
-// }
-
 export function createFishSprite(isBig = false, customPath = null) {
   const path =
     customPath ||
@@ -28,7 +20,7 @@ export function createFishSprite(isBig = false, customPath = null) {
   fish.anchor.set(0.5);
 
   if (isBig) {
-    fish.scale.set(0.1 + Math.random() * 0.1);
+    fish.scale.set(0.05 + Math.random() * 0.1);
   } else {
     fish.scale.set(1.5 + Math.random() * 0.3);
   }
@@ -62,6 +54,49 @@ export class BigFish {
     }
 
     this.sprite.position.set(this.x, this.y);
+  }
+}
+
+export function createDiver() {
+  const texture = PIXI.Texture.from("assets/images/ocean_diver.png");
+  const diver = new PIXI.Sprite(texture);
+  diver.anchor.set(0.5);
+  diver.scale.set(0.15);
+  return diver;
+}
+export class Diver {
+  constructor(width, height) {
+    this.width = width;
+    this.height = height;
+
+    this.sprite = createDiver();
+
+    this.x = width + 200;
+    this.baseY = height / 2;
+
+    this.speed = 1.5;
+    this.waveSpeed = 0.02;
+    this.amplitude = 50;
+    this.elapsed = 0;
+
+    this.sprite.position.set(this.x, this.baseY);
+  }
+
+  update() {
+    this.x -= this.speed;
+
+    this.elapsed += this.waveSpeed;
+    const yOffset = Math.sin(this.elapsed) * this.amplitude;
+
+    if (this.x < -200) {
+      this.x = this.width + 200;
+      this.baseY = this.height * 0.3 + Math.random() * (this.height * 0.4);
+    }
+
+    this.sprite.x = this.x;
+    this.sprite.y = this.baseY + yOffset;
+
+    this.sprite.rotation = Math.cos(this.elapsed) * 0.2;
   }
 }
 

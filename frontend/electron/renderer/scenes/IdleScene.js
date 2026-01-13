@@ -3,6 +3,7 @@ import {
   createFishSprite,
   BigFish,
   FishSwarm,
+  Diver,
   CommonStyles,
   createBackground,
   PulsingLabel,
@@ -22,8 +23,10 @@ export class IdleScene {
 
     this.swarm = new FishSwarm(50, app.screen.width, app.screen.height);
     this.bigFish = new BigFish(app.screen.width, app.screen.height);
+    this.diver = new Diver(app.screen.width, app.screen.height);
     this.container.addChild(this.swarm.container);
     this.container.addChild(this.bigFish.sprite);
+    this.container.addChild(this.diver.sprite);
 
     this.label = new PulsingLabel(app, "Press the Mic button and ask away!");
     this.container.addChild(this.label.container);
@@ -31,6 +34,7 @@ export class IdleScene {
     this.update = () => {
       this.swarm.update();
       this.bigFish.update();
+      this.diver.update();
       this.label.update();
     };
     PIXI.Ticker.shared.add(this.update);
