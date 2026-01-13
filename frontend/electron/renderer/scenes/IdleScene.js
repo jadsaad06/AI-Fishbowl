@@ -1,5 +1,9 @@
 import * as PIXI from "pixi.js";
-import { FishSwarm, CommonStyles } from "../assets/sprites.js";
+import {
+  FishSwarm,
+  CommonStyles,
+  createBackground,
+} from "../assets/sprites.js";
 
 /**
  * This class creates the animations responsible for being displayed
@@ -11,11 +15,7 @@ export class IdleScene {
   constructor(app) {
     this.container = new PIXI.Container();
 
-    const background = new PIXI.Graphics();
-    background.beginFill(0x0b62f7);
-    background.drawRect(0, 0, app.screen.width, app.screen.height);
-    background.endFill();
-    this.container.addChild(background);
+    this.initBackground(app);
 
     this.swarm = new FishSwarm(50, app.screen.width, app.screen.height);
     this.container.addChild(this.swarm.container);
@@ -27,6 +27,14 @@ export class IdleScene {
 
     this.update = () => this.swarm.update();
     PIXI.Ticker.shared.add(this.update);
+  }
+
+  async initBackground(app) {
+    const bg = await createBackground();
+
+    bg.width = app.screen.width;
+    bg.height = app.screen.height;
+    this.container.addChildAt(bg, 0);
   }
 
   destroy() {

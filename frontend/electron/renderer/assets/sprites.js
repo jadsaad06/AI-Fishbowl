@@ -65,19 +65,12 @@ export function createFancyFish(color = 0xffab00) {
   return fish;
 }
 
-export function createEnvironment(width, height) {
-  const container = new PIXI.Container();
-
-  for (let i = 0; i < 10; i++) {
-    const stone = new PIXI.Graphics()
-      .beginFill(0x555555)
-      .drawCircle(0, 0, 10 + Math.random() * 20)
-      .endFill();
-    stone.x = Math.random() * width;
-    stone.y = height - 10;
-    container.addChild(stone);
-  }
-  return container;
+export async function createBackground(
+  path = "./assets/images/Underwater BG Blank.png"
+) {
+  const texture = await PIXI.Assets.load(path);
+  const background = new PIXI.Sprite(texture);
+  return background;
 }
 export class FishSwarm {
   constructor(count = 20, width, height) {
