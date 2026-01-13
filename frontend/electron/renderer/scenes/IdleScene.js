@@ -21,7 +21,7 @@ export class IdleScene {
 
     this.initBackground(app);
 
-    this.swarm = new FishSwarm(50, app.screen.width, app.screen.height);
+    this.swarm = new FishSwarm(30, app.screen.width, app.screen.height);
     this.bigFish = new BigFish(app.screen.width, app.screen.height);
     this.diver = new Diver(app.screen.width, app.screen.height);
     this.container.addChild(this.swarm.container);

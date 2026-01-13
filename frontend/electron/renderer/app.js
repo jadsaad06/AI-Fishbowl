@@ -24,7 +24,7 @@ async function init() {
     document.body.appendChild(app.canvas);
 
     await PIXI.Assets.load([
-      "assets/images/Underwater BG Blank.png",
+      "assets/images/deep_sea_bg.jpg",
       "assets/images/fish_blue.png",
       "assets/images/fish_brown.png",
       "assets/images/fish_green.png",
@@ -35,6 +35,7 @@ async function init() {
       "assets/images/fish_tuna.png",
       "assets/images/Red_Fish_AnarkaliArt.png",
       "assets/images/ocean_diver.png",
+      "assets/images/glowing_creature_background.jpg",
     ]);
 
     /**
@@ -65,4 +66,4 @@ async function init() {
 }
 
 /** Log unhandled errors and call the init function */
-init().catch(console.error);
+init();

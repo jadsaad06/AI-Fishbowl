@@ -26,7 +26,7 @@ export function setScene(app, state) {
 
   switch (state) {
     case "listening":
-      currentScene = new ListeningScene();
+      currentScene = new ListeningScene(app);
       break;
     // case "thinking":
     //   currentScene = new ThinkingScene();

@@ -10,6 +10,14 @@ const FISH_TEXTURE_PATHS = [
   "assets/images/fish_grey.png",
 ];
 
+export async function createBackground(
+  path = "./assets/images/deep_sea_bg.jpg"
+) {
+  const texture = await PIXI.Assets.load(path);
+  const background = new PIXI.Sprite(texture);
+  return background;
+}
+
 export function createFishSprite(isBig = false, customPath = null) {
   const path =
     customPath ||
@@ -98,14 +106,6 @@ export class Diver {
 
     this.sprite.rotation = Math.cos(this.elapsed) * 0.2;
   }
-}
-
-export async function createBackground(
-  path = "./assets/images/Underwater BG Blank.png"
-) {
-  const texture = await PIXI.Assets.load(path);
-  const background = new PIXI.Sprite(texture);
-  return background;
 }
 
 export class FishSwarm {
