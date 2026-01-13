@@ -98,14 +98,7 @@ def microphone_audio_source(device: int, samplerate: int, blocksize: int) -> Ite
         # copy to detach from PortAudio buffer
         q.put(indata.copy())
 
-    with sd.InputStream(
-        device=device,
-        samplerate=samplerate,
-        blocksize=blocksize,
-        channels=1,
-        dtype="float32",
-        callback=callback,
-    ):
+    with sd.InputStream(device, samplerate, blocksize, channels=1, dtype="float32", callback):
         while True:
             block_2d = q.get()          # shape: (frames, 1)
             block_1d = block_2d[:, 0]   # flatten to mono
@@ -120,7 +113,7 @@ class VadConfig:
     min_utterance_seconds: float
 
 
-def record_one_utterance_vad(source: Iterator[AudioBlock], cfg: VadConfig) -> AudioBlock:
+def record_utterance(source: Iterator[AudioBlock], cfg: VadConfig) -> AudioBlock:
     """
     Consume audio from audio source (microphone) until complete utterance is detected.
     Returns (utterance_audio, samplerate).
@@ -200,8 +193,9 @@ def main() -> None:
         min_utterance_seconds=MIN_UTTERANCE_SECONDS,
     )
 
-    print("Listening... (speak, then pause to end)")
-    utterance, sr = record_one_utterance_vad(source, cfg)
+    print("EVENT:MIC_STARTED", flush=True)
+    utterance, sr = record_utterance(source, cfg)
+    print("EVENT:MIC_STOPPED", flush=True)
 
     sf.write(OUTPUT_FILENAME, utterance, sr)
     print(f"Saved: {OUTPUT_FILENAME} ({len(utterance)/sr:.2f}s @ {sr} Hz)")
