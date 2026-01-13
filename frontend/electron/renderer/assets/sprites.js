@@ -8,7 +8,13 @@ const FISH_TEXTURE_PATHS = [
   "assets/images/fish_red.png",
   "assets/images/fish_pink.png",
   "assets/images/fish_grey.png",
+  "assets/images/fish_tuna.png",
 ];
+
+const BIG_FISH_TEXTURE_PATHS = [
+    "assets/images/fish_tuna.png",
+    "assets/images/Red_Fish_AnarkaliArt.png"
+]
 
 export function createFishSprite(isBig = false, customPath = null) {
   const path =
@@ -32,17 +38,20 @@ export class BigFish {
     this.width = width;
     this.height = height;
 
-    const BIG_FISH_PATH = "assets/images/Red_Fish_AnarkaliArt.png";
-    this.sprite = createFishSprite(true, BIG_FISH_PATH);
 
-    this.x = -200;
-    this.y = this.height * 0.3 + Math.random() * (this.height * 0.4);
-    this.speed = 0.8;
+    for (const i = 0; i < 4; i++) {
+        const BIG_FISH_PATH = BIG_FISH_TEXTURE_PATHS[getRandomInt(2)]
+        this.sprite = createFishSprite(true, BIG_FISH_PATH);
 
-    this.sprite.scale.x = -Math.abs(this.sprite.scale.x);
+        this.x = -200;
+        this.y = this.height * 0.3 + Math.random() * (this.height * 0.4);
+        this.speed = 0.8;
 
-    this.sprite.rotation = 0;
-    this.sprite.position.set(this.x, this.y);
+        this.sprite.scale.x = -Math.abs(this.sprite.scale.x);
+
+        this.sprite.rotation = 0;
+        this.sprite.position.set(this.x, this.y);
+    }
   }
 
   update() {
@@ -140,3 +149,7 @@ export const CommonStyles = {
     fontWeight: "bold",
   }),
 };
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+}
