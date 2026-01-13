@@ -5,6 +5,7 @@ import {
   FishSwarm,
   CommonStyles,
   createBackground,
+  PulsingLabel,
 } from "../assets/sprites.js";
 
 /**
@@ -24,14 +25,13 @@ export class IdleScene {
     this.container.addChild(this.swarm.container);
     this.container.addChild(this.bigFish.sprite);
 
-    const label = new PIXI.Text("Idle State", CommonStyles.header);
-    label.anchor.set(0.5);
-    label.position.set(app.screen.width / 2, app.screen.height / 2 - 60);
-    this.container.addChild(label);
+    this.label = new PulsingLabel(app, "Press the Mic button and ask away!");
+    this.container.addChild(this.label.container);
 
     this.update = () => {
       this.swarm.update();
       this.bigFish.update();
+      this.label.update();
     };
     PIXI.Ticker.shared.add(this.update);
   }

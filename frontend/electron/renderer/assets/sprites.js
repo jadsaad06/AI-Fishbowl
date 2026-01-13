@@ -10,6 +10,14 @@ const FISH_TEXTURE_PATHS = [
   "assets/images/fish_grey.png",
 ];
 
+// export function createDiver() {
+//   const texture = PIXI.Texture.from("assets/images/diver.png");
+//   const diver = new PIXI.Sprite(texture);
+//   diver.anchor.set(0.5);
+//   diver.scale.set(0.5);
+//   return diver;
+// }
+
 export function createFishSprite(isBig = false, customPath = null) {
   const path =
     customPath ||
@@ -64,6 +72,7 @@ export async function createBackground(
   const background = new PIXI.Sprite(texture);
   return background;
 }
+
 export class FishSwarm {
   constructor(count = 20, width, height) {
     this.width = width;
@@ -129,6 +138,48 @@ export class FishSwarm {
 
       f.speed = 40 + Math.random() * 20;
     });
+  }
+}
+
+export class PulsingLabel {
+  constructor(app, text = "INTERACT TO START") {
+    this.container = new PIXI.Container();
+
+    const style = new PIXI.TextStyle({
+      fontFamily: "Times New Roman",
+      fontSize: 54,
+      fill: "#ffffff",
+      fontWeight: "bold",
+      dropShadow: true,
+      dropShadowColor: "#000000",
+      dropShadowBlur: 10,
+      dropShadowDistance: 0,
+    });
+
+    this.text = new PIXI.Text(text, style);
+    this.text.anchor.set(0.5);
+
+    const padding = 60;
+    const ellipseWidth = this.text.width + padding * 2;
+    const ellipseHeight = this.text.height + padding * 4;
+
+    this.bg = new PIXI.Graphics();
+
+    this.bg.ellipse(0, 0, ellipseWidth / 2, ellipseHeight / 2);
+    this.bg.fill({ color: 0x000000, alpha: 0.8 });
+    this.bg.stroke({ width: 4, color: 0xffffff });
+
+    this.container.addChild(this.bg);
+    this.container.addChild(this.text);
+    this.container.position.set(app.screen.width / 2, app.screen.height / 2);
+
+    this.elapsed = 0;
+  }
+
+  update(delta) {
+    this.elapsed += 0.03;
+
+    this.container.alpha = 0.7 + Math.sin(this.elapsed) * 0.4;
   }
 }
 
