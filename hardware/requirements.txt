@@ -1,3 +1,4 @@
 device_manager
 sounddevice
 soundfile
+numpy

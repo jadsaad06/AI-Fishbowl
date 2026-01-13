@@ -191,11 +191,7 @@ def record_one_utterance_vad(source: Iterator[AudioBlock], cfg: VadConfig) -> Au
 def main() -> None:
     device_index = get_device(MIC_NAME)
 
-    source = microphone_audio_source(
-        device=device_index,
-        samplerate=SAMPLE_RATE,
-        blocksize=BLOCKSIZE,
-    )
+    source = microphone_audio_source(device=device_index, samplerate=SAMPLE_RATE, blocksize=BLOCKSIZE)
 
     cfg = VadConfig(
         energy_threshold=ENERGY_THRESHOLD,
