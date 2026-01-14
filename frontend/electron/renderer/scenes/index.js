@@ -4,7 +4,7 @@
  */
 import { IdleScene } from "./IdleScene.js";
 import { ListeningScene } from "./ListeningScene.js";
-// import { ThinkingScene } from "./ThinkingScene.js";
+import { ThinkingScene } from "./ThinkingScene.js";
 // import { RespondingScene } from "./RespondingScene.js";
 import { ErrorScene } from "./ErrorScene.js";
 
@@ -28,9 +28,9 @@ export function setScene(app, state) {
     case "listening":
       currentScene = new ListeningScene(app);
       break;
-    // case "thinking":
-    //   currentScene = new ThinkingScene();
-    //   break;
+    case "thinking":
+      currentScene = new ThinkingScene(app);
+      break;
     // case "responding":
     //   currentScene = new RespondingScene();
     //   break;
