@@ -30,12 +30,15 @@ SAMPLE_RATE = 48000
 BLOCKSIZE = 1024
 
 # Energy threshold for speech detection, can be tuned up/down for sensitivity
-ENERGY_THRESHOLD = 0.008
+# started with 0.008, seemed too sensitive.  This will be partially dependent on environment.
+ENERGY_THRESHOLD = 0.015
 
 # How long we require silence before ending an utterance.
 # With 1024 blocksize @ 48kHz => 21.3ms/block.
 # 25 blocks ~ 0.53s of silence.
-SILENCE_BLOCKS = 25
+# started with 25, was much too short.  May be better to further increase this duration and give
+# the user an option to end their speech manually to ensure they aren't cut off in the middle.
+SILENCE_BLOCKS = 100
 
 # Capture short amount of audio before speech starts to avoid clipping.
 # 10 blocks ~ 213ms
@@ -98,7 +101,7 @@ def microphone_audio_source(device: int, samplerate: int, blocksize: int) -> Ite
         # copy to detach from PortAudio buffer
         q.put(indata.copy())
 
-    with sd.InputStream(device, samplerate, blocksize, channels=1, dtype="float32", callback):
+    with sd.InputStream(device=device, samplerate=samplerate, blocksize=blocksize, channels=1, dtype="float32", callback=callback):
         while True:
             block_2d = q.get()          # shape: (frames, 1)
             block_1d = block_2d[:, 0]   # flatten to mono
