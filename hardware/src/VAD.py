@@ -147,7 +147,7 @@ def record_utterance(source: Iterator[AudioBlock], cfg: VadConfig) -> AudioBlock
             if rms > cfg.energy_threshold:
                 speaking = True
                 silent_count = 0
-                print("speech started")
+                print("EVENT:MIC_STARTED", flush=True)
 
                 # Include pre-roll so we don't clip the first syllable
                 utterance_blocks.extend(pre_roll)
@@ -165,7 +165,7 @@ def record_utterance(source: Iterator[AudioBlock], cfg: VadConfig) -> AudioBlock
                 silent_count += 1
 
                 if silent_count >= cfg.silence_blocks:
-                    print("speech ended")
+                    print("EVENT:MIC_STOPPED", flush=True)
                     audio = np.concatenate(utterance_blocks)
 
                     # Drop segments that are too short
@@ -196,9 +196,7 @@ def main() -> None:
         min_utterance_seconds=MIN_UTTERANCE_SECONDS,
     )
 
-    print("EVENT:MIC_STARTED", flush=True)
     utterance, sr = record_utterance(source, cfg)
-    print("EVENT:MIC_STOPPED", flush=True)
 
     sf.write(OUTPUT_FILENAME, utterance, sr)
     print(f"Saved: {OUTPUT_FILENAME} ({len(utterance)/sr:.2f}s @ {sr} Hz)")
