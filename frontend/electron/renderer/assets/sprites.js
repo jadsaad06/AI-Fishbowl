@@ -32,42 +32,17 @@ export function createFishSprite(fishList = null) {
   const fish = new PIXI.Sprite(texture);
   fish.anchor.set(0.5);
 
+  const baseScale =
+    fishList == LISTENING_SCENE_FISH
+      ? 0.05 + Math.random() * 0.05
+      : 1.5 + Math.random() * 0.3;
+
+  fish.scale.set(baseScale);
+
   if (fishList == LISTENING_SCENE_FISH) {
-    fish.scale.set(0.05 + Math.random() * 0.1);
-  } else {
-    fish.scale.set(1.5 + Math.random() * 0.3);
+    fish.scale.x = -Math.abs(fish.scale.x);
   }
   return fish;
-}
-
-export class BigFish {
-  constructor(width, height) {
-    this.width = width;
-    this.height = height;
-
-    const BIG_FISH_PATH = "assets/images/Red_Fish_AnarkaliArt.png";
-    this.sprite = createFishSprite(true, BIG_FISH_PATH);
-
-    this.x = -200;
-    this.y = this.height * 0.3 + Math.random() * (this.height * 0.4);
-    this.speed = 0.8;
-
-    this.sprite.scale.x = -Math.abs(this.sprite.scale.x);
-
-    this.sprite.rotation = 0;
-    this.sprite.position.set(this.x, this.y);
-  }
-
-  update() {
-    this.x += this.speed;
-
-    if (this.x > this.width + 200) {
-      this.x = -200;
-      this.y = Math.random() * this.height;
-    }
-
-    this.sprite.position.set(this.x, this.y);
-  }
 }
 
 export function createDiver() {

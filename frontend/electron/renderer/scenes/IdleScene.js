@@ -1,7 +1,6 @@
 import * as PIXI from "pixi.js";
 import {
   createFishSprite,
-  BigFish,
   FishSwarm,
   Diver,
   CommonStyles,
