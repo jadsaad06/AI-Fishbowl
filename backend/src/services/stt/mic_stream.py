@@ -2,76 +2,81 @@
 https://people.csail.mit.edu/hubert/pyaudio/docs/
 We will be using PyAudio in order to get a stream of audio from
 our USB microphone that we can then use with the Google STT API.
+
+https://docs.cloud.google.com/speech-to-text/docs/v1/optimizing-audio-files-for-speech-to-text
+^TLDR use 16-bit formatting or paInt16
+
+https://docs.cloud.google.com/speech-to-text/docs/best-practices
+^TLDR use a 100-millisecond frame size
 """
 
-import wave
 import pyaudio
+import wave
 
-"""
-# These are my mic specs I got from list_devices.py
-INDEX = 24       
-RATE = 48000                # You can think of this as samples per second. My mic takes 48,000 "snapshots" of sound every 1 second.
-CHANNELS = 2     
-FORMAT = pyaudio.paInt16    # So I don't fully understand why this was making it break, but this setting stood out. As everything else is default or my mic specs. And this is specific to the audio recording quality. 
-CHUNK = 1024                # this is is more samples per buffer. We will be grabbing 1,024 snapshots at a time (this was the default with PyAudio).
+class MicrophoneStream:
+    def __init__(self, index, chunk_duration_ms=100):   # chunk_duration_ms is in milliseconds (100ms recommended by Google)
+        self.index = index
+        self.chunk_duration_ms = chunk_duration_ms
+        self.format = pyaudio.paInt16                   # Recommended by Google
+        
+        self.audio_interface = pyaudio.PyAudio()        # Initialize PyAudio
+        
+        # Pull hardware specs of mic by index
+        info = self.audio_interface.get_device_info_by_index(self.index)
+        self.rate = int(info.get('defaultSampleRate'))
+        self.channels = int(info.get('maxInputChannels'))
+        
+        # Calculate chunk size based on chunk duration (ms)
+        self.chunk = int(self.rate * (self.chunk_duration_ms / 1000))   # Rate (samples/sec) * (ms / 1000) = samples per chunk
+        
+        self.stream = None
 
-p = pyaudio.PyAudio()
+    def __enter__(self):
+        self.stream = self.audio_interface.open(    # Open the stream
+            format=self.format,
+            channels=self.channels,
+            rate=self.rate,
+            input=True,
+            input_device_index=self.index,
+            frames_per_buffer=self.chunk,
+        )
+        return self
 
-# In the last version, we were on output mode, now we are in input mode. 
-stream = p.open(
-    format=FORMAT,
-    channels=CHANNELS,
-    rate=RATE,
-    input=True,
-    input_device_index=INDEX,
-    frames_per_buffer=CHUNK
-)
-"""
-# These are my mic specs I got from list_devices.py
-INDEX = 24  
-FORMAT = pyaudio.paInt16                    # when you see format, think sample quality
-CHUNK = 1024                                # this is is more samples per buffer. We will be grabbing 1,024 snapshots at a time (this was the default with PyAudio).
+    def __exit__(self, type, value, traceback):   # Close the stream
+        if self.stream:
+            self.stream.stop_stream()
+            self.stream.close()
+        self.audio_interface.terminate()
 
-p = pyaudio.PyAudio()
+    def generator(self):   # Infinite loop to get audio chunks for STT 
+        while True:
+            # you need exception_on_overflow=False for live Windows/Mac streams
+            data = self.stream.read(self.chunk, exception_on_overflow=False)
+            if not data:    # If no data is comes through, break the loop
+                break
+            yield data
 
-info = p.get_device_info_by_index(INDEX)    # get info from the specific device index
-RATE = int(info.get('defaultSampleRate'))   # get the sample rate, my mic is 48,000, which means it takes 48,000 snapshots of audio per second. 
-CHANNELS = info.get('maxInputChannels')     # get the number of input channels
+if __name__ == "__main__":
+    TARGET_INDEX = 24 
+    
+    with MicrophoneStream(index=TARGET_INDEX, chunk_duration_ms=100) as mic:
+        print(f"Hardware Detected: {mic.rate}Hz, {mic.channels} Channels")
+        print(f"Calculated Chunk Size: {mic.chunk} samples (about 100ms)")
+        print("Recording 5 seconds for testing")
+        
+        frames = []
+        total_test_chunks = int(5000 / mic.chunk_duration_ms)   # Calculate how many 100ms chunks fit in 5 seconds
+        
+        audio_gen = mic.generator()                             # Run it
+        for i in range(total_test_chunks):                      # Merge them all
+            chunk = next(audio_gen)
+            frames.append(chunk)
+            print(f"Progress: {i+1}/{total_test_chunks} chunks", end='\r')
 
-stream = p.open(
-    format=FORMAT,
-    channels=CHANNELS,
-    rate=RATE,
-    input=True,
-    input_device_index=INDEX,
-    frames_per_buffer=CHUNK
-)
-
-print(f"Starting 5 second recording")
-
-frames = []
-for i in range(0, int(RATE / CHUNK * 5)):  # 5 seconds bc 48,000 / 1,024 = 46.875 this means there are roughly 47 chunks in one second of audio and 47 * 5 = 235 chunks in 5 seconds
-    data = stream.read(CHUNK, exception_on_overflow=False)
-    frames.append(data)
-
-print(f"* Done! Captured {len(frames)} chunks.")
-
-
-
-# ------------------ TEMP saving WAV File for testing ------------------
-audio_data = b''.join(frames)               # join all chunks
-
-
-with wave.open("audio_input_test.wav", 'wb') as wf: # write the file
-    wf.setnchannels(CHANNELS)
-    wf.setsampwidth(p.get_sample_size(FORMAT)) 
-    wf.setframerate(RATE)
-    wf.writeframes(audio_data)
-
-print("saved test file")
-# ---------------------------- END TEMP---------------------------------
-
-# close up everything and stop pyAudio
-stream.stop_stream()
-stream.close()
-p.terminate()
+        with wave.open("mic_class_test.wav", 'wb') as wf:       # Save to a WAV file w/ all the mic info
+            wf.setnchannels(mic.channels)
+            wf.setsampwidth(mic.audio_interface.get_sample_size(mic.format))
+            wf.setframerate(mic.rate)
+            wf.writeframes(b''.join(frames))
+            
+    print("\nDone!")
