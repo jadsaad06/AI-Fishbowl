@@ -4,35 +4,53 @@ We will be using PyAudio in order to get a stream of audio from
 our USB microphone that we can then use with the Google STT API.
 """
 
-"""PyAudio Example: Play a wave file."""
-
 import wave
-# import sys        # I shouldn't need this I think
 import pyaudio
 
-FILE_PATH = r"D:\Desktop\School Items\PSU Year 3\Capstone - CS-469\AI-Fishbowl\backend\src\services\stt\Test\test_audio.wav"
-CHUNK = 1024
+# These are my mic specs I got from list_devices.py
+INDEX = 24       
+RATE = 48000                # You can think of this as samples per second. My mic takes 48,000 "snapshots" of sound every 1 second.
+CHANNELS = 2     
+FORMAT = pyaudio.paFloat32  # This is the bit depth. Google said that this is standard. And it's the highest precision that PyAudio offers. 
+CHUNK = 1024                # this is is more samples per buffer. We will be grabbing 1,024 snapshots at a time (this was the default with PyAudio).
 
-with wave.open(FILE_PATH, 'rb') as wf:
-    # Instantiate PyAudio and initialize PortAudio system resources (1)
-    p = pyaudio.PyAudio()
+p = pyaudio.PyAudio()
 
-    # Open stream (2)
-    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                    channels=wf.getnchannels(),
-                    rate=wf.getframerate(),
-                    output=True)
+# In the last version, we were on output mode, now we are in input mode. 
+stream = p.open(
+    format=FORMAT,
+    channels=CHANNELS,
+    rate=RATE,
+    input=True,
+    input_device_index=INDEX,
+    frames_per_buffer=CHUNK
+)
 
-    print(f"Playing: {FILE_PATH}")
+print(f"Starting 5 second recording")
 
-    # Play samples from the wave file (3)
-    while len(data := wf.readframes(CHUNK)):  # Requires Python 3.8+ for :=
-        stream.write(data)
+frames = []
+for i in range(0, int(RATE / CHUNK * 5)):  # 5 seconds bc 48,000 / 1,024 = 46.875 this means there are roughly 47 chunks in one second of audio and 47 * 5 = 235 chunks in 5 seconds
+    data = stream.read(CHUNK, exception_on_overflow=False)
+    frames.append(data)
 
-    print("Finished playback.")
+print(f"* Done! Captured {len(frames)} chunks.")
 
-    # Close stream (4)
-    stream.close()
 
-    # Release PortAudio system resources (5)
-    p.terminate()
+
+# ------------------ TEMP saving WAV File for testing ------------------
+audio_data = b''.join(frames)               # join all chunks
+
+
+with wave.open("audio_input_test.wav", 'wb') as wf: # write the file
+    wf.setnchannels(CHANNELS)
+    wf.setsampwidth(p.get_sample_size(FORMAT)) 
+    wf.setframerate(RATE)
+    wf.writeframes(audio_data)
+
+print("saved test file")
+# ---------------------------- END TEMP---------------------------------
+
+# close up everything and stop pyAudio
+stream.stop_stream()
+stream.close()
+p.terminate()
