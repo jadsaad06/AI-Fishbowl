@@ -23,10 +23,10 @@ for i in range(0, num_devices):
     api_info = p.get_host_api_info_by_index(info.get('hostApi')) # the 'hostApi' key provides an index we can use to get the API name
     api_name = api_info.get('name') # get Host API name (e.g., MME, Windows WASAPI)
 
-    if info.get('maxInputChannels') > 0: # filter for microphones
-        device_name = info.get('name')
-        input_channels = info.get('maxInputChannels')
-        default_rate = info.get('defaultSampleRate')
+    if info.get('maxInputChannels') > 0:                # filter for microphones
+        device_name = info.get('name')                  # get the name of the device
+        input_channels = info.get('maxInputChannels')   # get the number of input channels
+        default_rate = info.get('defaultSampleRate')    # get the default sample rate
         
         print(f"{i:<5} | {api_name:<20} | {input_channels:<8} | {default_rate:<10} | {device_name}") # More formatting 
 
