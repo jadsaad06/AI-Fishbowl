@@ -11,7 +11,7 @@ import pyaudio
 INDEX = 24       
 RATE = 48000                # You can think of this as samples per second. My mic takes 48,000 "snapshots" of sound every 1 second.
 CHANNELS = 2     
-FORMAT = pyaudio.paFloat32  # This is the bit depth. Google said that this is standard. And it's the highest precision that PyAudio offers. 
+FORMAT = pyaudio.paInt16    # So I don't fully understand why this was making it break, but this setting stood out. As everything else is default or my mic specs. And this is specific to the audio recording quality. 
 CHUNK = 1024                # this is is more samples per buffer. We will be grabbing 1,024 snapshots at a time (this was the default with PyAudio).
 
 p = pyaudio.PyAudio()
