@@ -82,9 +82,9 @@ export class Diver {
     this.x = width + 200;
     this.baseY = height / 2;
 
-    this.speed = 1.5;
+    this.speed = 0.5;
     this.waveSpeed = 0.02;
-    this.amplitude = 50;
+    this.amplitude = 20;
     this.elapsed = 0;
 
     this.sprite.position.set(this.x, this.baseY);
