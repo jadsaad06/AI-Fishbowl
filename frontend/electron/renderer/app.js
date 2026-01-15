@@ -36,6 +36,8 @@ async function init() {
       "assets/images/Red_Fish_AnarkaliArt.png",
       "assets/images/ocean_diver.png",
       "assets/images/glowing_creature_background.jpg",
+      "assets/images/animated_fish_1.png",
+      "assets/images/animated_fish_2.png",
     ]);
 
     /**

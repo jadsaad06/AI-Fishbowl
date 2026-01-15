@@ -21,20 +21,14 @@ export class IdleScene {
 
     this.initBackground(app);
 
-    this.swarm = new FishSwarm(30, app.screen.width, app.screen.height);
-    this.bigFish = new BigFish(app.screen.width, app.screen.height);
-    this.diver = new Diver(app.screen.width, app.screen.height);
+    this.swarm = new FishSwarm(30, app.screen.width, app.screen.height, "idle");
     this.container.addChild(this.swarm.container);
-    this.container.addChild(this.bigFish.sprite);
-    this.container.addChild(this.diver.sprite);
 
     this.label = new PulsingLabel(app, "Press the Mic button and ask away!");
     this.container.addChild(this.label.container);
 
     this.update = () => {
       this.swarm.update();
-      this.bigFish.update();
-      this.diver.update();
       this.label.update();
     };
     PIXI.Ticker.shared.add(this.update);

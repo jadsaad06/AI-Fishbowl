@@ -1,6 +1,6 @@
 import * as PIXI from "pixi.js";
 
-const FISH_TEXTURE_PATHS = [
+const IDLE_SCENE_FISH = [
   "assets/images/fish_blue.png",
   "assets/images/fish_brown.png",
   "assets/images/fish_green.png",
@@ -8,6 +8,13 @@ const FISH_TEXTURE_PATHS = [
   "assets/images/fish_red.png",
   "assets/images/fish_pink.png",
   "assets/images/fish_grey.png",
+];
+
+const LISTENING_SCENE_FISH = [
+  "assets/images/Red_Fish_AnarkaliArt.png",
+  "assets/images/animated_fish_1.png",
+  "assets/images/animated_fish_2.png",
+  "assets/images/fish_tuna.png",
 ];
 
 export async function createBackground(
@@ -18,16 +25,14 @@ export async function createBackground(
   return background;
 }
 
-export function createFishSprite(isBig = false, customPath = null) {
-  const path =
-    customPath ||
-    FISH_TEXTURE_PATHS[Math.floor(Math.random() * FISH_TEXTURE_PATHS.length)];
+export function createFishSprite(fishList = null) {
+  const path = fishList[Math.floor(Math.random() * fishList.length)];
 
   const texture = PIXI.Texture.from(path);
   const fish = new PIXI.Sprite(texture);
   fish.anchor.set(0.5);
 
-  if (isBig) {
+  if (fishList == LISTENING_SCENE_FISH) {
     fish.scale.set(0.05 + Math.random() * 0.1);
   } else {
     fish.scale.set(1.5 + Math.random() * 0.3);
@@ -109,16 +114,23 @@ export class Diver {
 }
 
 export class FishSwarm {
-  constructor(count = 20, width, height) {
+  constructor(count = 20, width, height, scene = "idle") {
     this.width = width;
     this.height = height;
 
     this.container = new PIXI.Container();
     this.fishData = [];
     this.isScattering = false;
+    let list_to_use = [];
+
+    if (scene == "idle") {
+      list_to_use = IDLE_SCENE_FISH;
+    } else if (scene == "listening") {
+      list_to_use = LISTENING_SCENE_FISH;
+    }
 
     for (let i = 0; i < count; i++) {
-      const fish = createFishSprite(false);
+      const fish = createFishSprite(list_to_use);
 
       const data = {
         sprite: fish,
@@ -171,7 +183,7 @@ export class FishSwarm {
 
       f.angle = Math.atan2(dy, dx);
 
-      f.speed = 40 + Math.random() * 20;
+      f.speed = 30 + Math.random() * 10;
     });
   }
 }
@@ -212,9 +224,9 @@ export class PulsingLabel {
   }
 
   update(delta) {
-    this.elapsed += 0.03;
+    this.elapsed += 0.01;
 
-    this.container.alpha = 0.7 + Math.sin(this.elapsed) * 0.4;
+    this.container.alpha = 0.6 + Math.sin(this.elapsed) * 0.4;
   }
 }
 
