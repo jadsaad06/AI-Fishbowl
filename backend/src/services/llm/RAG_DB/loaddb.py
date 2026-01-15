@@ -69,7 +69,7 @@ def load_db(vectorstore):
     # scrapes them, chunks them, then adds them to vector database
     path_name = os.getenv("PATH_NAME")
     print(f"Path name: {path_name}")
-    website = f"https://www.pdx.edu/{path_name}"
+    website = f"https://web.cs.pdx.edu"
     headers = {
         'User-Agent' : 'PDXAcademicClient/pdx-cs-ask'
     }

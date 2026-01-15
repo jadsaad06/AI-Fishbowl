@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project contains an **LLM Model and a RAG Database**
+This project contains an **Agent and a RAG Database**
 There is only **one** entrypoint file, and there is **one** test file in a Test directory.
 
  **Important:**  
@@ -10,32 +10,46 @@ Not all Python files are meant to be executed directly with `python file.py`.
 
 ---
 
-## LLM Structure
+## Agent Structure
 
 ```
+    mcp_stack
+        ├──__init__.py this directory is a package for the mcp server and client
+        ├──client.py THE NEW ENTRYPOINT FOR AN AGENT
+        └──server.py The MCP server
 
-└── llm/
-    ├── entrypoint.py -- MAIN ENTRYPOINT FILE
-    |
-    ├── QUERY_CHAIN/ -- Module for initiating the llm chain
-    │   ├── __init__.py -- To ensure this Directory is a Package and within it are modules
-    │   └── query.py -- Query chain module
-    |
-    ├── RAG_DB/ -- Directory for storing the RAG DB, and to initialize the RAG DB
-    │   ├── .chromadb/ -- RAG DB Directory (If you already ran loaddb.py)
-        └── loaddb.py -- Python Module script to instantiate the RAG DB
-    |
-    ├── Test/ -- Test directory
-    │   ├── __init__.py -- This directory of Test/ is a package holding it's children
-    │   └── test_chain.py -- This Python module script should be ran when testing the llm.
-    |
-    ├── .env -- Real env file to replace .env.example
-    ├── .env.example -- example environment
-    └── README.md -- README File
+    services/ -- Holds the tts/, stt/ and llm/
+        └── llm/
+            ├── entrypoint.py -- MAIN ENTRYPOINT FILE
+            |
+            ├── QUERY_CHAIN/ -- Module for Isolating the mcp_stack/client.py
+            │   ├── __init__.py -- To ensure this Directory is a Package and within it are modules
+            │   └── query.py -- query module for providing prompt templates, and a small tool for the mcp client.
+            |
+            ├── RAG_DB/ -- Directory for storing the RAG DB, and to initialize the RAG DB
+            │   ├── .chromadb/ -- RAG DB Directory (If you already ran loaddb.py)
+                └── loaddb.py -- Python Module script to instantiate the RAG DB
+            |
+            ├── Test/ -- Test directory
+            │   ├── __init__.py -- This directory of Test/ is a package holding it's children
+            │   └── test_agent.py -- This Python module script should be ran when testing the llm.
+            |
+            ├── .env -- Real env file to replace .env.example
+            ├── .env.example -- example environment
+            └── README.md -- README File
 
 ```
 
 ---
+
+## Requirements
+
+Ensure that you are using 
+``
+3.12 <= python version <= 3.13.9
+``
+Anything outside of this range has not been tested yet, and the libraries for this script are not up to date with the constraints in the newer python versions, or the older ones.
+
 
 ## Environment Variables
 
@@ -71,13 +85,13 @@ The project uses `python-dotenv`, so environment variables are loaded automatica
 ### This will FAIL:
 
 ```bash
-python Test/test_chain.py
+python Test/test_agent.py
 ```
 
 **Reason:**
 - This directory uses **package-based imports**
 - Python uses `PYTHONPATH` env variable to determine where imports come from, and that's dependent on which directory you execute the script from.
-- Running files directly removes that context due to how the preprocessor for python works. If we ran Test/test_chain.py, the PYTHONPATH would be set to that directory, and since we import QUERY_CHAIN/query.py, the package resolver wouldn't find it, and break.
+- Running files directly removes that context due to how the preprocessor for python works. If we ran Test/test_agent.py, the PYTHONPATH would be set to that directory, and since we import mcp_stack/client, the package resolver wouldn't find it, and break.
 
 ---
 
@@ -111,23 +125,26 @@ python loaddb.py
 From inside:
 
 ```
-backend/src/services/llm
+backend/src/
 ```
 
 Run:
 
 ```bash
-python -m Test.test_chain
+python -m services.llm.Test.test_agent
 ```
 
 ---
 
 ### Option 2. Run the Main Entrypoint
 
-If you want to run the full llm + RAG with your prompts:
+If you want to run the Agent with your prompts:
+
 
 ```bash
-python entrypoint.py
+In backend/src/
+
+python -m mcp_stack.client
 ```
 
 
@@ -153,8 +170,8 @@ This ensures:
 Fix:
 
 ```bash
-In backend/src/service/llm
-python -m Test.test_chain  
+In backend/src/
+python -m services.llm.Test.test_agent  
 ```
 
 ---
@@ -173,7 +190,7 @@ Ensure:
 |----|----|
 Set env keys | Create `.env` |
 Run Instantiating RAG DB | `python loaddb.py` |
-Run tests | `python -m Test.test_chain` |
-Run llm + RAG | `python entrypoint.py`
+Run tests | `python -m services.llm.Test.test_agent` |
+Run Gemini AI Agent | `python -m mcp_stack.client`
 
 ---

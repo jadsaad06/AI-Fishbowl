@@ -1,6 +1,7 @@
 langchain
 langchain-community
 langchain_google_genai
+langchain-mcp-adapters
 langchain-chroma
 langchainhub
 grpcio
@@ -8,6 +9,9 @@ chromadb
 unidecode
 bs4
 langchain-text-splitters
+google-cloud-speech
+fastmcp
+mcp
 python-dotenv
 simpleaudio-312compat
 google-genai
