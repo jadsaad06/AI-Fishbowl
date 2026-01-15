@@ -14,7 +14,7 @@ import pyaudio
 p = pyaudio.PyAudio()
 num_devices = p.get_device_count() # get the total number of devices (Note that there are duplicates and this includes inputs and outputs)
 
-print(f"{'Index':<5} | {'Host API':<20} | {'Channels':<8} | {'Name'}") # nice formatting for column headers
+print(f"{'Index':<5} | {'Host API':<20} | {'Channels':<8} | {'Rate':<10} | {'Name'}") # nice formatting for column headers
 print("-" * 80)
 
 for i in range(0, num_devices):
@@ -26,7 +26,8 @@ for i in range(0, num_devices):
     if info.get('maxInputChannels') > 0: # filter for microphones
         device_name = info.get('name')
         input_channels = info.get('maxInputChannels')
+        default_rate = info.get('defaultSampleRate')
         
-        print(f"{i:<5} | {api_name:<20} | {input_channels:<8} | {device_name}") # More formatting 
+        print(f"{i:<5} | {api_name:<20} | {input_channels:<8} | {default_rate:<10} | {device_name}") # More formatting 
 
 p.terminate()
