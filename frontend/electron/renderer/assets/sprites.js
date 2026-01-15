@@ -18,7 +18,7 @@ const LISTENING_SCENE_FISH = [
 ];
 
 export async function createBackground(
-  path = "./assets/images/deep_sea_bg.jpg"
+  path = "./assets/images/background_2.png"
 ) {
   const texture = await PIXI.Assets.load(path);
   const background = new PIXI.Sprite(texture);
