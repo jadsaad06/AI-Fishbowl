@@ -7,6 +7,7 @@ our USB microphone that we can then use with the Google STT API.
 import wave
 import pyaudio
 
+"""
 # These are my mic specs I got from list_devices.py
 INDEX = 24       
 RATE = 48000                # You can think of this as samples per second. My mic takes 48,000 "snapshots" of sound every 1 second.
@@ -17,6 +18,26 @@ CHUNK = 1024                # this is is more samples per buffer. We will be gra
 p = pyaudio.PyAudio()
 
 # In the last version, we were on output mode, now we are in input mode. 
+stream = p.open(
+    format=FORMAT,
+    channels=CHANNELS,
+    rate=RATE,
+    input=True,
+    input_device_index=INDEX,
+    frames_per_buffer=CHUNK
+)
+"""
+# These are my mic specs I got from list_devices.py
+INDEX = 24  
+FORMAT = pyaudio.paInt16                    # when you see format, think sample quality
+CHUNK = 1024                                # this is is more samples per buffer. We will be grabbing 1,024 snapshots at a time (this was the default with PyAudio).
+
+p = pyaudio.PyAudio()
+
+info = p.get_device_info_by_index(INDEX)    # get info from the specific device index
+RATE = int(info.get('defaultSampleRate'))   # get the sample rate, my mic is 48,000, which means it takes 48,000 snapshots of audio per second. 
+CHANNELS = info.get('maxInputChannels')     # get the number of input channels
+
 stream = p.open(
     format=FORMAT,
     channels=CHANNELS,
