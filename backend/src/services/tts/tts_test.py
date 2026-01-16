@@ -33,13 +33,19 @@ def text_to_wav(text: str):
         ),
     )
 
+    if not hasattr(response, "parts") or response.parts is None:
+        print("No Gemini response")
+        return None
+
     audio_bytes = None
     for part in response.parts:   #Extracts audio bytes from Gemini response
-        if part.inline_data:
+        if hasattr(part, "inline_data") and part.inline_data:
             audio_bytes = part.inline_data.data
+            break
 
     if not audio_bytes:
-        raise RuntimeError("No audio data found in response")
+        print("No audio data found in response")
+        return None
 
     with wave.open("output.wav", "wb") as wf:  #Stores Gemini's PCM output to a .wav file
         wf.setnchannels(1)
