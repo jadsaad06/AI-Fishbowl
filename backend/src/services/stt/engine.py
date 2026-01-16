@@ -69,13 +69,10 @@ def transcribe_streaming_v2(mic_index=24):
                     
                     if result.is_final:                                                         # Only process final results
                         transcript = result.alternatives[0].transcript                          # Get the completed transcription
-                        print(f"User said: {transcript}")                                       # Display what was transcribed
-                        # Send transcript to agent here
+                        yield transcript                                                        # Return transcript but keep the generator running
     except KeyboardInterrupt:
         print("\n\n* Stopped listening")
+        raise                                                                                   # Re-raise
     except Exception as e:
         print(f"\n\nError: {e}")
         raise
-
-if __name__ == "__main__":
-    transcribe_streaming_v2()
