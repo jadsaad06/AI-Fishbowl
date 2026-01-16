@@ -34,38 +34,6 @@ GOOGLE_APPLICATION_CREDENTIALS="path/to/your-service-account.json"
 GOOGLE_CLOUD_PROJECT="your-google-cloud-project-id"
 ```
 
-## Usage
-
-### Transcribing Audio Files
-
-```python
-from engine import transcribe_streaming_v2
-
-# Path to your audio file (WAV format recommended)
-audio_file_path = "path/to/your/audio/file.wav"
-
-# Get transcription responses
-responses = transcribe_streaming_v2(audio_file_path)
-
-# Combine all transcription segments into a single string
-# Each response may contain multiple results, and each result may have alternatives
-full_transcript = ""
-for response in responses:
-    for result in response.results:
-        if result.alternatives:
-            full_transcript += result.alternatives[0].transcript + " " # We take the highest confidence alternative (index 0) from each result and concatenate them
-
-print(full_transcript)
-```
-
-### Response Format
-
-The `transcribe_streaming_v2` function returns a list of `StreamingRecognizeResponse` objects from the Google Cloud Speech-to-Text API. Each response contains:
-
-- Metadata about the recognition request
-- Results with transcribed text and confidence scores
-- Language detection information
-
 ## Setup
 
 ### 1. Find Your Microphone Index
