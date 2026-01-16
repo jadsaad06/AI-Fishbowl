@@ -15,6 +15,7 @@ from mic_stream import MicrophoneStream
 
 if __name__ == "__main__":
     TARGET_INDEX = 24 
+# =====  Update me ^ =====
     
     with MicrophoneStream(index=TARGET_INDEX, chunk_duration_ms=100) as mic:
         print(f"Hardware Detected: {mic.rate}Hz, {mic.channels} Channels")
