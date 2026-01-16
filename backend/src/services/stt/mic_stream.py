@@ -48,7 +48,7 @@ class MicrophoneStream:
             self.stream.close()
         self.audio_interface.terminate()
 
-    def generator(self):   # Infinite loop to get audio chunks for STT 
+    def generator(self):    # Infinite loop to get audio chunks for STT 
         while True:
             # you need exception_on_overflow=False for live Windows/Mac streams
             data = self.stream.read(self.chunk, exception_on_overflow=False)

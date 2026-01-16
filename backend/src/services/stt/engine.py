@@ -2,79 +2,80 @@
 https://docs.cloud.google.com/speech-to-text/docs/streaming-recognize
 The is the documentation I am referencing. Note that it supports the
 transcription of live audio and audio files.
+
+PIPELINE:
+Microphone -> PyAudio -> MicrophoneStream -> get_request_stream() -> Google Cloud STT API -> responses_iterator -> Terminal Output
 """
 
-from dotenv import load_dotenv
-load_dotenv()
-
-# Note that this is all just pasted from the documentation
 import os
-
+from dotenv import load_dotenv
 from google.cloud.speech_v2 import SpeechClient
 from google.cloud.speech_v2.types import cloud_speech as cloud_speech_types
+from mic_stream import MicrophoneStream
+
+load_dotenv()
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 
-def transcribe_streaming_v2(
-    stream_file: str,
-) -> cloud_speech_types.StreamingRecognizeResponse:
-    """Transcribes audio from an audio file stream using Google Cloud Speech-to-Text API.
-    Args:
-        stream_file (str): Path to the local audio file to be transcribed.
-            Example: "resources/audio.wav"
-    Returns:
-        list[cloud_speech_types.StreamingRecognizeResponse]: A list of objects.
-            Each response includes the transcription results for the corresponding audio segment.
-    """
-    # Instantiates a client
-    client = SpeechClient()
+def get_request_stream(config, mic_gen):
+    yield config                                                                                # First yield must be the config request
+    for chunk in mic_gen:                                                                       # Then continuously yield audio chunks
+        yield cloud_speech_types.StreamingRecognizeRequest(audio=chunk)                         # Wrap each chunk in a StreamingRecognizeRequest
 
-    # Reads a file as bytes
-    with open(stream_file, "rb") as f:
-        audio_content = f.read()
+def transcribe_streaming_v2(mic_index=24):
+    print("Initializing.\n")
+    client = SpeechClient() # Instantiates a client
 
-    # In practice, stream should be a generator yielding chunks of audio data
+    try:
+        with MicrophoneStream(index=mic_index) as mic:
+            print(f"Using: {mic.rate}Hz, {mic.channels} channel(s)")
 
-    # I had to comment this out as my chunks were too big
-    # chunk_length = len(audio_content) // 5      # Divides audio into 5 equal chunks
-    
-    max_chunk_size = 25000                                                      # It said that 25600 is the byte limit, so we're just a bit under. Plus 25000 is a nicer number.
-    num_chunks = (len(audio_content) + max_chunk_size - 1) // max_chunk_size    # ceiling division formula: so we round up for partial chunks but avoid adding an extra chunk when it is exact
-    chunk_length = len(audio_content) // num_chunks                             # ex: without -1: (100,000 + 25,000) // 25,000 = 5 (incorrect, should be 4)
-    
-    stream = [                                  # In a real-time application, these would come from a microphone
-        audio_content[start : start + chunk_length]
-        for start in range(0, len(audio_content), chunk_length)
-    ]
-    audio_requests = (
-        cloud_speech_types.StreamingRecognizeRequest(audio=audio) for audio in stream
-    )
+            recognition_config = cloud_speech_types.RecognitionConfig(                          # Configure speech recognition parameters:
+                explicit_decoding_config=cloud_speech_types.ExplicitDecodingConfig(             # - explicit_decoding_config: Manually inputing audio encoding settings
+                    encoding=cloud_speech_types.ExplicitDecodingConfig.AudioEncoding.LINEAR16,  # - This is the bitdepth. This is the recommended setting from Google
+                    sample_rate_hertz=mic.rate,                                                 # - mic info
+                    audio_channel_count=mic.channels,                                           # - more mic info
+                ),
+                language_codes=["en-US"],                                                       # - language_codes: Specifies what language to recognize
+                model="latest_long",                                                            # - model: it complains when I do chirp_3 (the default) so Google told me to use latest_long and it works
+            )
 
-    recognition_config = cloud_speech_types.RecognitionConfig(                  # Configure speech recognition parameters:
-        auto_decoding_config=cloud_speech_types.AutoDetectDecodingConfig(),     # - auto_decoding_config: Automatically detects audio encoding
-        language_codes=["en-US"],                                               # - language_codes: Specifies what language to recognize
-        model="latest_long",                                                    # - model: it complains when I do chirp_3 (the default) so Google told me to use latest_long and it works
-    )
-    streaming_config = cloud_speech_types.StreamingRecognitionConfig(
-        config=recognition_config
-    )
-    config_request = cloud_speech_types.StreamingRecognizeRequest(
-        recognizer=f"projects/{PROJECT_ID}/locations/global/recognizers/_",
-        streaming_config=streaming_config,
-    )
+            streaming_config = cloud_speech_types.StreamingRecognitionConfig(
+                config=recognition_config,                                                      # Setting the config
+                streaming_features=cloud_speech_types.StreamingRecognitionFeatures(
+                    interim_results=False                                                       # False, if true it'll give us temporary & real-time transcriptions that are subject to change as more audio is processed
+                )
+            )
+            
+            config_request = cloud_speech_types.StreamingRecognizeRequest(                      # Same as starter code, package everything into a request object
+                recognizer=f"projects/{PROJECT_ID}/locations/global/recognizers/_",             # - recognizer: Path to the Google Cloud recognizer (using default)
+                streaming_config=streaming_config,                                              # - streaming_config: The config we just made
+            )
+            
+            responses_iterator = client.streaming_recognize(                                    # This is where stuff happens, we pass the config + mic generator (the input stream) to Google's API
+                requests=get_request_stream(config_request, mic.generator())                    # get_request_stream() packages our mic chunks into requests
+            )                                                                                   # Google will continuously process audio chunks and send back transcription results
 
-    def requests(config: cloud_speech_types.RecognitionConfig, audio: list) -> list:
-        yield config
-        yield from audio
+            print("Listening. Press Ctrl+C to stop\n")
+            
+            # This loop continuously pulls transcription results from Google
+            for response in responses_iterator:                                                 # Loop through each response from Google
+                if not response.results:                                                        # Skip empty responses (heartbeat packets)
+                    continue
 
-    # Transcribes the audio into text
-    responses_iterator = client.streaming_recognize(
-        requests=requests(config_request, audio_requests)
-    )
-    responses = []
-    for response in responses_iterator:
-        responses.append(response)
-        for result in response.results:
-            print(f"Transcript: {result.alternatives[0].transcript}")
+                for result in response.results:                                                 # Each response can have multiple results
+                    if not result.alternatives:                                                 # Skip if no transcription alternatives
+                        continue
+                    
+                    if result.is_final:                                                         # Only process final results
+                        transcript = result.alternatives[0].transcript                          # Get the completed transcription
+                        print(f"User said: {transcript}")                                       # Display what was transcribed
+                        # Send transcript to agent here
+    except KeyboardInterrupt:
+        print("\n\n* Stopped listening")
+    except Exception as e:
+        print(f"\n\nError: {e}")
+        raise
 
-    return responses
+if __name__ == "__main__":
+    transcribe_streaming_v2()
