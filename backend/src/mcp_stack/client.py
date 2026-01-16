@@ -9,6 +9,60 @@ from services.llm.QUERY_CHAIN.query import agent_prompt_template, get_context, w
 from langchain.agents import create_agent
 from langchain_mcp_adapters.tools import load_mcp_tools
 
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from pydantic import BaseModel
+
+
+class RequestPrompt(BaseModel):
+    user_prompt: str
+
+
+
+
+@asynccontextmanager #async context manager initializes the listening server on startup, up until yield, after yield will be on program termination for cleanup
+async def run_client(app: FastAPI): # An async function to work with the MCP server.
+    """
+    Before running the application, connect the mcp client, to the mcp server.
+    The app Argument is for building states, 
+    """
+    backend_src = Path(__file__).resolve().parent
+    server_path = backend_src / "server.py" #Resolve the path to where the server is 
+    if not server_path.exists():
+        raise FileNotFoundError(
+            f"Could not find server.py at {server_path}."
+        )
+    
+    server_params = StdioServerParameters( # Create the server cli command to then execute the server 
+        command=sys.executable,
+        args=["-u", str(server_path)],
+        env=None
+    )
+
+
+    async with stdio_client(server_params) as (read, write):  # Establish a new child process and we will execute the server and retrieve read and write streams
+        async with ClientSession(read, write) as session: # Create a connection between the server and client
+            await session.initialize() # Create the handshake between the server and client
+
+            tools = await load_mcp_tools(session) # Load mcp tools from the server
+
+            MCP_Tools = [] # Hold all the MCP tools
+            MCP_Tools.append(get_context)
+            for tool in tools:
+                MCP_Tools.append(tool)
+
+
+            app.state.agent = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+
+            yield
+
+    """AFTER the application is done running, perform a cleanup. (performs nothing)"""
+
+
+
+
+app = FastAPI(lifespan=run_client)
+
 
 
 
@@ -26,84 +80,28 @@ def grab_agent_final_response(resp) -> str:
 
 
 
+@app.post("/agent")
+async def call_agent(request : RequestPrompt):
+    conversation = []        
 
-async def run_client(*, Test: bool = False, test_prompt : str = ""): # An async function to work with the MCP server 
-    backend_src = Path(__file__).resolve().parent
-    server_path = backend_src / "server.py" #Resolve the path to where the server is 
-    if not server_path.exists():
-        raise FileNotFoundError(
-            f"Could not find server.py at {server_path}."
-        )
+    conversation = conversation[-4:]
+
+    conversation.append({
+        "role" : "user",
+        "content" : request.user_prompt
+        })
+
+    print(request.user_prompt)
+
+
     
-    server_params = StdioServerParameters( # Create the server cli command to then execute the server 
-        command=sys.executable,
-        args=["-u", str(server_path)],
-        env=None
-    )
+    response = await app.state.agent.ainvoke(input={"messages": conversation}) #asynchronously invoke the agent
+    
 
-    async with stdio_client(server_params) as (read, write):  # Establish a new child process and we will execute the server and retrieve read and write streams
-        async with ClientSession(read, write) as session: # Create a connection between the server and client
-            await session.initialize() # Create the handshake between the server and client
+    conversation.append({
+        "role" : "assistant",
+        "content" : grab_agent_final_response(response)
+        })
+    
+    return {"agent_response" : grab_agent_final_response(response)}
 
-            tools = await load_mcp_tools(session) # Load mcp tools from the server
-
-            MCP_Tools = [] # Hold all the MCP tools
-            MCP_Tools.append(get_context)
-            for tool in tools:
-                MCP_Tools.append(tool)
-
-
-            agent = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
-
-            if Test == True: # If the run_client function is being ran as a test, then invoke the agent once, with the test prompt and return the response
-                response = await agent.ainvoke(input={"messages": [{"role": "user", "content": test_prompt}]})  
-                return grab_agent_final_response(response)
-            
-
-
-
-            conversation = []
-
-            print(welcome_text)
-            while(Test == False):
-                message = input("Enter a prompt: ")
-                if message == "q" or message == "Q":
-                    break
-
-
-
-                conversation = conversation[-4:]
-
-                conversation.append({
-                    "role" : "user",
-                    "content" : message
-                    })
-
-                
-
-
-                
-                response = await agent.ainvoke(input={"messages": conversation}) #asynchronously invoke the agent
-                
-                print(response)
-
-                print(grab_agent_final_response(response))
-
-                print(conversation)
-
-                
-
-                conversation.append({
-                    "role" : "assistant",
-                    "content" : grab_agent_final_response(response)
-                    })
-
-            
-            
-
-
-
-
-
-if __name__ == "__main__":
-    asyncio.run(run_client(Test=False, test_prompt=""))
