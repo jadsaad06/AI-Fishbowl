@@ -35,9 +35,16 @@ async function init() {
       "assets/images/fish_tuna.png",
       "assets/images/Red_Fish_AnarkaliArt.png",
       "assets/images/ocean_diver.png",
-      "assets/images/glowing_creature_background.jpg",
+      "assets/images/error_bg.jpg",
       "assets/images/animated_fish_1.png",
       "assets/images/animated_fish_2.png",
+      "assets/images/idle_bg_1.png",
+      "assets/images/idle_bg_2.png",
+      "assets/images/idle_bg_3.png",
+      "assets/images/idle_bg_4.png",
+      "assets/images/idle_bg_5.png",
+      "assets/images/idle_bg_6.png",
+      "assets/images/thinking_bg_1.png",
     ]);
 
     /**

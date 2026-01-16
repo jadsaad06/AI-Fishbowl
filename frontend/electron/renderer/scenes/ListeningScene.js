@@ -32,7 +32,7 @@ export class ListeningScene {
   }
 
   async initBackground(app) {
-    const bg = await createBackground("assets/images/background_1.png");
+    const bg = await createBackground("assets/images/idle_bg_1.png");
 
     bg.width = app.screen.width;
     bg.height = app.screen.height;
