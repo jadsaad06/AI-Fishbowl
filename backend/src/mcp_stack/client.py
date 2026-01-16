@@ -22,7 +22,6 @@ def grab_agent_final_response(resp) -> str:
         return content[0]["text"]
     else:
         return content
-    
 
 
 
@@ -63,15 +62,42 @@ async def run_client(*, Test: bool = False, test_prompt : str = ""): # An async 
 
 
 
+            conversation = []
 
             print(welcome_text)
             while(Test == False):
                 message = input("Enter a prompt: ")
                 if message == "q" or message == "Q":
                     break
+
+
+
+                conversation = conversation[-4:]
+
+                conversation.append({
+                    "role" : "user",
+                    "content" : message
+                    })
+
                 
-                response = await agent.ainvoke(input={"messages": [{"role": "user", "content": message}]}) #asynchronously invoke the agent
+
+
+                
+                response = await agent.ainvoke(input={"messages": conversation}) #asynchronously invoke the agent
+                
+                print(response)
+
                 print(grab_agent_final_response(response))
+
+                print(conversation)
+
+                
+
+                conversation.append({
+                    "role" : "assistant",
+                    "content" : grab_agent_final_response(response)
+                    })
+
             
             
 
