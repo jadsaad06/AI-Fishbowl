@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel
 
 
-class RequestPrompt(BaseModel):
+class RequestPrompt(BaseModel): # Class for denoting the request that the user will prompt for a post request.
     user_prompt: str
 
 
@@ -53,6 +53,7 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
 
 
             app.state.agent = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+            app.state.conversation = [] # variable to create the context window
 
             yield
 
@@ -61,7 +62,7 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
 
 
 
-app = FastAPI(lifespan=run_client)
+app = FastAPI(lifespan=run_client) #Run the fastAPI entrypoint with a starter function that also cleans up
 
 
 
@@ -73,35 +74,35 @@ def grab_agent_final_response(resp) -> str:
 
     if isinstance(content, list) and content and isinstance(content[0], dict) and "text" in content[0]: #If the content contains a list then its a structured response, 
         # we only seek for the text, so check if the content has an object at the first index (Gemini text responses are usually from the first index),
-        return content[0]["text"]
+        return content[0]["text"] 
     else:
-        return content
+        return content #If the content solely has the last response then return it.
 
 
 
 
-@app.post("/agent")
-async def call_agent(request : RequestPrompt):
-    conversation = []        
+@app.post("/agent") #This is the path of /agent for a post request to query the agent
+async def call_agent(request : RequestPrompt): #The arg is the payload that the user sent
 
-    conversation = conversation[-4:]
+    app.state.conversation = app.state.conversation[-4:] #Take the 2 most recent conversations.
 
-    conversation.append({
+    app.state.conversation.append({ # Context, adding the user prompt 
         "role" : "user",
         "content" : request.user_prompt
         })
 
     print(request.user_prompt)
 
-
+    print(app.state.conversation)
     
-    response = await app.state.agent.ainvoke(input={"messages": conversation}) #asynchronously invoke the agent
-    
+    response = await app.state.agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
 
-    conversation.append({
+    print(response)
+
+    app.state.conversation.append({ # Add the agents response to the context window
         "role" : "assistant",
         "content" : grab_agent_final_response(response)
         })
     
-    return {"agent_response" : grab_agent_final_response(response)}
+    return {"agent_response" : grab_agent_final_response(response)} # Return the agents response
 
