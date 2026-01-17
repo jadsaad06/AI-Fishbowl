@@ -16,10 +16,11 @@ if not api_key:
 client = genai.Client(api_key=api_key)
 
 def text_to_wav(text: str):
+    style_prompt = f"Read the following in a friendly and professional tone: {text}"
     try:
         response = client.models.generate_content(  #Calls Gemini
             model = "gemini-2.5-flash-preview-tts",
-            contents=text,
+            contents=style_prompt,
             config=types.GenerateContentConfig(
                 response_modalities = ["AUDIO"],
                 speech_config=types.SpeechConfig(
@@ -31,7 +32,7 @@ def text_to_wav(text: str):
                 )
             ),
         )
-    except ClientError as e:
+    except ClientError as e:  #Checks if Gemini accepted text
         if e.code == 400:
             print(f"Gemini TTS rejected the input text: {text!r}")
             return None
