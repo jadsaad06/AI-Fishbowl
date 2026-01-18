@@ -19,9 +19,26 @@ async function init() {
     /** Displays the application document */
     await app.init({
       resizeTo: window,
-      background: "#0b62f7ff",
+      //background: "#0b62f7ff",
     });
     document.body.appendChild(app.canvas);
+
+    await PIXI.Assets.load([
+      "assets/images/deep_sea_bg.jpg",
+      "assets/images/fish_blue.png",
+      "assets/images/fish_brown.png",
+      "assets/images/fish_green.png",
+      "assets/images/fish_orange.png",
+      "assets/images/fish_red.png",
+      "assets/images/fish_pink.png",
+      "assets/images/fish_grey.png",
+      "assets/images/fish_tuna.png",
+      "assets/images/Red_Fish_AnarkaliArt.png",
+      "assets/images/ocean_diver.png",
+      "assets/images/glowing_creature_background.jpg",
+      "assets/images/animated_fish_1.png",
+      "assets/images/animated_fish_2.png",
+    ]);
 
     /**
      * If the main process broadcasts a new UI state, this IPC listener is triggered.
@@ -51,4 +68,4 @@ async function init() {
 }
 
 /** Log unhandled errors and call the init function */
-init().catch(console.error);
+init();

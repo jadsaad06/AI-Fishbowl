@@ -4,8 +4,8 @@
  */
 import { IdleScene } from "./IdleScene.js";
 import { ListeningScene } from "./ListeningScene.js";
-// import { ThinkingScene } from "./ThinkingScene.js";
-// import { RespondingScene } from "./RespondingScene.js";
+import { ThinkingScene } from "./ThinkingScene.js";
+import { RespondingScene } from "./RespondingScene.js";
 import { ErrorScene } from "./ErrorScene.js";
 
 // Tracks currently displayed scene
@@ -26,14 +26,14 @@ export function setScene(app, state) {
 
   switch (state) {
     case "listening":
-      currentScene = new ListeningScene();
+      currentScene = new ListeningScene(app);
       break;
-    // case "thinking":
-    //   currentScene = new ThinkingScene();
-    //   break;
-    // case "responding":
-    //   currentScene = new RespondingScene();
-    //   break;
+    case "thinking":
+      currentScene = new ThinkingScene(app);
+      break;
+    case "responding":
+      currentScene = new RespondingScene(app);
+      break;
     case "error":
       currentScene = new ErrorScene();
       break;
