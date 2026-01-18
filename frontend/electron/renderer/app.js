@@ -35,7 +35,6 @@ export const RESPONDERS = [
   "assets/images/responder_1.png",
   "assets/images/responder_2.png",
   "assets/images/responder_3.png",
-  "assets/images/responder_4.png",
 ];
 
 /** Initializes a new PIXI application in the UI */
