@@ -27,6 +27,7 @@ if __name__ == "__main__":
             print(f"\n[Transcript]: {user_input}")
             print("-" * 50)  # visual separator for style points
             print("\nSending to Agent")
+            payload["user_prompt"] = user_input
             response = requests.post(url, json=payload)
             print(f"Status Code: {response.status_code}")
             print(f"Response Body: {response.json()}")
