@@ -1,104 +1,120 @@
 import * as PIXI from "pixi.js";
 
-export function createFishSprite(color = 0xffffff, width = 40, height = 20) {
-  const fish = new PIXI.Container();
+const IDLE_SCENE_FISH = [
+  "assets/images/fish_blue.png",
+  "assets/images/fish_brown.png",
+  "assets/images/fish_green.png",
+  "assets/images/fish_orange.png",
+  "assets/images/fish_red.png",
+  "assets/images/fish_pink.png",
+  "assets/images/fish_grey.png",
+];
 
-  const body = new PIXI.Graphics();
-  body.beginFill(color);
-  body.drawEllipse(0, 0, width / 2, height / 2);
-  body.endFill();
-  fish.addChild(body);
+const LISTENING_SCENE_FISH = [
+  "assets/images/Red_Fish_AnarkaliArt.png",
+  "assets/images/animated_fish_1.png",
+  "assets/images/animated_fish_2.png",
+  "assets/images/fish_tuna.png",
+];
 
-  const eye = new PIXI.Graphics();
-  eye.beginFill(0x000000);
-  eye.drawCircle(width * 0.25, -height * 0.1, Math.max(width, height) * 0.05);
-  eye.endFill();
-  fish.addChild(eye);
-
-  const tailColor = Math.floor(Math.random() * 0xffffff);
-  const tail = new PIXI.Graphics();
-  tail.beginFill(tailColor);
-  tail.moveTo(-width / 2, 0);
-  tail.lineTo(-width / 2 - width * 0.3, -height * 0.4);
-  tail.lineTo(-width / 2 - width * 0.3, height * 0.4);
-  tail.endFill();
-  tail.closePath();
-  fish.addChild(tail);
-
-  const finColor = Math.floor(Math.random() * 0xffffff);
-  const topFin = new PIXI.Graphics();
-  topFin.beginFill(finColor);
-  topFin.moveTo(-width * 0.1, -height / 2);
-  topFin.lineTo(0, -height / 2 - height * 0.3);
-  topFin.lineTo(width * 0.1, -height / 2);
-  topFin.endFill();
-  topFin.closePath();
-  fish.addChild(topFin);
-
-  return fish;
+export async function createBackground(
+  path = "./assets/images/background_2.png"
+) {
+  const texture = await PIXI.Assets.load(path);
+  const background = new PIXI.Sprite(texture);
+  return background;
 }
 
-export function createFancyFish(color = 0xffab00) {
-  const fish = new PIXI.Container();
-  const width = 100;
-  const height = 50;
+export function createFishSprite(fishList = null) {
+  const path = fishList[Math.floor(Math.random() * fishList.length)];
 
-  const body = new PIXI.Graphics();
-  body.beginFill(color);
-  body.drawEllipse(0, 0, width / 2, height / 2);
-  body.endFill();
+  const texture = PIXI.Texture.from(path);
+  const fish = new PIXI.Sprite(texture);
+  fish.anchor.set(0.5);
 
-  // const stripes = new PIXI.Graphics();
-  // stripes.beginFill(0xffffff, 0.2);
-  // stripes.drawRect(-10, -20, 5, 40);
-  // stripes.drawRect(10, -20, 5, 40);
-  // stripes.endFill();
-  // stripes.mask = body;
+  const baseScale =
+    fishList == LISTENING_SCENE_FISH
+      ? 0.05 + Math.random() * 0.05
+      : 1.5 + Math.random() * 0.3;
 
-  const tail = new PIXI.Graphics();
-  tail.beginFill(color);
-  tail.moveTo(-width / 2, 0);
-  tail.bezierCurveTo(-width, -30, -width, 30, -width / 2, 0);
-  tail.endFill();
+  fish.scale.set(baseScale);
 
-  fish.addChild(body, tail);
-  return fish;
-}
-
-export function createEnvironment(width, height) {
-  const container = new PIXI.Container();
-
-  for (let i = 0; i < 10; i++) {
-    const stone = new PIXI.Graphics()
-      .beginFill(0x555555)
-      .drawCircle(0, 0, 10 + Math.random() * 20)
-      .endFill();
-    stone.x = Math.random() * width;
-    stone.y = height - 10;
-    container.addChild(stone);
+  if (fishList == LISTENING_SCENE_FISH) {
+    fish.scale.x = -Math.abs(fish.scale.x);
   }
-  return container;
+  return fish;
 }
+
+export function createDiver() {
+  const texture = PIXI.Texture.from("assets/images/ocean_diver.png");
+  const diver = new PIXI.Sprite(texture);
+  diver.anchor.set(0.5);
+  diver.scale.set(0.15);
+  return diver;
+}
+export class Diver {
+  constructor(width, height) {
+    this.width = width;
+    this.height = height;
+
+    this.sprite = createDiver();
+
+    this.x = width + 200;
+    this.baseY = height / 2;
+
+    this.speed = 0.5;
+    this.waveSpeed = 0.02;
+    this.amplitude = 20;
+    this.elapsed = 0;
+
+    this.sprite.position.set(this.x, this.baseY);
+  }
+
+  update() {
+    this.x -= this.speed;
+
+    this.elapsed += this.waveSpeed;
+    const yOffset = Math.sin(this.elapsed) * this.amplitude;
+
+    if (this.x < -200) {
+      this.x = this.width + 200;
+      this.baseY = this.height * 0.3 + Math.random() * (this.height * 0.4);
+    }
+
+    this.sprite.x = this.x;
+    this.sprite.y = this.baseY + yOffset;
+
+    this.sprite.rotation = Math.cos(this.elapsed) * 0.2;
+  }
+}
+
 export class FishSwarm {
-  constructor(count = 20, width, height) {
+  constructor(count = 20, width, height, scene = "idle") {
+    this.width = width;
+    this.height = height;
+
     this.container = new PIXI.Container();
     this.fishData = [];
     this.isScattering = false;
+    let list_to_use = [];
+
+    if (scene == "idle") {
+      list_to_use = IDLE_SCENE_FISH;
+    } else if (scene == "listening") {
+      list_to_use = LISTENING_SCENE_FISH;
+    }
 
     for (let i = 0; i < count; i++) {
-      const fish = createFishSprite(
-        Math.floor(Math.random() * 0xffffff),
-        100,
-        50
-      );
+      const fish = createFishSprite(list_to_use);
 
       const data = {
         sprite: fish,
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
+        x: Math.random() * this.width,
+        y: Math.random() * this.height,
         angle: Math.random() * Math.PI * 2,
         speed: 0.5 + Math.random() * 1,
       };
+      fish.position.set(data.x, data.y);
 
       this.container.addChild(fish);
       this.fishData.push(data);
@@ -115,18 +131,25 @@ export class FishSwarm {
       }
 
       if (!this.isScattering) {
-        if (f.x > window.innerWidth + 50) f.x = -50;
-        if (f.x < -50) f.x = window.innerWidth + 50;
-        if (f.y > window.innerHeight + 50) f.y = -50;
-        if (f.y < -50) f.y = window.innerHeight + 50;
+        if (f.x > this.width + 50) f.x = -50;
+        if (f.x < -50) f.x = this.width + 50;
+        if (f.y > this.height + 50) f.y = -50;
+        if (f.y < -50) f.y = this.height + 50;
       }
 
       f.sprite.position.set(f.x, f.y);
+
       f.sprite.rotation = f.angle;
+
+      if (Math.cos(f.angle) < 0) {
+        f.sprite.scale.y = -Math.abs(f.sprite.scale.y);
+      } else {
+        f.sprite.scale.y = Math.abs(f.sprite.scale.y);
+      }
     });
   }
 
-  scatter(originX = window.innerWidth / 2, originY = window.innerHeight / 2) {
+  scatter(originX = this.width / 2, originY = this.height / 2) {
     this.isScattering = true;
 
     this.fishData.forEach((f) => {
@@ -135,8 +158,50 @@ export class FishSwarm {
 
       f.angle = Math.atan2(dy, dx);
 
-      f.speed = 40 + Math.random() * 20;
+      f.speed = 30 + Math.random() * 10;
     });
+  }
+}
+
+export class PulsingLabel {
+  constructor(app, text = "INTERACT TO START") {
+    this.container = new PIXI.Container();
+
+    const style = new PIXI.TextStyle({
+      fontFamily: "Times New Roman",
+      fontSize: 54,
+      fill: "#ffffff",
+      fontWeight: "bold",
+      dropShadow: true,
+      dropShadowColor: "#000000",
+      dropShadowBlur: 10,
+      dropShadowDistance: 0,
+    });
+
+    this.text = new PIXI.Text(text, style);
+    this.text.anchor.set(0.5);
+
+    const padding = 60;
+    const ellipseWidth = this.text.width + padding * 2;
+    const ellipseHeight = this.text.height + padding * 4;
+
+    this.bg = new PIXI.Graphics();
+
+    this.bg.ellipse(0, 0, ellipseWidth / 2, ellipseHeight / 2);
+    this.bg.fill({ color: 0x000000, alpha: 0.8 });
+    this.bg.stroke({ width: 4, color: 0xffffff });
+
+    this.container.addChild(this.bg);
+    this.container.addChild(this.text);
+    this.container.position.set(app.screen.width / 2, app.screen.height / 2);
+
+    this.elapsed = 0;
+  }
+
+  update(delta) {
+    this.elapsed += 0.01;
+
+    this.container.alpha = 0.6 + Math.sin(this.elapsed) * 0.4;
   }
 }
 
@@ -148,3 +213,7 @@ export const CommonStyles = {
     fontWeight: "bold",
   }),
 };
+
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
