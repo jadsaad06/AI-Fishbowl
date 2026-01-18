@@ -83,22 +83,13 @@ Speak into your microphone and watch transcripts appear in real-time.
 
 ### Integrating with an LLM/Agent
 
-The `transcribe_streaming_v2()` function is a generator that yields final transcripts. Here's how to integrate it:
-```python
-from engine import transcribe_streaming_v2
+The `transcribe_streaming_v2()` function is a generator that yields final transcripts. With the use of FastAPI we can send these transcripts live to the Agent. 
 
-# Your LLM/agent code
-for user_input in transcribe_streaming_v2():
-    # user_input contains the completed transcription text
-    llm_response = your_llm_function(user_input)
-    print(f"Agent: {llm_response}")
-```
-Note that `test_transcribe.py` has an example of this
+Here's how to do it:
 
-The generator will:
-- Continuously listen to the microphone
-- Yield each final transcript when speech pauses
-- Run indefinitely until interrupted (Ctrl+C)
+1. Follow the Instructions in the `llm` directory to run the fastapi wrapped mcp server
+2. cd into `stt/Test`
+3. `python test_transcribe`
 
 ## Requirements
 
