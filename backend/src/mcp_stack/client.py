@@ -9,26 +9,23 @@ from services.llm.QUERY_CHAIN.query import agent_prompt_template, get_context, w
 from langchain.agents import create_agent
 from langchain_mcp_adapters.tools import load_mcp_tools
 
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from pydantic import BaseModel
 
 
-
-def grab_agent_final_response(resp) -> str:
-    AI_response = resp["messages"][-1] #Retrieve the last or final answer 
-
-    content = AI_response.content # parse the content 
-
-    if isinstance(content, list) and content and isinstance(content[0], dict) and "text" in content[0]: #If the content contains a list then its a structured response, 
-        # we only seek for the text, so check if the content has an object at the first index (Gemini text responses are usually from the first index),
-        return content[0]["text"]
-    else:
-        return content
-    
+class RequestPrompt(BaseModel): # Class for denoting the request that the user will prompt for a post request.
+    user_prompt: str
 
 
 
 
-
-async def run_client(*, Test: bool = False, test_prompt : str = ""): # An async function to work with the MCP server 
+@asynccontextmanager #async context manager initializes the listening server on startup, up until yield, after yield will be on program termination for cleanup
+async def run_client(app: FastAPI): # An async function to work with the MCP server.
+    """
+    Before running the application, connect the mcp client, to the mcp server.
+    The app Argument is for building states, 
+    """
     backend_src = Path(__file__).resolve().parent
     server_path = backend_src / "server.py" #Resolve the path to where the server is 
     if not server_path.exists():
@@ -42,6 +39,7 @@ async def run_client(*, Test: bool = False, test_prompt : str = ""): # An async 
         env=None
     )
 
+
     async with stdio_client(server_params) as (read, write):  # Establish a new child process and we will execute the server and retrieve read and write streams
         async with ClientSession(read, write) as session: # Create a connection between the server and client
             await session.initialize() # Create the handshake between the server and client
@@ -54,30 +52,57 @@ async def run_client(*, Test: bool = False, test_prompt : str = ""): # An async 
                 MCP_Tools.append(tool)
 
 
-            agent = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+            app.state.agent = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+            app.state.conversation = [] # variable to create the context window
 
-            if Test == True: # If the run_client function is being ran as a test, then invoke the agent once, with the test prompt and return the response
-                response = await agent.ainvoke(input={"messages": [{"role": "user", "content": test_prompt}]})  
-                return grab_agent_final_response(response)
-            
+            yield
 
-
-
-
-            print(welcome_text)
-            while(Test == False):
-                message = input("Enter a prompt: ")
-                if message == "q" or message == "Q":
-                    break
-                
-                response = await agent.ainvoke(input={"messages": [{"role": "user", "content": message}]}) #asynchronously invoke the agent
-                print(grab_agent_final_response(response))
-            
-            
+    """AFTER the application is done running, perform a cleanup. (performs nothing)"""
 
 
 
 
+app = FastAPI(lifespan=run_client) #Run the fastAPI entrypoint with a starter function that also cleans up
 
-if __name__ == "__main__":
-    asyncio.run(run_client(Test=False, test_prompt=""))
+
+
+
+def grab_agent_final_response(resp) -> str:
+    AI_response = resp["messages"][-1] #Retrieve the last or final answer 
+
+    content = AI_response.content # parse the content 
+
+    if isinstance(content, list) and content and isinstance(content[0], dict) and "text" in content[0]: #If the content contains a list then its a structured response, 
+        # we only seek for the text, so check if the content has an object at the first index (Gemini text responses are usually from the first index),
+        return content[0]["text"] 
+    else:
+        return content #If the content solely has the last response then return it.
+
+
+
+
+@app.post("/agent") #This is the path of /agent for a post request to query the agent
+async def call_agent(request : RequestPrompt): #The arg is the payload that the user sent
+
+    app.state.conversation = app.state.conversation[-4:] #Take the 2 most recent conversations.
+
+    app.state.conversation.append({ # Context, adding the user prompt 
+        "role" : "user",
+        "content" : request.user_prompt
+        })
+
+    print(request.user_prompt)
+
+    print(app.state.conversation)
+    
+    response = await app.state.agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
+
+    print(response)
+
+    app.state.conversation.append({ # Add the agents response to the context window
+        "role" : "assistant",
+        "content" : grab_agent_final_response(response)
+        })
+    
+    return {"agent_response" : grab_agent_final_response(response)} # Return the agents response
+

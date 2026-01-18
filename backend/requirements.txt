@@ -10,4 +10,5 @@ bs4
 langchain-text-splitters
 python-dotenv
 google-genai
+fastapi[standard]
 pygame
