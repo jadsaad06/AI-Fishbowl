@@ -5,8 +5,34 @@ import * as PIXI from "pixi.js";
 import { subscribe, setState } from "./state/store.js";
 import { setScene } from "./scenes/index.js";
 
+export const BACKGROUNDS = [
+  "assets/images/idle_bg_1.png",
+  "assets/images/idle_bg_2.png",
+  "assets/images/idle_bg_3.png",
+  "assets/images/idle_bg_4.png",
+  "assets/images/idle_bg_5.png",
+  "assets/images/idle_bg_6.png",
+];
+
+export const ANIMATED_FISH = [
+  "assets/images/fish_blue.png",
+  "assets/images/fish_brown.png",
+  "assets/images/fish_green.png",
+  "assets/images/fish_orange.png",
+  "assets/images/fish_red.png",
+  "assets/images/fish_pink.png",
+  "assets/images/fish_grey.png",
+];
+
+export const ENHANCED_FISH = [
+  "assets/images/Red_Fish_AnarkaliArt.png",
+  "assets/images/animated_fish_1.png",
+  "assets/images/animated_fish_2.png",
+  "assets/images/fish_tuna.png",
+];
 /** Initializes a new PIXI application in the UI */
 const app = new PIXI.Application();
+console.log(BACKGROUNDS);
 
 /**
  * Initializes the PIXI application, sets up IPC listeners for state changes,
@@ -16,36 +42,15 @@ const app = new PIXI.Application();
  */
 async function init() {
   try {
+    await PIXI.Assets.load(BACKGROUNDS);
+    await PIXI.Assets.load(ANIMATED_FISH);
+    await PIXI.Assets.load(ENHANCED_FISH);
+
     /** Displays the application document */
     await app.init({
       resizeTo: window,
-      //background: "#0b62f7ff",
     });
     document.body.appendChild(app.canvas);
-
-    await PIXI.Assets.load([
-      "assets/images/deep_sea_bg.jpg",
-      "assets/images/fish_blue.png",
-      "assets/images/fish_brown.png",
-      "assets/images/fish_green.png",
-      "assets/images/fish_orange.png",
-      "assets/images/fish_red.png",
-      "assets/images/fish_pink.png",
-      "assets/images/fish_grey.png",
-      "assets/images/fish_tuna.png",
-      "assets/images/Red_Fish_AnarkaliArt.png",
-      "assets/images/ocean_diver.png",
-      "assets/images/error_bg.jpg",
-      "assets/images/animated_fish_1.png",
-      "assets/images/animated_fish_2.png",
-      "assets/images/idle_bg_1.png",
-      "assets/images/idle_bg_2.png",
-      "assets/images/idle_bg_3.png",
-      "assets/images/idle_bg_4.png",
-      "assets/images/idle_bg_5.png",
-      "assets/images/idle_bg_6.png",
-      "assets/images/thinking_bg_1.png",
-    ]);
 
     /**
      * If the main process broadcasts a new UI state, this IPC listener is triggered.

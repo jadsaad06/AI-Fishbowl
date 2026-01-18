@@ -1,21 +1,5 @@
 import * as PIXI from "pixi.js";
-
-const IDLE_SCENE_FISH = [
-  "assets/images/fish_blue.png",
-  "assets/images/fish_brown.png",
-  "assets/images/fish_green.png",
-  "assets/images/fish_orange.png",
-  "assets/images/fish_red.png",
-  "assets/images/fish_pink.png",
-  "assets/images/fish_grey.png",
-];
-
-const LISTENING_SCENE_FISH = [
-  "assets/images/Red_Fish_AnarkaliArt.png",
-  "assets/images/animated_fish_1.png",
-  "assets/images/animated_fish_2.png",
-  "assets/images/fish_tuna.png",
-];
+import { BACKGROUNDS, ANIMATED_FISH, ENHANCED_FISH } from "../app.js";
 
 export async function createBackground(
   path = "./assets/images/background_2.png"
@@ -25,23 +9,52 @@ export async function createBackground(
   return background;
 }
 
-export function createFishSprite(fishList = null) {
+export class BackgroundManager {
+  constructor(app, texturePaths) {
+    this.app = app;
+    this.texturePaths = texturePaths;
+    this.currentIndex = 0;
+    this.container = new PIXI.Container();
+
+    this.sprite = new PIXI.Sprite();
+    this.sprite.anchor.set(0.5);
+    this.sprite.x = app.screen.width / 2;
+    this.sprite.y = app.screen.height / 2;
+
+    this.container.addChild(this.sprite);
+    this.updateTexture();
+  }
+
+  updateTexture() {
+    const texturePath = this.texturePaths[this.currentIndex];
+    this.sprite.texture = PIXI.Assets.get(texturePath);
+
+    const ratio = Math.max(
+      this.app.screen.width / this.sprite.texture.width,
+      this.app.screen.height / this.sprite.texture.height
+    );
+    this.sprite.scale.set(ratio);
+  }
+
+  next() {
+    this.currentIndex = (this.currentIndex + 1) % this.texturePaths.length;
+    this.updateTexture();
+  }
+}
+
+export function createFishSprite(fishList = [], targetWidth = 100) {
   const path = fishList[Math.floor(Math.random() * fishList.length)];
 
   const texture = PIXI.Texture.from(path);
   const fish = new PIXI.Sprite(texture);
   fish.anchor.set(0.5);
 
-  const baseScale =
-    fishList == LISTENING_SCENE_FISH
-      ? 0.05 + Math.random() * 0.05
-      : 1.5 + Math.random() * 0.3;
+  autoScale(fish, targetWidth);
 
-  fish.scale.set(baseScale);
+  const variance = 0.9 + Math.random() * 0.2;
+  fish.scale.x *= variance;
+  fish.scale.y *= variance;
 
-  if (fishList == LISTENING_SCENE_FISH) {
-    fish.scale.x = -Math.abs(fish.scale.x);
-  }
   return fish;
 }
 
@@ -92,20 +105,15 @@ export class FishSwarm {
   constructor(count = 20, width, height, scene = "idle") {
     this.width = width;
     this.height = height;
-
     this.container = new PIXI.Container();
     this.fishData = [];
     this.isScattering = false;
-    let list_to_use = [];
 
-    if (scene == "idle") {
-      list_to_use = IDLE_SCENE_FISH;
-    } else if (scene == "listening") {
-      list_to_use = LISTENING_SCENE_FISH;
-    }
+    const targetSize = scene === "idle" ? 120 : 60;
+    const list_to_use = scene === "idle" ? ANIMATED_FISH : ENHANCED_FISH;
 
     for (let i = 0; i < count; i++) {
-      const fish = createFishSprite(list_to_use);
+      const fish = createFishSprite(list_to_use, targetSize);
 
       const data = {
         sprite: fish,
@@ -114,8 +122,12 @@ export class FishSwarm {
         angle: Math.random() * Math.PI * 2,
         speed: 0.5 + Math.random() * 1,
       };
-      fish.position.set(data.x, data.y);
 
+      if (Math.cos(data.angle) < 0) {
+        fish.scale.x = -Math.abs(fish.scale.x);
+      }
+
+      fish.position.set(data.x, data.y);
       this.container.addChild(fish);
       this.fishData.push(data);
     }
@@ -213,6 +225,12 @@ export const CommonStyles = {
     fontWeight: "bold",
   }),
 };
+
+export function autoScale(sprite, targetWidth) {
+  if (!sprite.texture || !sprite.texture.width) return;
+  const scaleFactor = targetWidth / sprite.texture.width;
+  sprite.scale.set(scaleFactor);
+}
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
