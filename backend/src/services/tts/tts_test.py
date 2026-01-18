@@ -1,13 +1,15 @@
 import os
 import wave
-import time
-import simpleaudio as sa   #This must be simpleaudio-312compat
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1" #Stops a default pygame support prompt from appearing
+import pygame
 import google.genai as genai
 from google.genai import types
 from google.genai.errors import ClientError
 from dotenv import load_dotenv
 
 load_dotenv()
+
+pygame.mixer.init()
 
 api_key = os.getenv("KEY")   #Gets API key from .env file
 if not api_key:
@@ -59,16 +61,18 @@ def text_to_wav(text: str):
         wf.setframerate(24000) 
         wf.writeframes(audio_bytes)
 
-    play_obj = speak_wav("output.wav")
-
-    play_obj.wait_done()
+    speak_wav("output.wav")
 
     print(f"Audio saved to output.wav")
 
 def speak_wav(file: str):
-    wave_obj = sa.WaveObject.from_wave_file(file)
-    play_obj = wave_obj.play()
-    return play_obj
+    pygame.mixer.music.load(file)
+    pygame.mixer.music.play()
+
+    while pygame.mixer.music.get_busy():
+        pygame.time.Clock().tick(30)
+
+    pygame.mixer.music.unload()
 
 if __name__ == "__main__":
     text = input("Enter text: ")
