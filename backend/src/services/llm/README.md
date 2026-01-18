@@ -136,16 +136,18 @@ python -m services.llm.Test.test_agent
 
 ---
 
-### Option 2. Run the Main Entrypoint
+### Option 2. Run the MCP client as a Server
 
 If you want to run the Agent with your prompts:
 
 
 ```bash
-In backend/src/
+In backend/src/mcp_stack
 
-python -m mcp_stack.client
+fastapi dev client.py
 ```
+
+Inside of ```localhost:8000/docs``` on your browser, you will be able to query the agent, or you may query it without the help of that path.
 
 
 ## Vector Store Behavior
@@ -191,6 +193,6 @@ Ensure:
 Set env keys | Create `.env` |
 Run Instantiating RAG DB | `python loaddb.py` |
 Run tests | `python -m services.llm.Test.test_agent` |
-Run Gemini AI Agent | `python -m mcp_stack.client`
+Run Gemini AI Agent Server | `fastapi dev client.py`
 
 ---

@@ -5,3 +5,4 @@ __pycache__
 *.pyc
 .chromadb
 node_modules/
+gcp-credentials.json
