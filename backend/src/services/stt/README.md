@@ -38,6 +38,9 @@ GOOGLE_CLOUD_PROJECT="your-google-cloud-project-id"
 
 ### 1. Find Your Microphone Index
 
+Install requirements using `pip install -r requirements.txt` in the src directory.
+**Important** If you're on mac, you must install `portaudio` onto your computer or pyaudio will not install.
+
 Run the device listing script to find your microphone:
 ```bash
 python list_devices.py
