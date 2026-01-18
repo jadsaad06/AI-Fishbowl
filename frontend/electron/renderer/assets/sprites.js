@@ -2,7 +2,7 @@ import * as PIXI from "pixi.js";
 import { BACKGROUNDS, ANIMATED_FISH, ENHANCED_FISH } from "../app.js";
 
 export async function createBackground(
-  path = "./assets/images/background_2.png"
+  path = "./assets/images/background_2.png",
 ) {
   const texture = await PIXI.Assets.load(path);
   const background = new PIXI.Sprite(texture);
@@ -31,7 +31,7 @@ export class BackgroundManager {
 
     const ratio = Math.max(
       this.app.screen.width / this.sprite.texture.width,
-      this.app.screen.height / this.sprite.texture.height
+      this.app.screen.height / this.sprite.texture.height,
     );
     this.sprite.scale.set(ratio);
   }
@@ -66,38 +66,61 @@ export function createDiver() {
   return diver;
 }
 export class Diver {
-  constructor(width, height) {
-    this.width = width;
-    this.height = height;
-
+  constructor(app, targetWidth = 150) {
+    this.app = app;
     this.sprite = createDiver();
 
-    this.x = width + 200;
-    this.baseY = height / 2;
+    const randomScale = 0.8 + Math.random() * 0.4;
+    targetWidth = targetWidth * randomScale;
 
-    this.speed = 0.5;
-    this.waveSpeed = 0.02;
-    this.amplitude = 20;
-    this.elapsed = 0;
+    autoScale(this.sprite, targetWidth);
 
-    this.sprite.position.set(this.x, this.baseY);
+    this.sprite.x =
+      Math.random() * (app.screen.width - this.sprite.width) +
+      this.sprite.width / 2;
+    this.sprite.y =
+      Math.random() * (app.screen.height - this.sprite.height) +
+      this.sprite.height / 2;
+
+    const speed = 0.3 + Math.random() * 2;
+    this.vx = Math.random() > 0.5 ? speed : -speed;
+    this.vy = Math.random() > 0.5 ? speed : -speed;
+
+    this.rotationSpeed = 0.02;
   }
 
   update() {
-    this.x -= this.speed;
+    this.sprite.x += this.vx;
+    this.sprite.y += this.vy;
 
-    this.elapsed += this.waveSpeed;
-    const yOffset = Math.sin(this.elapsed) * this.amplitude;
+    const halfWidth = this.sprite.width / 2;
+    const halfHeight = this.sprite.height / 2;
 
-    if (this.x < -200) {
-      this.x = this.width + 200;
-      this.baseY = this.height * 0.3 + Math.random() * (this.height * 0.4);
+    if (
+      this.sprite.x + halfWidth >= this.app.screen.width ||
+      this.sprite.x - halfWidth <= 0
+    ) {
+      this.vx *= -1;
+      this.sprite.scale.x *= -1;
+    }
+    if (
+      this.sprite.y + halfHeight >= this.app.screen.height ||
+      this.sprite.y - halfHeight <= 0
+    ) {
+      this.vy *= -1;
     }
 
-    this.sprite.x = this.x;
-    this.sprite.y = this.baseY + yOffset;
+    const baseAngle = Math.atan2(this.vy, this.vx);
 
-    this.sprite.rotation = Math.cos(this.elapsed) * 0.2;
+    this.sprite.rotation = baseAngle + Math.PI;
+
+    if (this.vx > 0) {
+      this.sprite.scale.x = -Math.abs(this.sprite.scale.x);
+    } else {
+      this.sprite.scale.x = Math.abs(this.sprite.scale.x);
+    }
+
+    this.sprite.scale.x = Math.abs(this.sprite.scale.x);
   }
 }
 

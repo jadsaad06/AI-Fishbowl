@@ -45,6 +45,7 @@ async function init() {
     await PIXI.Assets.load(BACKGROUNDS);
     await PIXI.Assets.load(ANIMATED_FISH);
     await PIXI.Assets.load(ENHANCED_FISH);
+    await PIXI.Assets.load("assets/images/ocean_diver.png");
 
     /** Displays the application document */
     await app.init({
