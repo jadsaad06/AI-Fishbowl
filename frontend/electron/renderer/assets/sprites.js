@@ -102,18 +102,15 @@ export class Diver {
 }
 
 export class FishSwarm {
-  constructor(count = 20, width, height, scene = "idle") {
+  constructor(count = 20, width, height, fishFiles, targetWidth = 100) {
     this.width = width;
     this.height = height;
     this.container = new PIXI.Container();
     this.fishData = [];
     this.isScattering = false;
 
-    const targetSize = scene === "idle" ? 120 : 60;
-    const list_to_use = scene === "idle" ? ANIMATED_FISH : ENHANCED_FISH;
-
     for (let i = 0; i < count; i++) {
-      const fish = createFishSprite(list_to_use, targetSize);
+      const fish = createFishSprite(fishFiles, targetWidth);
 
       const data = {
         sprite: fish,
@@ -122,10 +119,6 @@ export class FishSwarm {
         angle: Math.random() * Math.PI * 2,
         speed: 0.5 + Math.random() * 1,
       };
-
-      if (Math.cos(data.angle) < 0) {
-        fish.scale.x = -Math.abs(fish.scale.x);
-      }
 
       fish.position.set(data.x, data.y);
       this.container.addChild(fish);
@@ -151,9 +144,9 @@ export class FishSwarm {
 
       f.sprite.position.set(f.x, f.y);
 
-      f.sprite.rotation = f.angle;
+      f.sprite.rotation = f.angle + Math.PI;
 
-      if (Math.cos(f.angle) < 0) {
+      if (Math.cos(f.angle) > 0) {
         f.sprite.scale.y = -Math.abs(f.sprite.scale.y);
       } else {
         f.sprite.scale.y = Math.abs(f.sprite.scale.y);

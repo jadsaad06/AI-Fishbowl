@@ -1,5 +1,9 @@
 import * as PIXI from "pixi.js";
-import { BackgroundManager, PulsingLabel } from "../assets/sprites.js";
+import {
+  BackgroundManager,
+  PulsingLabel,
+  FishSwarm,
+} from "../assets/sprites.js";
 import { BACKGROUNDS, ANIMATED_FISH, ENHANCED_FISH } from "../app.js";
 
 export class IdleScene {
@@ -9,12 +13,22 @@ export class IdleScene {
     this.bgManager = new BackgroundManager(app, BACKGROUNDS);
     this.container.addChild(this.bgManager.container);
 
+    this.swarm = new FishSwarm(
+      30,
+      app.screen.width,
+      app.screen.height,
+      ENHANCED_FISH,
+      120
+    );
+    this.container.addChild(this.swarm.container);
+
     this.label = new PulsingLabel(app, "Press the Mic button and ask away!");
     this.container.addChild(this.label.container);
 
     this.update = (delta) => {
-      this.bgManager.update(delta);
-      this.label.update();
+      //this.bgManager.update(delta);
+      this.swarm.update(delta);
+      this.label.update(delta);
     };
 
     PIXI.Ticker.shared.add(this.update);
