@@ -30,6 +30,14 @@ export const ENHANCED_FISH = [
   "assets/images/animated_fish_2.png",
   "assets/images/fish_tuna.png",
 ];
+
+export const RESPONDERS = [
+  "assets/images/responder_1.png",
+  "assets/images/responder_2.png",
+  "assets/images/responder_3.png",
+  "assets/images/responder_4.png",
+];
+
 /** Initializes a new PIXI application in the UI */
 const app = new PIXI.Application();
 console.log(BACKGROUNDS);
@@ -45,6 +53,7 @@ async function init() {
     await PIXI.Assets.load(BACKGROUNDS);
     await PIXI.Assets.load(ANIMATED_FISH);
     await PIXI.Assets.load(ENHANCED_FISH);
+    await PIXI.Assets.load(RESPONDERS);
     await PIXI.Assets.load("assets/images/ocean_diver.png");
 
     /** Displays the application document */

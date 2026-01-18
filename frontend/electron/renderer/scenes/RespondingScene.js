@@ -3,61 +3,65 @@ import {
   createBackground,
   FishSwarm,
   PulsingLabel,
+  createFishSprite,
+  createResponder,
 } from "../assets/sprites.js";
+import {
+  BACKGROUNDS,
+  ANIMATED_FISH,
+  ENHANCED_FISH,
+  RESPONDERS,
+} from "../app.js";
 
 export class RespondingScene {
   constructor(app) {
     this.app = app;
     this.container = new PIXI.Container();
 
-    this.init(app);
+    const targetWidth = 350;
+    this.responder = createResponder(app, RESPONDERS, targetWidth);
+    this.container.addChild(this.responder);
+
+    this.targetX = this.responder.x + app.screen.width * 0.15;
+    this.targetY = this.responder.y - app.screen.height * 0.15;
+
+    this.speed = 0.05;
+    this.arrived = false;
 
     this.elapsed = 0;
-  }
+    this.bobIntensity = 10;
+    this.bobSpeed = 0.07;
 
-  async init(app) {
-    this.bg = await createBackground();
+    this.update = (ticker) => {
+      const delta = ticker.deltaTime;
 
-    this.bg.width = this.app.screen.width;
-    this.bg.height = this.app.screen.height;
-    this.container.addChildAt(this.bg, 0);
+      if (!this.arrived) {
+        const dx = this.targetX - this.responder.x;
+        const dy = this.targetY - this.responder.y;
 
-    this.swarm = new FishSwarm(
-      20,
-      this.app.screen.width,
-      this.app.screen.height
-    );
-    this.container.addChild(this.swarm.container);
+        this.responder.x += dx * this.speed * delta;
+        this.responder.y += dy * this.speed * delta;
 
-    this.label = new PulsingLabel(this.app, "Responding...");
-    this.container.addChild(this.label.container);
+        if (Math.abs(dy) < 1 && Math.abs(dy) < 1) {
+          this.responder.x = this.targetX;
+          this.responder.y = this.targetY;
+          this.arrived = true;
+        }
+      } else {
+        this.elapsed += this.bobSpeed * delta;
+        const currentBob = Math.sin(this.elapsed) * this.bobIntensity;
 
-    this.glow = new PIXI.Graphics();
-    this.glow.circle(0, 0, 250).fill({ color: 0x3a8dde, alpha: 0.15 });
-    this.glow.x = app.screen.width / 2;
-    this.glow.y = app.screen.height / 2;
-    this.container.addChild(this.glow);
+        const baseUpdateY = this.arrived ? this.targetY : this.responder.y;
+        this.responder.y = baseUpdateY + currentBob;
+      }
+    };
 
-    this.tickerCallback = (delta) => this.update(delta);
-    PIXI.Ticker.shared.add(this.tickerCallback);
-  }
-
-  update(delta) {
-    if (this.swarm) this.swarm.update();
-    if (this.label) this.label.update();
-    this.elapsed += delta * 0.05;
-
-    this.swarm.fishData.forEach((f) => {
-      f.angle += 0.002;
-    });
-
-    this.glow.alpha = 0.12 + Math.sin(this.elapsed) * 0.05;
+    PIXI.Ticker.shared.add(this.update);
   }
 
   destroy() {
-    if (this.tickerCallback) {
-      PIXI.Ticker.shared.remove(this.tickerCallback);
-    }
+    PIXI.Ticker.shared.remove(this.update);
     this.container.destroy({ children: true });
+    this.responder = null;
   }
 }

@@ -1,5 +1,10 @@
 import * as PIXI from "pixi.js";
-import { BACKGROUNDS, ANIMATED_FISH, ENHANCED_FISH } from "../app.js";
+import {
+  BACKGROUNDS,
+  ANIMATED_FISH,
+  ENHANCED_FISH,
+  RESPONDERS,
+} from "../app.js";
 
 export async function createBackground(
   path = "./assets/images/background_2.png",
@@ -202,6 +207,98 @@ export class FishSwarm {
   }
 }
 
+export function createResponder(app, imageList = [], targetWidth = 200) {
+  const path = imageList[Math.floor(Math.random() * imageList.length)];
+  const texture = PIXI.Texture.from(path);
+  const responder = new PIXI.Sprite(texture);
+
+  responder.anchor.set(0.5);
+
+  autoScale(responder, targetWidth);
+
+  const variance = 0.9 + Math.random() * 0.2;
+  responder.x = 0;
+  responder.y = app.screen.height - responder.height / 2;
+
+  return responder;
+}
+// export class Responder {
+//   constructor(app, fishFiles, targetWidth = 150) {
+//     this.app = app;
+//     this.container = new PIXI.Container();
+
+//     const path = fishFiles[Math.floor(Math.random() * fishFiles.length)];
+//     this.sprite = PIXI.Sprite.from(path);
+//     this.sprite.anchor.set(0.5);
+//     // autoScale(this.sprite, targetWidth);
+
+//     // this.container.x = -100;
+//     // this.container.y = app.screen.height - 150;
+//     this.container.x = 400;
+//     this.container.y = 400;
+
+//     this.targetX = app.screen.width * 0.15;
+//     this.targetY = app.screen.height - 200;
+
+//     this.isStationary = false;
+//     this.bubbleCreated = false;
+//     this.container.addChild(this.sprite);
+//   }
+
+//   update(delta) {
+//     if (!this.isStationary) {
+//       const dx = this.targetX - this.container.x;
+//       const dy = this.targetY - this.container.y;
+
+//       this.container.x += dx * 0.05 * delta;
+//       this.container.y += dy * 0.05 * delta;
+
+//       if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
+//         this.isStationary = true;
+//       }
+//     }
+//   }
+
+//   createSpeechBubble(text = "...") {
+//     if (this.bubbleCreated) return;
+
+//     this.bubbleCreated = true;
+
+//     const bubbleGroup = new PIXI.Container();
+
+//     for (let i = 1; i <= 3; i++) {
+//       const circle = new PIXI.Graphics()
+//         .circle(0, 0, i * 5)
+//         .fill({ color: 0xffffff, alpha: 0.8 });
+//       circle.x = 40 + i * 20;
+//       circle.y = -40 - i * 20;
+//       bubbleGroup.addChild(circle);
+//     }
+
+//     const style = new PIXI.TextStyle({
+//       fontFamily: "Arial",
+//       fontSize: 24,
+//       wordWrap: true,
+//       wordWrapWidth: 400,
+//     });
+
+//     const txt = new PIXI.Text({ text, style });
+//     txt.anchor.set(0);
+//     txt.x = 120;
+//     txt.y = -250;
+
+//     const bg = new PIXI.Graphics()
+//       .roundRect(txt.x - 20, txt.y - 20, txt.width + 40, txt.height + 40, 15)
+//       .fill({ color: 0xffffff, alpha: 0.9 })
+//       .stroke({ width: 2, color: 0x000000 });
+
+//     bubbleGroup.addChild(bg);
+//     bubbleGroup.addChild(txt);
+
+//     this.container.addChild(bubbleGroup);
+//   }
+// }
+
 export class PulsingLabel {
   constructor(app, text = "INTERACT TO START") {
     this.container = new PIXI.Container();
@@ -254,7 +351,8 @@ export const CommonStyles = {
 };
 
 export function autoScale(sprite, targetWidth) {
-  if (!sprite.texture || !sprite.texture.width) return;
+  if (!sprite.texture || !sprite.texture.width || sprite.texture.width === 0)
+    return;
   const scaleFactor = targetWidth / sprite.texture.width;
   sprite.scale.set(scaleFactor);
 }
