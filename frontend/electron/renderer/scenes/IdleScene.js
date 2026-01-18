@@ -1,5 +1,12 @@
 import * as PIXI from "pixi.js";
-import { FishSwarm, CommonStyles } from "../assets/sprites.js";
+import {
+  createFishSprite,
+  FishSwarm,
+  Diver,
+  CommonStyles,
+  createBackground,
+  PulsingLabel,
+} from "../assets/sprites.js";
 
 /**
  * This class creates the animations responsible for being displayed
@@ -11,22 +18,27 @@ export class IdleScene {
   constructor(app) {
     this.container = new PIXI.Container();
 
-    const background = new PIXI.Graphics();
-    background.beginFill(0x0b62f7);
-    background.drawRect(0, 0, app.screen.width, app.screen.height);
-    background.endFill();
-    this.container.addChild(background);
+    this.initBackground(app);
 
-    this.swarm = new FishSwarm(50, app.screen.width, app.screen.height);
+    this.swarm = new FishSwarm(30, app.screen.width, app.screen.height, "idle");
     this.container.addChild(this.swarm.container);
 
-    const label = new PIXI.Text("Idle State", CommonStyles.header);
-    label.anchor.set(0.5);
-    label.position.set(app.screen.width / 2, app.screen.height / 2 - 50);
-    this.container.addChild(label);
+    this.label = new PulsingLabel(app, "Press the Mic button and ask away!");
+    this.container.addChild(this.label.container);
 
-    this.update = () => this.swarm.update();
+    this.update = () => {
+      this.swarm.update();
+      this.label.update();
+    };
     PIXI.Ticker.shared.add(this.update);
+  }
+
+  async initBackground(app) {
+    const bg = await createBackground();
+
+    bg.width = app.screen.width;
+    bg.height = app.screen.height;
+    this.container.addChildAt(bg, 0);
   }
 
   destroy() {

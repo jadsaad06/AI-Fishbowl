@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
+const { spawn } = require("child_process");
 const path = require("path");
 
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
@@ -40,5 +41,36 @@ ipcMain.on("set-ui-state", (event, newState) => {
   win.webContents.send("ui-state-changed", newState);
 });
 
+function startMicListener() {
+  const pythonProcess = spawn("python3", [
+    path.join(__dirname, "../../hardware/src/mic-input.py"),
+  ]);
+
+  pythonProcess.stdout.on("data", (data) => {
+    const output = data.toString().trim();
+
+    if (output.includes("EVENT:MIC_STARTED")) {
+      updateUIState("listening");
+    }
+    if (output.includes("EVENT:MIC_STOPPED")) {
+      updateUIState("thinking");
+    }
+  });
+
+  pythonProcess.stderr.on("data", (data) => {
+    console.error(`Mic Script Error: ${data}`);
+  });
+}
+
+function updateUIState(newState) {
+  console.log("State Transition: ", newState);
+  if (win) {
+    win.webContents.send("ui-state-changed", newState);
+  }
+}
+
 // When Electron has finished initialization, create the kiosk browser window.
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createWindow();
+  startMicListener();
+});
