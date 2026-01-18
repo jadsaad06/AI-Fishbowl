@@ -15,6 +15,8 @@ from engine import transcribe_streaming_v2
 if __name__ == "__main__":
     print("--------------- STT Engine Test ---------------")
     print("Speak into your microphone. Transcripts will appear below.\n")
+    
+    # Set payload and MCP Server URL
     url = "http://127.0.0.1:8000/agent"
     payload = {"user_prompt": ""}
     
@@ -27,7 +29,11 @@ if __name__ == "__main__":
             print(f"\n[Transcript]: {user_input}")
             print("-" * 50)  # visual separator for style points
             print("\nSending to Agent")
+            
+            # Update payload with transcript
             payload["user_prompt"] = user_input
+            
+            # Send transcript to Agent
             response = requests.post(url, json=payload)
             print(f"Status Code: {response.status_code}")
             print(f"Response Body: {response.json()}")
