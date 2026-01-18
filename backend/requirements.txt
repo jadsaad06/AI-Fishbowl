@@ -10,5 +10,6 @@ bs4
 langchain-text-splitters
 python-dotenv
 google-genai
+pyaudio
 fastapi[standard]
 pygame
