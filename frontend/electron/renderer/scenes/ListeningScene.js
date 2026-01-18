@@ -6,6 +6,7 @@ import {
   createBackground,
   PulsingLabel,
 } from "../assets/sprites.js";
+import { BACKGROUNDS, ANIMATED_FISH, ENHANCED_FISH } from "../app.js";
 
 export class ListeningScene {
   constructor(app) {
@@ -19,7 +20,12 @@ export class ListeningScene {
 
     this.initBackground(app);
 
-    this.swarm = new FishSwarm(20, app.screen.width, app.screen.height, "idle");
+    this.swarm = new FishSwarm(
+      20,
+      app.screen.width,
+      app.screen.height,
+      ENHANCED_FISH
+    );
     this.swarmLayer.addChild(this.swarm.container);
     this.swarm.scatter(app.screen.width / 2, app.screen.height / 2);
 
@@ -41,6 +47,7 @@ export class ListeningScene {
 
   update(delta) {
     if (this.swarm) this.swarm.update();
+    if (this.newSwarm) this.newSwarm.update();
 
     if (this.label) {
       this.label.update();
@@ -91,7 +98,7 @@ export class ListeningScene {
       20,
       this.app.screen.width,
       this.app.screen.height,
-      "listening"
+      ANIMATED_FISH
     );
     this.swarmLayer.addChild(this.swarm.container);
 

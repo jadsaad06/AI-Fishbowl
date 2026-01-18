@@ -108,6 +108,7 @@ export class FishSwarm {
     this.container = new PIXI.Container();
     this.fishData = [];
     this.isScattering = false;
+    this.fishFiles = fishFiles;
 
     for (let i = 0; i < count; i++) {
       const fish = createFishSprite(fishFiles, targetWidth);
@@ -144,12 +145,22 @@ export class FishSwarm {
 
       f.sprite.position.set(f.x, f.y);
 
-      f.sprite.rotation = f.angle + Math.PI;
+      if (this.fishFiles == "ENHANCED_FISH") {
+        f.sprite.rotation = f.angle + Math.PI;
 
-      if (Math.cos(f.angle) > 0) {
-        f.sprite.scale.y = -Math.abs(f.sprite.scale.y);
-      } else {
-        f.sprite.scale.y = Math.abs(f.sprite.scale.y);
+        if (Math.cos(f.angle) > 0) {
+          f.sprite.scale.y = -Math.abs(f.sprite.scale.y);
+        } else {
+          f.sprite.scale.y = Math.abs(f.sprite.scale.y);
+        }
+      } else if (this.fishFiles == "ANIMATED_FISH") {
+        f.sprite.rotation = f.angle;
+
+        if (Math.cos(f.angle) < 0) {
+          f.sprite.scale.y = -Math.abs(f.sprite.scale.y);
+        } else {
+          f.sprite.scale.y = Math.abs(f.sprite.scale.y);
+        }
       }
     });
   }
