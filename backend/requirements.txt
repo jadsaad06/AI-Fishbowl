@@ -7,6 +7,9 @@ grpcio
 chromadb
 unidecode
 bs4
+mcp
+langchain_mcp-adapters
+fastmcp
 langchain-text-splitters
 python-dotenv
 google-genai
