@@ -24,10 +24,9 @@ def run_tts_service(get_text_callback, poll_interval=0.5):
             text = get_text_callback()
 
             if text:
+                print(f"TTS_SPEECH_STARTED", flush=True)
                 print(f"\nSpeaking: {text!r}")
                 tts_test.text_to_wav(text)
-            else:
-                print(".", end="", flush=True)  #'.' to show activity
 
             time.sleep(poll_interval)  #Waits before getting more text
 
