@@ -52,14 +52,25 @@ ipcMain.on("set-ui-state", (event, newState) => {
 });
 
 function startServices() {
-  const agent = spawn("python3", [
-    "-m",
-    "fastapi",
-    "dev",
-    path.join(__dirname, "../../../backend/src/mcp_stack/client.py"),
-    "--port",
-    "8000",
-  ]);
+
+
+
+  const agent = spawn(`fastapi dev ${path.join(__dirname, "../../../backend/src/mcp_stack/client.py")} `, {
+    shell: true,
+    env: {
+      ...process.env,
+      PYTHONUNBUFFERED: "1",
+      PYTHONIOENCODING: "utf-8",
+      // Python 3.7+: force UTF-8 mode
+      PYTHONUTF8: "1",
+    },
+  });
+
+  /*
+  agent.stderr.on("data", (d) => console.error("[Agent STDERR]:", d.toString()));
+  agent.on("exit", (code, signal) => console.log("[Agent EXIT]:", { code, signal }));
+  agent.on("error", (err) => console.error("[Agent SPAWN ERROR]:", err));
+  */
 
   agent.stdout.on("data", (data) => {
     const out = data.toString();
@@ -70,7 +81,7 @@ function startServices() {
     }
   });
 
-  const stt = spawn("python3", [
+  const stt = spawn("python", [
     "-u",
     path.join(
       __dirname,
@@ -90,7 +101,8 @@ function startServices() {
     }
   });
 
-  const tts = spawn("python3", [
+  /*
+  const tts = spawn("python", [
     "-u",
     path.join(__dirname, "../../../backend/services/tts/tts_wrapper.py"),
   ]);
@@ -102,6 +114,8 @@ function startServices() {
       updateUIState("responding");
     }
   });
+  */
+  
 }
 
 // function startServices() {
@@ -196,5 +210,7 @@ function startServices() {
 // When Electron has finished initialization, create the kiosk browser window.
 app.whenReady().then(() => {
   createWindow();
+  console.log(path.join(__dirname, "../../../backend/src/mcp_stack/client.py"))
+
   startServices();
 });
