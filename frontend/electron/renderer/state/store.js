@@ -3,9 +3,11 @@
  * It is a reactive state store that keeps track of the current UI state and notifies subscribers of any changes.
  */
 let currentState = "idle";
+let currentSubtitles = "";
 
 // Set of callback functions that want to be notified when the state changes
 const listeners = new Set();
+const subtitleListeners = new Set();
 
 // Exports the current state in case we want to access the state without subscribing
 export function getState() {
@@ -34,4 +36,18 @@ export function setState(newState) {
 export function subscribe(cb) {
   listeners.add(cb);
   return () => listeners.delete(cb);
+}
+
+export function setSubtitles(text) {
+  currentSubtitles = text;
+  subtitleListeners.forEach((cb) => cb(currentSubtitles));
+}
+
+export function subscribeSubtitles(cb) {
+  subtitleListeners.add(cb);
+  return () => subtitleListeners.delete(cb);
+}
+
+export function getSubtitles() {
+  return currentSubtitles;
 }

@@ -25,9 +25,10 @@ const testSubtitles =
   "Extremely long line with a bunch of text and strings and random stuff that is going to or planning to test the width expansion of the subtitles box and to see if the wordwrap functionality actually works as intended, if it works it's fantastic!";
 
 export class RespondingScene {
-  constructor(app) {
+  constructor(app, subtitleText) {
     this.app = app;
     this.container = new PIXI.Container();
+    this.subtitleText = subtitleText;
     this.bgLayer = new PIXI.Container();
     this.container.addChild(this.bgLayer);
     this.initBackground(app);
@@ -61,7 +62,7 @@ export class RespondingScene {
           this.responder.x = this.targetX;
           this.responder.y = this.targetY;
           this.arrived = true;
-          this.createSpeechBubble(testSubtitles);
+          this.createSpeechBubble(this.subtitleText ?? testSubtitles);
         }
       } else {
         this.elapsed += this.bobSpeed * delta;

@@ -2,8 +2,9 @@
  * Main application file for the Electron renderer process. (Frontend)
  */
 import * as PIXI from "pixi.js";
-import { subscribe, setState } from "./state/store.js";
-import { setScene } from "./scenes/index.js";
+import { subscribe, setState, setSubtitles } from "./state/store.js";
+import { setScene, currentScene } from "./scenes/index.js";
+import { RespondingScene } from "./scenes/RespondingScene.js";
 
 export const BACKGROUNDS = [
   "assets/images/idle_bg_1.png",
@@ -69,6 +70,15 @@ async function init() {
       window.fishbowl.onStateChange((newState) => {
         console.log("IPC Received State:", newState);
         setState(newState);
+      });
+
+      window.fishbowl.onAgentResponse((text) => {
+        console.log("IPC Received Subtitles: ", text);
+        setSubtitles(text);
+
+        if (currentScene instanceof RespondingScene) {
+          currentScene.updateSubtitles(text);
+        }
       });
     }
 
