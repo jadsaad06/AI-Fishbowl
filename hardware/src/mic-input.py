@@ -53,12 +53,14 @@ def record_audio(device: int, duration: int, samplerate: int, output_filename: s
     """
 
     try:
+        print("EVENT:MIC_STARTED", flush=True)
         audio = sd.rec(int(duration * samplerate),
                     samplerate = samplerate,
                     channels = 1,
                     dtype = 'float32',
                     device = device)
         sd.wait()
+        print("EVENT:MIC_STOPPED", flush=True)
         sf.write(output_filename, audio, samplerate)
 
     except Exception as e:

@@ -4,4 +4,6 @@ env
 __pycache__
 *.pyc
 .chromadb
-node_modules
+node_modules/
+gcp-credentials.json
+.vscode

@@ -1,21 +1,44 @@
 Overview:
+# Text-to-Speech (TTS) Service
 
-tts_test.py contains two related functions: text_to_wav() and speak_wav(). text_to_wav() takes text input and sends it to Google's Gemini API. Gemini returns the audio in the form of raw Pulse-Code Modulation (PCM), which placed in an easier to use .wav file ("output.wav") The program then sends output.wav to the speak_wav() function, a function which plays audio from inputed .wav files.
+## Overview
 
-The main function contains a menu with some of the tests I ran the model, testing vocal range and inflection as well a spot to enter custom text. It is important to note that the silence/whitespace test currently causes a TypeError. I intend to fix this soon.
+The `tts_test.py` file contains two related functions: `text_to_wav()` and `speak_wav()`. 
 
-Dependencies: 
+- **`text_to_wav()`**: This function takes text input and sends it to Google's Gemini API. Gemini returns the audio in the form of raw Pulse-Code Modulation (PCM), which is then saved as an easier-to-use `.wav` file named `output.wav`. The program subsequently sends `output.wav` to the `speak_wav()` function, which plays audio from the specified `.wav` files. Running `tts_test.py` directly allows for text input for testing purposes.
 
-python-dotenv,
-google-genai,
-simpleaudio-312compat (basic simpleaudio is incompatable with modern versions of Python)
+- **`tts_wrapper.py`**: This script actively listens for incoming text (currently from the file `incoming.txt` for testing purposes, but it can be updated to use an API call). Upon receiving text input, it calls `text_to_wav()` from the `tts_test.py` file.
 
-Testing:
+## Testing the Wrapper Function
 
-This program requires a Gemini API Key assigned to the variable "KEY" in a .env file (see the env.example file for an example).
-After adding the API key, run python .\tts_test.py. This will bring up a menu with some of the tests I used, as well as an option to enter your own text for testing.
-All testing was performed in a virtual environment on Windows using Python 3.13.3
+To test the wrapper function, execute the following command:
 
-Possible next steps: 
+```bash
+python tts_wrapper.py
+```
 
-Catch or avoid TypeErrors. Add the ability to receive interruptions, terminating speech early. Investigate ways to track where speech is terminated. Investigate ways to decrease processing time. Work with UI team to determine what outputs are needed for subtitles.
+Then, open the `incoming.txt` file. The wrapper should vocalize any text you input and subsequently clear the file. If a test fails, you may need to clear and save the `incoming.txt` file (using `CTRL + S`) before `tts_wrapper` will recognize it again.
+
+## Voice Models
+
+All tests were conducted using Gemini's default voice models, primarily Aoede, Charon, Despina, and Umbriel (the current model). Testing was performed in a virtual environment on Windows.
+
+## Dependencies
+
+The following dependencies are required:
+
+- `python-dotenv`
+- `google-genai`
+- `pygame`
+- `pathlib`
+
+## Important Note
+
+This program requires a Gemini API Key, which should be assigned to the variable `KEY` in a `.env` file.
+
+## Possible Next Steps
+
+- Add the ability to receive interruptions and terminate speech early.
+- Investigate methods to track where speech is terminated.
+- Explore ways to decrease processing time.
+- Collaborate with the UI team to determine necessary outputs for subtitles.
