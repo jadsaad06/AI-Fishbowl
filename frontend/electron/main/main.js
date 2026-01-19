@@ -52,32 +52,49 @@ ipcMain.on("set-ui-state", (event, newState) => {
 });
 
 function startServices() {
-  const mic = spawn("python3", [
-    path.join(__dirname, "../../hardware/src/mic-input.py"),
-  ]);
-  mic.stdout.on("data", (data) => {
-    const out = data.toString().trim();
-    if (out.includes("EVENT:MIC_STARTED")) updateUIState("listening");
-    if (out.includes("EVENT:MIC_STOPPED")) updateUIState("thinking");
-  });
-
   const agent = spawn("python3", [
-    "-u",
-    path.join(__dirname, "../../backend/src/mcp_stack/client.py"),
+    "-m",
+    "fastapi",
+    "dev",
+    path.join(__dirname, "../../../backend/src/mcp_stack/client.py"),
+    "--port",
+    "8000",
   ]);
+
   agent.stdout.on("data", (data) => {
     const out = data.toString();
-
+    console.log("[Agent Output]:", out);
     if (out.includes("AGENT_RESPONSE:")) {
-      const responseText = out.split("AGENT_RESPONSE:")[1].trim();
-
+      const responseText = out.split("AGENT_RESPONSE")[1].trim();
       win.webContents.send("render-subtitles", responseText);
     }
   });
 
-  const tts = spawn("python3", [
-    path.join(__dirname, "../../backend/services/tts/tts_wrapper.py"),
+  const stt = spawn("python3", [
+    "-u",
+    path.join(
+      __dirname,
+      "../../../backend/src/services/stt/Test/test_transcribe.py",
+    ),
   ]);
+
+  stt.stdout.on("data", (data) => {
+    const out = data.toString();
+    console.log("[STT Output]:", out);
+
+    if (out.includes("Listening. Press Ctrl+C to stop")) {
+      updateUIState("listening");
+    }
+    if (out.includes("[Transcript]:")) {
+      updateUIState("thinking");
+    }
+  });
+
+  const tts = spawn("python3", [
+    "-u",
+    path.join(__dirname, "../../../backend/services/tts/tts_wrapper.py"),
+  ]);
+
   tts.stdout.on("data", (data) => {
     const out = data.toString();
 
@@ -86,6 +103,51 @@ function startServices() {
     }
   });
 }
+
+// function startServices() {
+//   // const list_devices = spawn("python3", [path.join(__dirname, "../../backend/src/services/stt/list_devices.py")]);
+
+//   const mic = spawn("python3", [
+//     path.join(__dirname, "../../hardware/src/mic-input.py"),
+//   ]);
+//   mic.stdout.on("data", (data) => {
+//     const out = data.toString().trim();
+//     if (out.includes("EVENT:MIC_STARTED")) {
+//       updateUIState("listening");
+//       const test_transcribe = spawn("python3", [
+//         path.join(
+//           __dirname,
+//           "../../backend/src/services/stt/Test/test_transcribe.py",
+//         ),
+//       ]);
+//     }
+//     if (out.includes("EVENT:MIC_STOPPED")) updateUIState("thinking");
+//   });
+
+//   const agent = spawn("fastapi dev", [
+//     path.join(__dirname, "../../backend/src/mcp_stack/client.py"),
+//   ]);
+//   agent.stdout.on("data", (data) => {
+//     const out = data.toString();
+
+//     if (out.includes("AGENT_RESPONSE:")) {
+//       const responseText = out.split("AGENT_RESPONSE:")[1].trim();
+
+//       win.webContents.send("render-subtitles", responseText);
+//     }
+//   });
+
+//   const tts = spawn("python3", [
+//     path.join(__dirname, "../../backend/services/tts/tts_wrapper.py"),
+//   ]);
+//   tts.stdout.on("data", (data) => {
+//     const out = data.toString();
+
+//     if (out.includes("TTS_SPEECH_STARTED")) {
+//       updateUIState("responding");
+//     }
+//   });
+// }
 
 // function startMicListener() {
 //   const pythonProcess = spawn("python3", [
