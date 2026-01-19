@@ -1,6 +1,14 @@
 import tts_test
 import time
 import pathlib
+import websockets
+import asyncio
+
+async def main():
+    async with websockets.connect("ws://localhost:8000/ws") as ws:
+        message = await ws.recv()
+
+        run_tts_service(message)
 
 def get_text_from_file():
     p = pathlib.Path("incoming.txt")
@@ -35,5 +43,5 @@ def run_tts_service(get_text_callback, poll_interval=0.5):
         print("\nTTS stopped")
 
 if __name__ == "__main__":
-    run_tts_service(get_text_from_file)
+    asyncio.run(main())
     print("Done")
