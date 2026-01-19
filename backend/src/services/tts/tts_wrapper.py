@@ -28,16 +28,15 @@ def run_tts_service(get_text_callback, poll_interval=0.5):
     print("TTS service running. Press Ctrl+C to stop")
 
     try:
-        while True:     #Loops until Ctrl+C
-            text = get_text_callback()
+        text = get_text_callback()
 
-            if text:
-                print(f"\nSpeaking: {text!r}")
-                tts_test.text_to_wav(text)
-            else:
-                print(".", end="", flush=True)  #'.' to show activity
+        if text:
+            print(f"\nSpeaking: {text!r}")
+            tts_test.text_to_wav(text)
+        else:
+            print(".", end="", flush=True)  #'.' to show activity
 
-            time.sleep(poll_interval)  #Waits before getting more text
+        time.sleep(poll_interval)  #Waits before getting more text
 
     except KeyboardInterrupt:
         print("\nTTS stopped")
