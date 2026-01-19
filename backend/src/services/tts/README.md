@@ -7,21 +7,21 @@ The `tts_test.py` file contains two related functions: `text_to_wav()` and `spea
 
 - **`text_to_wav()`**: This function takes text input and sends it to Google's Gemini API. Gemini returns the audio in the form of raw Pulse-Code Modulation (PCM), which is then saved as an easier-to-use `.wav` file named `output.wav`. The program subsequently sends `output.wav` to the `speak_wav()` function, which plays audio from the specified `.wav` files. Running `tts_test.py` directly allows for text input for testing purposes.
 
-- **`tts_wrapper.py`**: This script actively listens for incoming text (currently from the file `incoming.txt` for testing purposes, but it can be updated to use an API call). Upon receiving text input, it calls `text_to_wav()` from the `tts_test.py` file.
+- **`tts_wrapper.py`**: This script actively listens for incoming text from the local host websocket. Upon receiving text input, it calls `text_to_wav()` from the `tts_test.py` file.
 
 ## Testing the Wrapper Function
 
-To test the wrapper function, execute the following command:
+To test the wrapper function, start a FastAPI server using loaddb.py in backend/src/services/llm. In a second terminal run:
 
 ```bash
 python tts_wrapper.py
 ```
 
-Then, open the `incoming.txt` file. The wrapper should vocalize any text you input and subsequently clear the file. If a test fails, you may need to clear and save the `incoming.txt` file (using `CTRL + S`) before `tts_wrapper` will recognize it again.
+Then, input some text into the local host. The LLM should respond, and send the response to the wrapper, which will vocalize the text.
 
 ## Voice Models
 
-All tests were conducted using Gemini's default voice models, primarily Aoede, Charon, Despina, and Umbriel (the current model). Testing was performed in a virtual environment on Windows.
+Testing was performed in a virtual environment on Windows with Python 3.13.3. Most testing was performed with the current voice model, Umbriel, although limited testing was done with other voice models.
 
 ## Dependencies
 
@@ -31,6 +31,8 @@ The following dependencies are required:
 - `google-genai`
 - `pygame`
 - `pathlib`
+- `websockets`
+- `asyncio`
 
 ## Important Note
 

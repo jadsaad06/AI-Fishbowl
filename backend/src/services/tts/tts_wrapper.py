@@ -6,9 +6,9 @@ import asyncio
 
 async def main():
     async with websockets.connect("ws://localhost:8000/ws") as ws:
-        message = await ws.recv()
-
-        run_tts_service(message)
+        while True:
+            message = await ws.recv()
+            run_tts_service(message)
 
 def get_text_from_file():
     p = pathlib.Path("incoming.txt")
@@ -26,15 +26,15 @@ def get_text_from_file():
 
 def run_tts_service(get_text_callback, poll_interval=0.5):
     print("TTS service running. Press Ctrl+C to stop")
-
+    
     try:
-        text = get_text_callback()
+        text = get_text_callback
 
         if text:
+            print(f"TTS_SPEECH_STARTED", flush=True)
             print(f"\nSpeaking: {text!r}")
             tts_test.text_to_wav(text)
-        else:
-            print(".", end="", flush=True)  #'.' to show activity
+            print(f"TTS_SPEECH_ENDED", flush=True)
 
         time.sleep(poll_interval)  #Waits before getting more text
 
