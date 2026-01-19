@@ -84,25 +84,38 @@ def grab_agent_final_response(resp) -> str:
 @app.post("/agent") #This is the path of /agent for a post request to query the agent
 async def call_agent(request : RequestPrompt): #The arg is the payload that the user sent
 
-    app.state.conversation = app.state.conversation[-4:] #Take the 2 most recent conversations.
+    app.state.conversation = app.state.conversation[-6:] #Take the 2 most recent conversations.
+
+
+    
 
     app.state.conversation.append({ # Context, adding the user prompt 
         "role" : "user",
         "content" : request.user_prompt
         })
-
-    print(request.user_prompt)
-
-    print(app.state.conversation)
     
+    print("Conversation window Before Prompt")
+
+
+    print("----------------------")
+    print(app.state.conversation)
+    print("----------------------")
+
+    
+
     response = await app.state.agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
 
+    stripped_response = grab_agent_final_response(response)
+
     print(response)
+    print("\n")
+
+    print("AGENT_RESPONSE: " + stripped_response, flush=True)
 
     app.state.conversation.append({ # Add the agents response to the context window
         "role" : "assistant",
-        "content" : grab_agent_final_response(response)
+        "content" : stripped_response
         })
     
-    return {"agent_response" : grab_agent_final_response(response)} # Return the agents response
+    return {"agent_response" : stripped_response} # Return the agents response
 
