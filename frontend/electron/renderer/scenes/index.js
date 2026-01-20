@@ -7,9 +7,10 @@ import { ListeningScene } from "./ListeningScene.js";
 import { ThinkingScene } from "./ThinkingScene.js";
 import { RespondingScene } from "./RespondingScene.js";
 import { ErrorScene } from "./ErrorScene.js";
+import { getSubtitles } from "../state/store.js";
 
 // Tracks currently displayed scene
-let currentScene;
+export let currentScene;
 
 /**
  * Updates the displayed scene in the application window.
@@ -32,7 +33,8 @@ export function setScene(app, state) {
       currentScene = new ThinkingScene(app);
       break;
     case "responding":
-      currentScene = new RespondingScene(app);
+      const text = getSubtitles();
+      currentScene = new RespondingScene(app, text);
       break;
     case "error":
       currentScene = new ErrorScene();

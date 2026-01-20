@@ -9,13 +9,14 @@ from services.llm.QUERY_CHAIN.query import agent_prompt_template, get_context, w
 from langchain.agents import create_agent
 from langchain_mcp_adapters.tools import load_mcp_tools
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 
 
 class RequestPrompt(BaseModel): # Class for denoting the request that the user will prompt for a post request.
     user_prompt: str
+
 
 
 
@@ -54,6 +55,8 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
 
             app.state.agent = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
             app.state.conversation = [] # variable to create the context window
+            app.state.ws_connection = None
+
 
             yield
 
@@ -80,29 +83,64 @@ def grab_agent_final_response(resp) -> str:
 
 
 
+@app.websocket("/ws")
+async def ws_tts(ws : WebSocket):
+    await ws.accept()
+
+    app.state.ws_connection = ws
+
+    try:
+        while True:
+            await ws.receive_text()
+        
+    except WebSocketDisconnect:
+        app.state.ws_connection = None
+
+
+
+
+
+
+
 
 @app.post("/agent") #This is the path of /agent for a post request to query the agent
 async def call_agent(request : RequestPrompt): #The arg is the payload that the user sent
 
-    app.state.conversation = app.state.conversation[-4:] #Take the 2 most recent conversations.
+    app.state.conversation = app.state.conversation[-6:] #Take the 2 most recent conversations.
+
+
+    
 
     app.state.conversation.append({ # Context, adding the user prompt 
         "role" : "user",
         "content" : request.user_prompt
         })
-
-    print(request.user_prompt)
-
-    print(app.state.conversation)
     
+    print("Conversation window Before Prompt")
+
+
+    print("----------------------")
+    print(app.state.conversation)
+    print("----------------------")
+
+    
+
     response = await app.state.agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
 
+    stripped_response = grab_agent_final_response(response)
+
     print(response)
+    print("\n")
+
+    print("AGENT_RESPONSE: " + stripped_response, flush=True)
+
+
+    await app.state.ws_connection.send_text(stripped_response)
 
     app.state.conversation.append({ # Add the agents response to the context window
         "role" : "assistant",
-        "content" : grab_agent_final_response(response)
+        "content" : stripped_response
         })
     
-    return {"agent_response" : grab_agent_final_response(response)} # Return the agents response
+    return {"agent_response" : stripped_response} # Return the agents response
 

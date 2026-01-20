@@ -6,3 +6,4 @@ __pycache__
 .chromadb
 node_modules/
 gcp-credentials.json
+.vscode

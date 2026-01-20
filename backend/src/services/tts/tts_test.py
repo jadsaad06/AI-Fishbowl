@@ -63,7 +63,7 @@ def text_to_wav(text: str):
 
     speak_wav("output.wav")
 
-    print(f"Audio saved to output.wav")
+    #print(f"Audio saved to output.wav")
 
 def speak_wav(file: str):
     pygame.mixer.music.load(file)
