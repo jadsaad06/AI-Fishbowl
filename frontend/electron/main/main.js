@@ -114,6 +114,9 @@ function startServices() {
     if (out.includes("TTS_SPEECH_STARTED")) {
       updateUIState("responding");
     }
+    if (out.includes("TTS_SPEECH_ENDED")) {
+      updateUIState("idle");
+    }
   });
 }
 
