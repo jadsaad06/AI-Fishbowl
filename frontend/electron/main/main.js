@@ -19,8 +19,8 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1280,
     height: 720,
-    fullscreen: true,
-    kiosk: true,
+    fullscreen: false,
+    kiosk: false,
     webPreferences: {
       preload: path.join(__dirname, "../preload.js"),
       contextIsolation: true,
@@ -55,7 +55,7 @@ function startServices() {
 
 
 
-  const agent = spawn(`fastapi dev ${path.join(__dirname, "../../../backend/src/mcp_stack/client.py")} `, {
+  const agent = spawn(`fastapi dev ${path.join(__dirname, "../../../backend/src/mcp_stack/client.py")}`, {
     shell: true,
     env: {
       ...process.env,
@@ -101,20 +101,20 @@ function startServices() {
     }
   });
 
-  /*
   const tts = spawn("python", [
-    "-u",
-    path.join(__dirname, "../../../backend/services/tts/tts_wrapper.py"),
+    path.join(__dirname, "../../../backend/src/services/tts/tts_wrapper.py"),
   ]);
 
   tts.stdout.on("data", (data) => {
     const out = data.toString();
 
+    console.log("[TTS]: " + out)
+
     if (out.includes("TTS_SPEECH_STARTED")) {
       updateUIState("responding");
     }
   });
-  */
+  
   
 }
 
