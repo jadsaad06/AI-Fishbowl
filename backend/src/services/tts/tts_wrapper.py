@@ -3,12 +3,27 @@ import time
 import pathlib
 import websockets
 import asyncio
+import time
 
 async def main():
-    async with websockets.connect("ws://localhost:8000/ws") as ws:
-        while True:
-            message = await ws.recv()
-            run_tts_service(message)
+
+    while True:
+        try:
+            async with websockets.connect("ws://localhost:8000/ws") as ws:
+                while True:
+                    message = await ws.recv()
+                    run_tts_service(message)
+        except (websockets.exceptions.ConnectionClosedError,
+                websockets.exceptions.ConnectionClosedOK,
+                OSError) as e:
+            print(f"WebSocket disconnected: {e}")
+
+        except Exception as e:
+            print(f"Unexpected WS error: {e}")
+        
+        await asyncio.sleep(10)
+
+
 
 def get_text_from_file():
     p = pathlib.Path("incoming.txt")
