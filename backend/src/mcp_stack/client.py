@@ -9,13 +9,14 @@ from services.llm.QUERY_CHAIN.query import agent_prompt_template, get_context, w
 from langchain.agents import create_agent
 from langchain_mcp_adapters.tools import load_mcp_tools
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 
 
 class RequestPrompt(BaseModel): # Class for denoting the request that the user will prompt for a post request.
     user_prompt: str
+
 
 
 
@@ -54,6 +55,8 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
 
             app.state.agent = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
             app.state.conversation = [] # variable to create the context window
+            app.state.ws_connection = None
+
 
             yield
 
@@ -77,6 +80,25 @@ def grab_agent_final_response(resp) -> str:
         return content[0]["text"] 
     else:
         return content #If the content solely has the last response then return it.
+
+
+
+@app.websocket("/ws")
+async def ws_tts(ws : WebSocket):
+    await ws.accept()
+
+    app.state.ws_connection = ws
+
+    try:
+        while True:
+            await ws.receive_text()
+        
+    except WebSocketDisconnect:
+        app.state.ws_connection = None
+
+
+
+
 
 
 
@@ -111,6 +133,9 @@ async def call_agent(request : RequestPrompt): #The arg is the payload that the 
     print("\n")
 
     print("AGENT_RESPONSE: " + stripped_response, flush=True)
+
+
+    await app.state.ws_connection.send_text(stripped_response)
 
     app.state.conversation.append({ # Add the agents response to the context window
         "role" : "assistant",
