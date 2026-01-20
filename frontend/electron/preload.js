@@ -17,4 +17,7 @@ contextBridge.exposeInMainWorld("fishbowl", {
   // Lets the renderer process request a UI state change in the main process.
   // If the request is approved, the main process updates uiState and broadcasts the change back to all renderer windows.
   setState: (state) => ipcRenderer.send("set-ui-state", state),
+
+  onAgentResponse: (cb) =>
+    ipcRenderer.on("render-subtitles", (_, text) => cb(text)),
 });
