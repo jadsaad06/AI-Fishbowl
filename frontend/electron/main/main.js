@@ -17,8 +17,8 @@ let ttsProcess;
 
 function createWindow() {
   win = new BrowserWindow({
-    width: 1280,
-    height: 720,
+    width: 1920,
+    height: 1080,
     fullscreen: false,
     kiosk: false,
     webPreferences: {
