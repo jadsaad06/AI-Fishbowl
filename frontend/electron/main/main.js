@@ -18,10 +18,10 @@ let ttsProcess;
 function createWindow() {
   // const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   win = new BrowserWindow({
-    // width,
-    // height,
-    fullscreen: true,
-    kiosk: true,
+    width: 1920,
+    height: 1080,
+    fullscreen: false,
+    kiosk: false,
     webPreferences: {
       preload: path.join(__dirname, "../preload.js"),
       contextIsolation: true,
