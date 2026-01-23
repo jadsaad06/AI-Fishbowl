@@ -4,10 +4,29 @@
  */
 let currentState = "idle";
 let currentSubtitles = "";
-
 // Set of callback functions that want to be notified when the state changes
 const listeners = new Set();
 const subtitleListeners = new Set();
+let currentPrompt = "";
+const promptListeners = new Set();
+
+export function setPrompt(text) {
+  currentPrompt = text;
+  promptListeners.forEach((cb) => cb(currentPrompt));
+}
+
+export function subscribePrompt(cb) {
+  promptListeners.add(cb);
+  return () => promptListeners.delete(cb);
+}
+
+export function getPrompt() {
+  return currentPrompt;
+}
+
+export function clearPrompt() {
+  setPrompt("");
+}
 
 // Exports the current state in case we want to access the state without subscribing
 export function getState() {

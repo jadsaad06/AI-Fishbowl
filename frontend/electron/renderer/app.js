@@ -2,7 +2,14 @@
  * Main application file for the Electron renderer process. (Frontend)
  */
 import * as PIXI from "pixi.js";
-import { subscribe, setState, setSubtitles } from "./state/store.js";
+import {
+  subscribe,
+  setState,
+  setSubtitles,
+  setPrompt,
+  getPrompt,
+  getState,
+} from "./state/store.js";
 import { setScene, currentScene } from "./scenes/index.js";
 import { RespondingScene } from "./scenes/RespondingScene.js";
 
@@ -93,6 +100,7 @@ async function init() {
 
     /** Default landing page initialization */
     setScene(app, "idle");
+    setupKeyboardInput();
   } catch (error) {
     console.error("Failed to initialize PIXI application:", error);
   }
@@ -100,3 +108,46 @@ async function init() {
 
 /** Log unhandled errors and call the init function */
 init();
+
+function setupKeyboardInput() {
+  window.addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    const currentState = getState();
+
+    if (e.key.toLowerCase() === "k" && currentState !== "keyboard") {
+      e.preventDefault();
+      window.fishbowl.setState("keyboard");
+      return;
+    }
+
+    if (currentState === "keyboard") {
+      if (e.key === "Enter") {
+        const prompt = getPrompt().trim();
+        if (!prompt) return;
+
+        console.log("Keyboard Prompt Submitted:", prompt);
+
+        // ------- SEND PROMPT TO MCP FROM HERE (Michel) -------------
+        setPrompt("");
+        window.fishbowl.setState("thinking");
+        return;
+      }
+
+      if (e.key === "Backspace") {
+        setPrompt(getPrompt().slice(0, -1));
+        return;
+      }
+
+      if (e.key === "Escape") {
+        setPrompt("");
+        window.fishbowl.setState("idle");
+        return;
+      }
+
+      if (e.key.length === 1) {
+        setPrompt(getPrompt() + e.key);
+      }
+    }
+  });
+}

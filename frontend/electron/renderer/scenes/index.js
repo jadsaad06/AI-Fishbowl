@@ -7,6 +7,7 @@ import { ListeningScene } from "./ListeningScene.js";
 import { ThinkingScene } from "./ThinkingScene.js";
 import { RespondingScene } from "./RespondingScene.js";
 import { ErrorScene } from "./ErrorScene.js";
+import { KeyboardScene } from "./KeyboardScene.js";
 import { getSubtitles } from "../state/store.js";
 
 // Tracks currently displayed scene
@@ -26,6 +27,9 @@ export function setScene(app, state) {
   }
 
   switch (state) {
+    case "keyboard":
+      currentScene = new KeyboardScene(app);
+      break;
     case "listening":
       currentScene = new ListeningScene(app);
       break;
