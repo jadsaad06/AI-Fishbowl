@@ -16,6 +16,7 @@ let ttsProcess;
  */
 
 function createWindow() {
+  // const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   win = new BrowserWindow({
     width: 1920,
     height: 1080,
@@ -52,19 +53,19 @@ ipcMain.on("set-ui-state", (event, newState) => {
 });
 
 function startServices() {
-
-
-
-  const agent = spawn(`fastapi dev ${path.join(__dirname, "../../../backend/src/mcp_stack/client.py")}`, {
-    shell: true,
-    env: {
-      ...process.env,
-      PYTHONUNBUFFERED: "1",
-      PYTHONIOENCODING: "utf-8",
-      // Python 3.7+: force UTF-8 mode
-      PYTHONUTF8: "1",
+  const agent = spawn(
+    `fastapi dev ${path.join(__dirname, "../../../backend/src/mcp_stack/client.py")}`,
+    {
+      shell: true,
+      env: {
+        ...process.env,
+        PYTHONUNBUFFERED: "1",
+        PYTHONIOENCODING: "utf-8",
+        // Python 3.7+: force UTF-8 mode
+        PYTHONUTF8: "1",
+      },
     },
-  });
+  );
 
   /*
   agent.stderr.on("data", (d) => console.error("[Agent STDERR]:", d.toString()));
@@ -108,14 +109,15 @@ function startServices() {
   tts.stdout.on("data", (data) => {
     const out = data.toString();
 
-    console.log("[TTS]: " + out)
+    console.log("[TTS]: " + out);
 
     if (out.includes("TTS_SPEECH_STARTED")) {
       updateUIState("responding");
     }
+    if (out.includes("TTS_SPEECH_ENDED")) {
+      updateUIState("idle");
+    }
   });
-  
-  
 }
 
 // function startServices() {
@@ -210,7 +212,7 @@ function startServices() {
 // When Electron has finished initialization, create the kiosk browser window.
 app.whenReady().then(() => {
   createWindow();
-  console.log(path.join(__dirname, "../../../backend/src/mcp_stack/client.py"))
+  console.log(path.join(__dirname, "../../../backend/src/mcp_stack/client.py"));
 
   startServices();
 });
