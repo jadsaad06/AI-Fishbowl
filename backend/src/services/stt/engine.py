@@ -16,6 +16,8 @@ from mic_stream import MicrophoneStream
 load_dotenv()
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
+DEFAULT_MIC_NAME = "LavMicro"
+
 
 def get_request_stream(config, mic_gen):
     yield config                                                                                # First yield must be the config request
@@ -23,14 +25,21 @@ def get_request_stream(config, mic_gen):
         yield cloud_speech_types.StreamingRecognizeRequest(audio=chunk)                         # Wrap each chunk in a StreamingRecognizeRequest
 
 # ========================  Important  =========================
-def transcribe_streaming_v2(mic_index=2):
+def transcribe_streaming_v2(mic_index=None, mic_name=DEFAULT_MIC_NAME, vad_enabled=True):
 # ========================  Update me ^ ========================
     print("Initializing.\n")
     client = SpeechClient() # Instantiates a client
 
     try:
-        with MicrophoneStream(index=mic_index) as mic:
-            print(f"Using: {mic.rate}Hz, {mic.channels} channel(s)")
+        name_contains = mic_name if mic_index is None else None
+        with MicrophoneStream(
+            index=mic_index,
+            name_contains=name_contains,
+            vad_enabled=vad_enabled,
+        ) as mic:
+            print(
+                f"Using: {mic.device_name} | {mic.rate}Hz, {mic.channels} channel(s)"
+            )
 
             recognition_config = cloud_speech_types.RecognitionConfig(                          # Configure speech recognition parameters:
                 explicit_decoding_config=cloud_speech_types.ExplicitDecodingConfig(             # - explicit_decoding_config: Manually inputing audio encoding settings

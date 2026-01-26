@@ -11,7 +11,7 @@ Microphone → PyAudio → MicrophoneStream → Google Cloud STT API → Final T
 
 ## Files
 
-- `mic_stream.py` - Handles microphone input via PyAudio, chunks audio into 100ms segments
+- `mic_stream.py` - Handles microphone input via PyAudio, chunks audio into 100ms segments, optional VAD
 - `engine.py` - Connects to Google Cloud STT API and streams microphone audio for transcription
 - `list_devices.py` - Helper script to identify your microphone's device index
 - `test_mic_stream.py` - Tests microphone input by recording a 5-second WAV file
@@ -36,7 +36,7 @@ GOOGLE_CLOUD_PROJECT="your-google-cloud-project-id"
 
 ## Setup
 
-### 1. Find Your Microphone Index
+### 1. Find Your Microphone Name (or Index)
 
 Install requirements using `pip install -r requirements.txt` in the src directory.
 **Important** If you're on mac, you must install `portaudio` onto your computer or pyaudio will not install.
@@ -55,13 +55,16 @@ Index | Host API             | Channels | Rate       | Name
 24    | Windows WASAPI       | 2        | 48000.0    | Microphone (4- fifine Microphone)
 ```
 
-Note the index number (e.g., `24`).
+Note the device name (e.g., `Microphone (4- fifine Microphone)`) or the index number (e.g., `24`).
 
-### 2. Update Microphone Index
+### 2. Update Microphone Selection
 
-Update the `mic_index` parameter in:
-- `engine.py` (line 26): `def transcribe_streaming_v2(mic_index=24):`
-- `test_mic_stream.py` (line 17): `TARGET_INDEX = 24`
+Default selection uses device name matching with `DEFAULT_MIC_NAME = "LavMicro"`.
+Update either:
+- `engine.py`: `DEFAULT_MIC_NAME = "LavMicro"`
+- `Test/test_mic_stream.py`: `TARGET_NAME = "LavMicro"`
+
+If you prefer a fixed index, set `mic_index` explicitly (the name match is ignored when `mic_index` is set).
 
 ## 3. Test Your Setup
 
@@ -91,6 +94,11 @@ Here's how to do it:
 2. cd into `stt/Test`
 3. `python test_transcribe`
 
+### Voice Activity Detection (VAD)
+
+VAD is enabled by default in `engine.py` and uses a simple energy threshold to filter silence.
+Tune it by passing `vad_enabled`, `vad_energy_threshold`, `vad_speech_ms`, or `vad_silence_ms` to `MicrophoneStream`.
+
 ## Requirements
 
 - Python 3.13 or lower (not 3.14)
@@ -116,7 +124,7 @@ Cloud Speech Client
 ## Troubleshooting
 
 **"Audio device not found" or wrong microphone**
-- Run `list_devices.py` and update your `mic_index`
+- Run `list_devices.py` and update `DEFAULT_MIC_NAME` or `mic_index`
 - On Windows, use "Windows WASAPI" devices
 
 **No transcripts appearing**
