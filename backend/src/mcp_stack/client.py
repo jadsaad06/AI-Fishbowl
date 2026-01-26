@@ -134,8 +134,10 @@ async def call_agent(request : RequestPrompt): #The arg is the payload that the 
 
     print("AGENT_RESPONSE: " + stripped_response, flush=True)
 
-
-    await app.state.ws_connection.send_text(stripped_response)
+    try:
+        await app.state.ws_connection.send_text(stripped_response)
+    except Exception:
+        pass
 
     app.state.conversation.append({ # Add the agents response to the context window
         "role" : "assistant",
