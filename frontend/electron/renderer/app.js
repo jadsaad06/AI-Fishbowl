@@ -49,6 +49,9 @@ export const RESPONDERS = [
 const app = new PIXI.Application();
 console.log(BACKGROUNDS);
 
+
+
+
 /**
  * Initializes the PIXI application, sets up IPC listeners for state changes,
  * and subscribes to the state store to update scenes accordingly.
@@ -109,6 +112,46 @@ async function init() {
 /** Log unhandled errors and call the init function */
 init();
 
+let ws = null;
+let is_connected = false;
+
+
+
+setTimeout(() => {
+  ws = new WebSocket("ws://localhost:8000/text_input");
+
+  ws.addEventListener("open", (event) => {
+    console.log("Connection from someone");
+    ws.send("Hello man!")
+    is_connected = true;
+  });
+
+  ws.addEventListener("message", (event) => {
+    console.log("YOU HAVE RECEIVED A MESSAGE");
+    console.log(event.data);
+    setSubtitles(event.data);
+    setScene(app, "responding")
+  });
+
+  ws.addEventListener("close", (event) => {
+    console.log("You are terminating connection");
+    console.log(event);
+    is_connected = false;
+
+  });
+
+}, 10000);
+
+if (socket.readyState === WebSocket.CLOSED) {
+    console.log("Connection is closed. Cannot send data.");
+}
+
+else if (socket.readyState === WebSocket.OPEN) {
+    console.log("Connection is open. Can send data.");
+}
+
+
+
 function setupKeyboardInput() {
   window.addEventListener("keydown", (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -127,6 +170,12 @@ function setupKeyboardInput() {
         if (!prompt) return;
 
         console.log("Keyboard Prompt Submitted:", prompt);
+        if (ws && ws.readyState == WebSocket.OPEN){
+          ws.send(prompt);
+        }
+        else{
+          console.log("Agent is not connected to the web server");
+        }
 
         // ------- SEND PROMPT TO MCP FROM HERE (Michel) -------------
         setPrompt("");
