@@ -145,4 +145,3 @@ async def call_agent(request : RequestPrompt): #The arg is the payload that the 
         })
     
     return {"agent_response" : stripped_response} # Return the agents response
-

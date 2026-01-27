@@ -164,6 +164,16 @@ export class RespondingScene {
       )
       .fill({ color: 0xffffff, alpha: 0.9 })
       .stroke({ width: 2, color: 0x000000 });
+
+    if (this.bubbleGroup) {
+      const topOfBubble = this.responder.y + this.subtitleText.y - padding;
+
+      if (topOfBubble < 50) {
+        const correction = 50 - topOfBubble;
+        this.subtitleText.y += correction;
+        this.bubbleBg.y += correction;
+      }
+    }
   }
 
   destroy() {

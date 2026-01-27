@@ -23,7 +23,7 @@ def get_request_stream(config, mic_gen):
         yield cloud_speech_types.StreamingRecognizeRequest(audio=chunk)                         # Wrap each chunk in a StreamingRecognizeRequest
 
 # ========================  Important  =========================
-def transcribe_streaming_v2(mic_index=24):
+def transcribe_streaming_v2(mic_index=2):
 # ========================  Update me ^ ========================
     print("Initializing.\n")
     client = SpeechClient() # Instantiates a client
