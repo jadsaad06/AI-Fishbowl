@@ -87,7 +87,8 @@ def grab_agent_final_response(resp) -> str:
 async def ws_tts(ws : WebSocket):
     await ws.accept()
 
-    app.state.ws_connection = ws
+    app.state.ws_connection = ws 
+
 
     try:
         while True:
@@ -98,6 +99,43 @@ async def ws_tts(ws : WebSocket):
 
 
 
+@app.websocket("/text_input")
+async def ws_text_input(ws : WebSocket):
+    await ws.accept()
+    app.state.ws_connection_keyboard = ws
+
+    try:
+        while True:
+            text = await ws.receive_text()
+
+            app.state.conversation = app.state.conversation[-6:] #Take the 2 most recent conversations.
+
+
+            
+
+            app.state.conversation.append({ # Context, adding the user prompt 
+                "role" : "user",
+                "content" : text
+                })
+
+
+            response = await app.state.agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
+            stripped_response = grab_agent_final_response(response)
+
+            await app.state.ws_connection_keyboard.send_text(stripped_response)
+
+
+            app.state.conversation.append({ # Add the agents response to the context window
+            "role" : "assistant",
+            "content" : stripped_response
+            })
+
+
+    except WebSocketDisconnect:
+        app.state.ws_connection_keyboard = None
+
+    except Exception:
+        pass
 
 
 
@@ -134,8 +172,10 @@ async def call_agent(request : RequestPrompt): #The arg is the payload that the 
 
     print("AGENT_RESPONSE: " + stripped_response, flush=True)
 
-    if app.state.ws_connection is not None:
+    try:
         await app.state.ws_connection.send_text(stripped_response)
+    except Exception:
+        pass
 
     app.state.conversation.append({ # Add the agents response to the context window
         "role" : "assistant",
