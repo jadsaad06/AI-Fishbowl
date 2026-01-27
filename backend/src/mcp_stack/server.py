@@ -47,14 +47,14 @@ def Long_Lat_Search(address : str) -> dict:
     return geographic_location
 
 @mcp.tool()
-def Weather_Search(geographic_location : dict) -> str:
+def Weather_Search(geographic_location : dict) -> dict:
     """
     This tool will allow you to invoke a weather search given a geographic location objectl.
     
     :param geographic_location: The Object storing information within it such as lng for longitude, lat for latitude, and the STATUS for whether the tool "Long_Lat_Search" was successful or not
     :type geographic_location: dict
     :return: This will return a string holding all the details of the current weather in the specified geographic location
-    :rtype: str
+    :rtype: dict
     """
 
     if geographic_location["STATUS"] == "NOT FOUND":
@@ -63,7 +63,7 @@ def Weather_Search(geographic_location : dict) -> str:
     base_url = f"https://weather.googleapis.com/v1/currentConditions:lookup?key={weather_key}&location.latitude={geographic_location["lat"]}&location.longitude={geographic_location["lng"]}"
     resp = s.get(base_url)
 
-    return resp.text.strip()
+    return resp.json()
 
 
 
