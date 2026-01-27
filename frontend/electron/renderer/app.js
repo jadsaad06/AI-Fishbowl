@@ -49,6 +49,58 @@ export const RESPONDERS = [
 const app = new PIXI.Application();
 console.log(BACKGROUNDS);
 
+let ws = null;
+let keepRetrying = false;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function connect_agent() {
+  keepRetrying = true;
+
+  while (keepRetrying) {
+    try {
+      ws = await new Promise((resolve, reject) => {
+        const sock = new WebSocket("ws://localhost:8000/text_input");
+
+        sock.addEventListener("open", () => {
+          console.log("WS connected");
+          sock.send("Hello man!");
+          resolve(sock);
+        });
+
+        sock.addEventListener("message", (event) => {
+          console.log("Message:", event.data);
+          setSubtitles(event.data);
+          setScene(app, "responding");
+        });
+
+        // either error or close => treat as failed/ended connection
+        sock.addEventListener("error", () => reject(new Error("WS error")));
+        sock.addEventListener("close", () => reject(new Error("WS closed")));
+      });
+
+      // Wait until it closes before reconnecting
+      await new Promise((resolve) =>
+        ws.addEventListener("close", resolve, { once: true })
+      );
+    } catch (e) {
+      if (!keepRetrying) break;
+      console.log("Retrying in 5 seconds...", e);
+      await sleep(5000);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -110,46 +162,7 @@ async function init() {
 }
 
 /** Log unhandled errors and call the init function */
-init();
-
-let ws = null;
-let is_connected = false;
-
-
-
-setTimeout(() => {
-  ws = new WebSocket("ws://localhost:8000/text_input");
-
-  ws.addEventListener("open", (event) => {
-    console.log("Connection from someone");
-    ws.send("Hello man!")
-    is_connected = true;
-  });
-
-  ws.addEventListener("message", (event) => {
-    console.log("YOU HAVE RECEIVED A MESSAGE");
-    console.log(event.data);
-    setSubtitles(event.data);
-    setScene(app, "responding")
-  });
-
-  ws.addEventListener("close", (event) => {
-    console.log("You are terminating connection");
-    console.log(event);
-    is_connected = false;
-
-  });
-
-}, 10000);
-
-if (socket.readyState === WebSocket.CLOSED) {
-    console.log("Connection is closed. Cannot send data.");
-}
-
-else if (socket.readyState === WebSocket.OPEN) {
-    console.log("Connection is open. Can send data.");
-}
-
+//init();
 
 
 function setupKeyboardInput() {
@@ -200,3 +213,13 @@ function setupKeyboardInput() {
     }
   });
 }
+
+
+async function run_all(){
+  await init();
+  await connect_agent();
+
+
+}
+
+run_all();
