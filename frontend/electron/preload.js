@@ -20,4 +20,6 @@ contextBridge.exposeInMainWorld("fishbowl", {
 
   onAgentResponse: (cb) =>
     ipcRenderer.on("render-subtitles", (_, text) => cb(text)),
+
+  sendKeyboardPrompt: (text) => ipcRenderer.send("keyboard-prompt", text),
 });
