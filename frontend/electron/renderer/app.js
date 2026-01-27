@@ -2,7 +2,14 @@
  * Main application file for the Electron renderer process. (Frontend)
  */
 import * as PIXI from "pixi.js";
-import { subscribe, setState, setSubtitles } from "./state/store.js";
+import {
+  subscribe,
+  setState,
+  setSubtitles,
+  setPrompt,
+  getPrompt,
+  getState,
+} from "./state/store.js";
 import { setScene, currentScene } from "./scenes/index.js";
 import { RespondingScene } from "./scenes/RespondingScene.js";
 
@@ -41,6 +48,61 @@ export const RESPONDERS = [
 /** Initializes a new PIXI application in the UI */
 const app = new PIXI.Application();
 console.log(BACKGROUNDS);
+
+let ws = null;
+let keepRetrying = false;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function connect_agent() {
+  keepRetrying = true;
+
+  while (keepRetrying) {
+    try {
+      ws = await new Promise((resolve, reject) => {
+        const sock = new WebSocket("ws://localhost:8000/text_input");
+
+        sock.addEventListener("open", () => {
+          console.log("WS connected");
+          sock.send("Hello man!");
+          resolve(sock);
+        });
+
+        sock.addEventListener("message", (event) => {
+          console.log("Message:", event.data);
+          setSubtitles(event.data);
+          setScene(app, "responding");
+        });
+
+        // either error or close => treat as failed/ended connection
+        sock.addEventListener("error", () => reject(new Error("WS error")));
+        sock.addEventListener("close", () => reject(new Error("WS closed")));
+      });
+
+      // Wait until it closes before reconnecting
+      await new Promise((resolve) =>
+        ws.addEventListener("close", resolve, { once: true })
+      );
+    } catch (e) {
+      if (!keepRetrying) break;
+      console.log("Retrying in 5 seconds...", e);
+      await sleep(5000);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * Initializes the PIXI application, sets up IPC listeners for state changes,
@@ -93,10 +155,71 @@ async function init() {
 
     /** Default landing page initialization */
     setScene(app, "idle");
+    setupKeyboardInput();
   } catch (error) {
     console.error("Failed to initialize PIXI application:", error);
   }
 }
 
 /** Log unhandled errors and call the init function */
-init();
+//init();
+
+
+function setupKeyboardInput() {
+  window.addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    const currentState = getState();
+
+    if (e.key.toLowerCase() === "k" && currentState !== "keyboard") {
+      e.preventDefault();
+      window.fishbowl.setState("keyboard");
+      return;
+    }
+
+    if (currentState === "keyboard") {
+      if (e.key === "Enter") {
+        const prompt = getPrompt().trim();
+        if (!prompt) return;
+
+        console.log("Keyboard Prompt Submitted:", prompt);
+        if (ws && ws.readyState == WebSocket.OPEN){
+          ws.send(prompt);
+        }
+        else{
+          console.log("Agent is not connected to the web server");
+        }
+
+        // ------- SEND PROMPT TO MCP FROM HERE (Michel) -------------
+        setPrompt("");
+        window.fishbowl.setState("thinking");
+        return;
+      }
+
+      if (e.key === "Backspace") {
+        setPrompt(getPrompt().slice(0, -1));
+        return;
+      }
+
+      if (e.key === "Escape") {
+        setPrompt("");
+        window.fishbowl.setState("idle");
+        return;
+      }
+
+      if (e.key.length === 1) {
+        setPrompt(getPrompt() + e.key);
+      }
+    }
+  });
+}
+
+
+async function run_all(){
+  await init();
+  await connect_agent();
+
+
+}
+
+run_all();
