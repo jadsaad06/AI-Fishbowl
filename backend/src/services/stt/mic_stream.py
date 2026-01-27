@@ -65,6 +65,8 @@ class MicrophoneStream:
         vad_speech_ms=200,
         vad_silence_ms=600,
         vad_pre_speech_ms=200,
+        vad_keepalive=False,
+        vad_keepalive_ms=1000,
     ):
         # chunk_duration_ms is in milliseconds (100ms recommended by Google)
         self.chunk_duration_ms = chunk_duration_ms
@@ -110,6 +112,12 @@ class MicrophoneStream:
         self._vad_pre_speech_chunks = max(
             0, int(math.ceil(self.vad_pre_speech_ms / self.chunk_duration_ms))
         )
+        self.vad_keepalive = bool(vad_keepalive)
+        self.vad_keepalive_ms = int(vad_keepalive_ms)
+        self._vad_keepalive_chunks = max(
+            1, int(math.ceil(self.vad_keepalive_ms / self.chunk_duration_ms))
+        )
+        self._silence_chunk = b"\x00" * (self.chunk * self.sample_width * self.channels)
 
         self.stream = None
 
@@ -148,6 +156,7 @@ class MicrophoneStream:
         speech_count = 0
         silence_count = 0
         speaking = False
+        keepalive_count = 0
 
         while True:
             data = self.stream.read(self.chunk, exception_on_overflow=False)
@@ -158,6 +167,7 @@ class MicrophoneStream:
             is_speech = rms >= self.vad_energy_threshold
 
             if speaking:
+                keepalive_count = 0
                 if is_speech:
                     silence_count = 0
                     yield data
@@ -168,6 +178,7 @@ class MicrophoneStream:
                     else:
                         speaking = False
                         speech_count = 0
+                        print("EVENT:MIC_STOPPED", flush=True)
                         if pre_buffer is not None:
                             pre_buffer.clear()
             else:
@@ -178,7 +189,9 @@ class MicrophoneStream:
                     speech_count += 1
                     if speech_count >= self._vad_speech_chunks:
                         speaking = True
+                        print("EVENT:MIC_STARTED", flush=True)
                         silence_count = 0
+                        keepalive_count = 0
                         if pre_buffer is not None:
                             for chunk in pre_buffer:
                                 yield chunk
@@ -187,3 +200,8 @@ class MicrophoneStream:
                             yield data
                 else:
                     speech_count = 0
+                    if self.vad_keepalive:
+                        keepalive_count += 1
+                        if keepalive_count >= self._vad_keepalive_chunks:
+                            keepalive_count = 0
+                            yield self._silence_chunk

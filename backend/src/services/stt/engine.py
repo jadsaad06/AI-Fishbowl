@@ -25,7 +25,13 @@ def get_request_stream(config, mic_gen):
         yield cloud_speech_types.StreamingRecognizeRequest(audio=chunk)                         # Wrap each chunk in a StreamingRecognizeRequest
 
 # ========================  Important  =========================
-def transcribe_streaming_v2(mic_index=None, mic_name=DEFAULT_MIC_NAME, vad_enabled=True):
+def transcribe_streaming_v2(
+    mic_index=None,
+    mic_name=DEFAULT_MIC_NAME,
+    vad_enabled=True,
+    vad_keepalive=True,
+    vad_keepalive_ms=1000,
+):
 # ========================  Update me ^ ========================
     print("Initializing.\n")
     client = SpeechClient() # Instantiates a client
@@ -36,6 +42,8 @@ def transcribe_streaming_v2(mic_index=None, mic_name=DEFAULT_MIC_NAME, vad_enabl
             index=mic_index,
             name_contains=name_contains,
             vad_enabled=vad_enabled,
+            vad_keepalive=vad_keepalive,
+            vad_keepalive_ms=vad_keepalive_ms,
         ) as mic:
             print(
                 f"Using: {mic.device_name} | {mic.rate}Hz, {mic.channels} channel(s)"
