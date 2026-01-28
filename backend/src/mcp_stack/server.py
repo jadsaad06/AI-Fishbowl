@@ -3,7 +3,6 @@ import requests
 from dotenv import load_dotenv
 import os
 
-
 load_dotenv()
 
 weather_key = os.getenv("Weather_API_KEY")  
@@ -71,4 +70,4 @@ def Weather_Search(geographic_location : dict) -> dict: # Tool for performing we
 
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="http", host="127.0.0.1", port=8005)
