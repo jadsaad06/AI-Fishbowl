@@ -76,6 +76,7 @@ run() {
 		exit 1
 	fi
 	source "$VENV/bin/activate"
+	(cd "$ROOT/backend/src/mcp_stack" && fastapi dev client.py)
 	(cd "$ROOT/frontend/electron" && npm start)
 }
 
