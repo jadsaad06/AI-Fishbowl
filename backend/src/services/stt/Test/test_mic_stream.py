@@ -1,8 +1,8 @@
 """
 This is a test for mic_stream.py
-Running this file will record mic input from the target index to make a 5-second long wav file titled mic_class_test.wav
+Running this file will record mic input from the target device to make a 5-second long wav file titled mic_class_test.wav
 
-Note to find your target index. Run a list_devices.py
+Note to find your target name or index. Run a list_devices.py
 - if on windows use the "Windows WASAPI" host API type
 """
 
@@ -14,10 +14,17 @@ sys.path.append(str(Path(__file__).parent.parent)) # adds parent dir to the Pyth
 from mic_stream import MicrophoneStream
 
 if __name__ == "__main__":
-    TARGET_INDEX = 24 
+    TARGET_NAME = "LavMicro"
+    TARGET_INDEX = None
 # =====  Update me ^ =====
-    
-    with MicrophoneStream(index=TARGET_INDEX, chunk_duration_ms=100) as mic:
+
+    name_contains = TARGET_NAME if TARGET_INDEX is None else None
+    with MicrophoneStream(
+        index=TARGET_INDEX,
+        name_contains=name_contains,
+        chunk_duration_ms=100,
+        vad_enabled=False,
+    ) as mic:
         print(f"Hardware Detected: {mic.rate}Hz, {mic.channels} Channels")
         print(f"Calculated Chunk Size: {mic.chunk} samples (about 100ms)")
         print("Recording 5 seconds for testing")
