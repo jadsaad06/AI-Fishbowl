@@ -10,8 +10,9 @@ https://docs.cloud.google.com/speech-to-text/docs/best-practices
 ^TLDR use a 100-millisecond frame size
 """
 
-import audioop
 import math
+import sys
+from array import array
 from collections import deque
 
 import pyaudio
@@ -163,7 +164,7 @@ class MicrophoneStream:
             if not data:
                 break
 
-            rms = audioop.rms(data, self.sample_width)
+            rms = _rms(data, self.sample_width)
             is_speech = rms >= self.vad_energy_threshold
 
             if speaking:
@@ -202,6 +203,60 @@ class MicrophoneStream:
                     speech_count = 0
                     if self.vad_keepalive:
                         keepalive_count += 1
-                        if keepalive_count >= self._vad_keepalive_chunks:
-                            keepalive_count = 0
-                            yield self._silence_chunk
+                    if keepalive_count >= self._vad_keepalive_chunks:
+                        keepalive_count = 0
+                        yield self._silence_chunk
+
+
+def _rms(data, sample_width):
+    """Compute RMS of raw PCM data without audioop (Py3.12+ compatible)."""
+    if not data:
+        return 0
+
+    remainder = len(data) % sample_width
+    if remainder:
+        data = data[:-remainder]
+        if not data:
+            return 0
+
+    if sample_width == 1:
+        # 8-bit PCM is unsigned (0..255); center to signed values.
+        samples = array("B")
+        samples.frombytes(data)
+        if not samples:
+            return 0
+        total = 0
+        for s in samples:
+            v = s - 128
+            total += v * v
+        return int(math.sqrt(total / len(samples)))
+
+    if sample_width == 2:
+        # 16-bit PCM is signed little-endian.
+        samples = array("h")
+        samples.frombytes(data)
+        if sys.byteorder != "little":
+            samples.byteswap()
+        if not samples:
+            return 0
+        total = 0
+        for s in samples:
+            total += s * s
+        return int(math.sqrt(total / len(samples)))
+
+    if sample_width == 4:
+        # 32-bit PCM is signed little-endian.
+        samples = array("i")
+        if samples.itemsize != 4:
+            raise ValueError("Unsupported 32-bit PCM on this platform")
+        samples.frombytes(data)
+        if sys.byteorder != "little":
+            samples.byteswap()
+        if not samples:
+            return 0
+        total = 0
+        for s in samples:
+            total += s * s
+        return int(math.sqrt(total / len(samples)))
+
+    raise ValueError(f"Unsupported sample width: {sample_width}")
