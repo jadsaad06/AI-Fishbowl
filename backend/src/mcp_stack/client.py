@@ -12,11 +12,18 @@ from langchain_mcp_adapters.tools import load_mcp_tools
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv()
+
+
+mcp_server_url = os.getenv("MCP_SERVER_URL")
 
 
 class RequestPrompt(BaseModel): # Class for denoting the request that the user will prompt for a post request.
     user_prompt: str
-
 
 
 
@@ -33,9 +40,8 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
         raise FileNotFoundError(
             f"Could not find server.py at {server_path}."
         )
-    
 
-    async with streamable_http_client("http://localhost:8005/mcp") as (read, write, _):  # Grab read and write streams between the server and client
+    async with streamable_http_client(f"{mcp_server_url}/mcp") as (read, write, _):  # Grab read and write streams between the server and client
         async with ClientSession(read, write) as session: # Create a connection between the server and client
             await session.initialize() # Create the handshake between the server and client
 
