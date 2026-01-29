@@ -1,15 +1,16 @@
 import os
-import wave
-os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1" #Stops a default pygame support prompt from appearing
-import pygame
 import google.genai as genai
 from google.genai import types
 from google.genai.errors import ClientError
 from dotenv import load_dotenv
+import pyaudio
 
 load_dotenv()
 
-pygame.mixer.init()
+RATE = 24000
+CHANNELS = 1
+FORMAT = pyaudio.paInt16
+CHUNK = 2048  #This buffer could be lowered for faster speed, but too low produces audio fuzz
 
 api_key = os.getenv("KEY")   #Gets API key from .env file
 if not api_key:
@@ -17,10 +18,20 @@ if not api_key:
 
 client = genai.Client(api_key=api_key)
 
-def text_to_wav(text: str):
+p = pyaudio.PyAudio()
+
+stream = p.open(
+    format=FORMAT,
+    channels=CHANNELS,
+    rate=RATE,
+    output=True,
+    frames_per_buffer=CHUNK,
+)
+
+def speak_text(text: str):
     style_prompt = f"Read the following in a friendly and professional tone: {text}"
     try:
-        response = client.models.generate_content(  #Calls Gemini
+        response = client.models.generate_content_stream(  #Calls Gemini, and returns in streamable chunks
             model = "gemini-2.5-flash-preview-tts",
             contents=style_prompt,
             config=types.GenerateContentConfig(
@@ -41,41 +52,20 @@ def text_to_wav(text: str):
         else:
             raise
 
-    if not hasattr(response, "parts") or response.parts is None:
-        print("No Gemini response")
-        return None
+    print("Streaming audio...")
+    
+    for chunk in response:
+        for part in getattr(chunk, "parts", []):
+            if hasattr(part, "inline_data") and part.inline_data:
+                audio_bytes = part.inline_data.data
+                stream.write(audio_bytes)
 
-    audio_bytes = None
-    for part in response.parts:   #Extracts audio bytes from Gemini response
-        if hasattr(part, "inline_data") and part.inline_data:
-            audio_bytes = part.inline_data.data
-            break
-
-    if not audio_bytes:
-        print("No audio data found in response")
-        return None
-
-    with wave.open("output.wav", "wb") as wf:  #Stores Gemini's PCM output to a .wav file
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(24000) 
-        wf.writeframes(audio_bytes)
-
-    speak_wav("output.wav")
-
-def speak_wav(file: str):
-    pygame.mixer.music.load(file)
-    pygame.mixer.music.play()
-
-    while pygame.mixer.music.get_busy():
-        pygame.time.Clock().tick(30)
-
-    pygame.mixer.music.unload()
+    print("Done Speaking")
 
 if __name__ == "__main__":
     text = input("Enter text: ")
 
     if text:
-        play_obj = text_to_wav(text)
+        speak_text(text)
 
     print("Test complete!")
