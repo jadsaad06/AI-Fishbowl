@@ -1,10 +1,8 @@
-import asyncio
-import sys
 from pathlib import Path
-from mcp import ClientSession, StdioServerParameters
+from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
-from services.llm.QUERY_CHAIN.query import agent_prompt_template, get_context, welcome_text
+from services.llm.QUERY_CHAIN.query import agent_prompt_template, get_context
 
 from langchain.agents import create_agent
 from langchain_mcp_adapters.tools import load_mcp_tools
@@ -34,12 +32,6 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
     Before running the application, connect the mcp client, to the mcp server.
     The app Argument is for building states, 
     """
-    backend_src = Path(__file__).resolve().parent
-    server_path = backend_src / "server.py" #Resolve the path to where the server is 
-    if not server_path.exists():
-        raise FileNotFoundError(
-            f"Could not find server.py at {server_path}."
-        )
 
     async with streamable_http_client(f"{mcp_server_url}/mcp") as (read, write, _):  # Grab read and write streams between the server and client
         async with ClientSession(read, write) as session: # Create a connection between the server and client
