@@ -11,6 +11,8 @@ The `tts_test.py` file contains two related functions: `text_to_wav()` and `spea
 
 ## Testing the Wrapper Function
 
+- **'tts_test.py'**: This file behaves in a similar way to the tts_wrapper function, however, instead of listening to the websocket, it listens to the text file "incoming.txt". To test the text to speech functions, run tts_test.py, and edit incoming.txt with your desired input.
+
 To test the wrapper function, start a FastAPI server using loaddb.py in backend/src/services/llm. In a second terminal run:
 
 ```bash
