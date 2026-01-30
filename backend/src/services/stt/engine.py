@@ -75,7 +75,7 @@ def transcribe_streaming_v2(
                 requests=get_request_stream(config_request, mic.generator())                    # get_request_stream() packages our mic chunks into requests
             )                                                                                   # Google will continuously process audio chunks and send back transcription results
 
-            print("Listening. Press Ctrl+C to stop\n")
+            print(f"Listening. Press Ctrl+C to stop\n", flush=True)
             
             # This loop continuously pulls transcription results from Google
             for response in responses_iterator:                                                 # Loop through each response from Google

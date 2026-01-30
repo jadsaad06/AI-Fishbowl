@@ -39,6 +39,7 @@ async def stt_websockt():
                         print(f"\n[Transcript]: {user_input}")
                         print("-" * 50)  # visual separator for style points
                         print("\nSending to Agent")
+                        print(f"USER-PROMPT: {user_input}", flush=True)
                         await ws.send(user_input)
                         
                         response = await ws.recv()
