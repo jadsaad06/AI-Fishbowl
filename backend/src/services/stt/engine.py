@@ -80,11 +80,11 @@ def transcribe_streaming_v2(
             # This loop continuously pulls transcription results from Google
             for response in responses_iterator:                                                 # Loop through each response from Google
                 if not response.results:         
-                    yield                                                                       # Skip empty responses (heartbeat packets)
+                    continue                                                                       # Skip empty responses (heartbeat packets)
 
                 for result in response.results:                                                 # Each response can have multiple results
                     if not result.alternatives:                                                 # Skip if no transcription alternatives
-                        yield 
+                        continue 
                     
                     if result.is_final:                                                         # Only process final results
                         transcript = result.alternatives[0].transcript                          # Get the completed transcription
