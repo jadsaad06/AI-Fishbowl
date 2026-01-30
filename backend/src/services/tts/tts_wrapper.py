@@ -6,24 +6,6 @@ import asyncio
 import time
 import sys
 
-async def main():
-
-    while True:
-        try:
-            async with websockets.connect("wss://MCP_CLIENT_URL/ws") as ws:
-                while True:
-                    message = await ws.recv()
-                    run_tts_service(message)
-        except (websockets.exceptions.ConnectionClosedError,
-                websockets.exceptions.ConnectionClosedOK,
-                OSError) as e:
-            print(f"WebSocket disconnected: {e}")
-
-        except Exception as e:
-            print(f"Unexpected WS error: {e}")
-        
-        await asyncio.sleep(10)
-
 
 
 def get_text_from_file():
@@ -62,7 +44,6 @@ capturing = False
 buffer = []
 
 if __name__ == "__main__":
-    asyncio.run(main())
     for line in sys.stdin:
         if "MCP-AGENT-RESPONSE:" in line:
             capturing = True

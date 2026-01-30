@@ -73,58 +73,6 @@ def grab_agent_final_response(resp) -> str:
         return content #If the content solely has the last response then return it.
 
 
-        
-
-
-
-
-@app.websocket("/stt")
-async def ws_stt(ws: WebSocket):
-    await ws.accept()
-    app.state.manager.connect(ws)
-
-    try:
-        while True:
-            text = await ws.receive_text()
-
-            app.state.conversation = app.state.conversation[-6:] #Take the 2 most recent conversations.
-
-
-            
-
-            app.state.conversation.append({ # Context, adding the user prompt 
-                "role" : "user",
-                "content" : text
-                })
-
-
-            response = await app.state.agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
-            stripped_response = grab_agent_final_response(response)
-
-            await app.state.manager.broadcast(stripped_response)
-
-
-            app.state.conversation.append({ # Add the agents response to the context window
-            "role" : "assistant",
-            "content" : stripped_response
-            })
-
-
-    except WebSocketDisconnect:
-        app.state.ws_connection_keyboard = None
-
-    except Exception:
-        pass
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -170,46 +118,3 @@ async def ws_text_input(ws : WebSocket):
 
 
 
-
-@app.post("/agent") #This is the path of /agent for a post request to query the agent
-async def call_agent(request : RequestPrompt): #The arg is the payload that the user sent
-
-    app.state.conversation = app.state.conversation[-6:] #Take the 2 most recent conversations.
-
-
-    
-
-    app.state.conversation.append({ # Context, adding the user prompt 
-        "role" : "user",
-        "content" : request.user_prompt
-        })
-    
-    print("Conversation window Before Prompt")
-
-
-    print("----------------------")
-    print(app.state.conversation)
-    print("----------------------")
-
-    
-
-    response = await app.state.agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
-
-    stripped_response = grab_agent_final_response(response)
-
-    print(response)
-    print("\n")
-
-    print("AGENT_RESPONSE: " + stripped_response, flush=True)
-
-    try:
-        await app.state.ws_connection.send_text(stripped_response)
-    except Exception:
-        pass
-
-    app.state.conversation.append({ # Add the agents response to the context window
-        "role" : "assistant",
-        "content" : stripped_response
-        })
-    
-    return {"agent_response" : stripped_response} # Return the agents response

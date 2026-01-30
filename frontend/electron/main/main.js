@@ -58,6 +58,8 @@ ipcMain.on("keyboard-prompt", (_, text) => {
 });
 
 function startServices() {
+
+  
   const stt = spawn("python", [
     "-u",
     path.join(
@@ -81,12 +83,14 @@ function startServices() {
       updateUIState("thinking");
     }
   });
+  
 
   const tts = spawn("python", [
     path.join(__dirname, "../../../backend/src/services/tts/tts_wrapper.py"),
   ]);
 
   ipcMain.on("send-to-tts", (event, text) => {
+    console.log(text);
     if (tts && tts.stdin.writable) {
       tts.stdin.write("MCP-AGENT-RESPONSE:" + text + "\n");
     }

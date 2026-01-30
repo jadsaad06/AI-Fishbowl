@@ -59,10 +59,11 @@ async def stt_websockt():
                         raise user_input
 
                     print(f"\n[Transcript]: {user_input}")
+                    print(f"USER-PROMPT: {user_input}", flush=True)
+
                     print("-" * 50)  # visual separator for style points
                     print("\nSending to Agent")
                     await ws.send(user_input) # Send the user input to the websocket
-                    print(f"USER-PROMPT: {user_input}", flush=True)
 
                     response = await ws.recv() # Wait for the Agents response from the websocket (always guaranteed)
                     print(response)

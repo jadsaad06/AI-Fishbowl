@@ -64,7 +64,7 @@ async function connect_agent() {
   while (keepRetrying) {
     try {
       ws = await new Promise((resolve, reject) => {
-        const sock = new WebSocket("wss://MCP_CLIENT_URL/text_input");
+        const sock = new WebSocket("wss://mcp-client-186487264479.us-west1.run.app/text_input");
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
@@ -75,7 +75,7 @@ async function connect_agent() {
         sock.addEventListener("message", (event) => {
           console.log("Message:", event.data);
           setSubtitles(event.data);
-          window.fishbowl.sendToTTS(event.data);
+          //window.fishbowl.sendToTTS(event.data);
           setScene(app, "responding");
         });
 
