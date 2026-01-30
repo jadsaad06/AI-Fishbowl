@@ -4,6 +4,7 @@ import pathlib
 import websockets
 import asyncio
 import time
+import sys
 
 async def main():
 
@@ -55,7 +56,21 @@ def run_tts_service(get_text_callback, poll_interval=0.5):
 
     except KeyboardInterrupt:
         print("\nTTS stopped")
+    
+# Variables set for receiving multi-paragraph Agent Response from the frontend
+capturing = False
+buffer = []
 
 if __name__ == "__main__":
     asyncio.run(main())
+    for line in sys.stdin:
+        if "MCP-AGENT-RESPONSE:" in line:
+            capturing = True
+            buffer.append(line.split("MCP-AGENT-RESPONSE:", 1)[1].lstrip())
+        elif capturing:
+            buffer.append(line)
+    
+    tts_input = "".join(buffer).rstrip()
+    run_tts_service(tts_input)
+
     print("Done")

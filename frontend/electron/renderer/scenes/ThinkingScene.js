@@ -47,6 +47,12 @@ export class ThinkingScene {
     PIXI.Ticker.shared.add(this.update);
   }
 
+  updateTranscript(text) {
+    if (text.includes("Question:")) {
+      this.label.setText(text);
+    }
+  }
+
   async init(app) {
     this.bg = await createBackground("assets/images/idle_bg_3.png");
     this.bg.width = app.screen.width;

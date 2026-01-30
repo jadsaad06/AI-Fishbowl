@@ -12,6 +12,8 @@ import {
 } from "./state/store.js";
 import { setScene, currentScene } from "./scenes/index.js";
 import { RespondingScene } from "./scenes/RespondingScene.js";
+import { ListeningScene } from "./scenes/ListeningScene.js";
+import { ThinkingScene } from "./scenes/ThinkingScene.js";
 
 export const BACKGROUNDS = [
   "assets/images/idle_bg_1.png",
@@ -73,6 +75,7 @@ async function connect_agent() {
         sock.addEventListener("message", (event) => {
           console.log("Message:", event.data);
           setSubtitles(event.data);
+          window.fishbowl.sendToTTS(event.data);
           setScene(app, "responding");
         });
 
@@ -83,7 +86,7 @@ async function connect_agent() {
 
       // Wait until it closes before reconnecting
       await new Promise((resolve) =>
-        ws.addEventListener("close", resolve, { once: true })
+        ws.addEventListener("close", resolve, { once: true }),
       );
     } catch (e) {
       if (!keepRetrying) break;
@@ -92,17 +95,6 @@ async function connect_agent() {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * Initializes the PIXI application, sets up IPC listeners for state changes,
@@ -161,9 +153,12 @@ async function init() {
   }
 }
 
-/** Log unhandled errors and call the init function */
-//init();
-
+window.fishbowl.onUserPrompt((text) => {
+  text = "Question:" + text;
+  if (currentScene instanceof ThinkingScene) {
+    currentScene.updateTranscript(text);
+  }
+});
 
 function setupKeyboardInput() {
   window.addEventListener("keydown", (e) => {
@@ -183,10 +178,9 @@ function setupKeyboardInput() {
         if (!prompt) return;
 
         console.log("Keyboard Prompt Submitted:", prompt);
-        if (ws && ws.readyState == WebSocket.OPEN){
+        if (ws && ws.readyState == WebSocket.OPEN) {
           ws.send(prompt);
-        }
-        else{
+        } else {
           console.log("Agent is not connected to the web server");
         }
 
@@ -214,12 +208,9 @@ function setupKeyboardInput() {
   });
 }
 
-
-async function run_all(){
+async function run_all() {
   await init();
   await connect_agent();
-
-
 }
 
 run_all();
