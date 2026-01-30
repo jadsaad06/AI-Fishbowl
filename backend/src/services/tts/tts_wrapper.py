@@ -43,15 +43,17 @@ def run_tts_service(get_text_callback, poll_interval=0.5):
 capturing = False
 buffer = []
 
-if __name__ == "__main__":
-    for line in sys.stdin:
-        if "MCP-AGENT-RESPONSE:" in line:
-            capturing = True
-            buffer.append(line.split("MCP-AGENT-RESPONSE:", 1)[1].lstrip())
-        elif capturing:
-            buffer.append(line)
-    
-    tts_input = "".join(buffer).rstrip()
-    run_tts_service(tts_input)
 
-    print("Done")
+print("Hello")
+for line in sys.stdin:
+    print("Hello?")
+    if "MCP-AGENT-RESPONSE:" in line:
+        capturing = True
+        buffer.append(line.split("MCP-AGENT-RESPONSE:", 1)[1].lstrip())
+    elif capturing:
+        buffer.append(line)
+
+tts_input = "".join(buffer).rstrip()
+run_tts_service(tts_input)
+
+print("Done")

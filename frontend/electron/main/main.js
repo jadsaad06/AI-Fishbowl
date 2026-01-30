@@ -2,6 +2,10 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const { start } = require("repl");
+require('dotenv').config();
+
+const GCP_URL = process.env.GCP_MCP_URL;
+
 
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
 let win;
@@ -71,17 +75,18 @@ function startServices() {
   stt.stdout.on("data", (data) => {
     const out = data.toString();
     console.log("[STT Output]:", out);
-    if (out.includes("USER-PROMPT:")) {
-      const promptText = out.split("USER-PROMPT:")[1].trim();
+    if (out.includes("[Transcript]:")) {
+      console.log(out)
+      const promptText = out.split("[Transcript]:")[1].trim();
+      updateUIState("thinking");
       win.webContents.send("display-user-prompt", promptText);
+
     }
 
-    if (out.includes("Listening. Press Ctrl+C to stop")) {
+    if (out.includes("EVENT:MIC_STARTED")) {
       updateUIState("listening");
     }
-    if (out.includes("[Transcript]:")) {
-      updateUIState("thinking");
-    }
+
   });
   
 
