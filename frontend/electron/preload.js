@@ -24,4 +24,7 @@ contextBridge.exposeInMainWorld("fishbowl", {
   sendKeyboardPrompt: (text) => ipcRenderer.send("keyboard-prompt", text),
 
   sentToTTS: (text) => ipcRenderer.send("send-to-tts", text),
+
+  onUserPrompt: (cb) =>
+    ipcRenderer.on("display-user-prompt", (_event, value) => cb(value)),
 });
