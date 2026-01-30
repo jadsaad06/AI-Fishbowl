@@ -1,5 +1,4 @@
-import tts_test
-import time
+import tts_functions
 import pathlib
 import websockets
 import asyncio
