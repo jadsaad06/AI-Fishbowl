@@ -16,7 +16,7 @@ from mic_stream import MicrophoneStream
 load_dotenv()
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-DEFAULT_MIC_NAME = "LavMicro"
+DEFAULT_MIC_NAME = "Microphone (SteelSeries Arctis"
 
 
 def get_request_stream(config, mic_gen):
@@ -79,12 +79,12 @@ def transcribe_streaming_v2(
             
             # This loop continuously pulls transcription results from Google
             for response in responses_iterator:                                                 # Loop through each response from Google
-                if not response.results:                                                        # Skip empty responses (heartbeat packets)
-                    continue
+                if not response.results:         
+                    yield                                                                       # Skip empty responses (heartbeat packets)
 
                 for result in response.results:                                                 # Each response can have multiple results
                     if not result.alternatives:                                                 # Skip if no transcription alternatives
-                        continue
+                        yield 
                     
                     if result.is_final:                                                         # Only process final results
                         transcript = result.alternatives[0].transcript                          # Get the completed transcription

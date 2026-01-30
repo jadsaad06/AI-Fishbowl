@@ -49,7 +49,6 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
             app.state.conversation = [] # variable to create the context window
             app.state.ws_connection = None
 
-
             yield
 
     """AFTER the application is done running, perform a cleanup. (performs nothing)"""
@@ -74,20 +73,58 @@ def grab_agent_final_response(resp) -> str:
         return content #If the content solely has the last response then return it.
 
 
+        
 
-@app.websocket("/ws")
-async def ws_tts(ws : WebSocket):
+
+
+
+@app.websocket("/stt")
+async def ws_stt(ws: WebSocket):
     await ws.accept()
-
-    app.state.ws_connection = ws 
-
+    app.state.manager.connect(ws)
 
     try:
         while True:
-            await ws.receive_text()
-        
+            text = await ws.receive_text()
+
+            app.state.conversation = app.state.conversation[-6:] #Take the 2 most recent conversations.
+
+
+            
+
+            app.state.conversation.append({ # Context, adding the user prompt 
+                "role" : "user",
+                "content" : text
+                })
+
+
+            response = await app.state.agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
+            stripped_response = grab_agent_final_response(response)
+
+            await app.state.manager.broadcast(stripped_response)
+
+
+            app.state.conversation.append({ # Add the agents response to the context window
+            "role" : "assistant",
+            "content" : stripped_response
+            })
+
+
     except WebSocketDisconnect:
-        app.state.ws_connection = None
+        app.state.ws_connection_keyboard = None
+
+    except Exception:
+        pass
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -115,6 +152,7 @@ async def ws_text_input(ws : WebSocket):
             stripped_response = grab_agent_final_response(response)
 
             await app.state.ws_connection_keyboard.send_text(stripped_response)
+            
 
 
             app.state.conversation.append({ # Add the agents response to the context window

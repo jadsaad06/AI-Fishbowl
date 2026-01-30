@@ -9,7 +9,7 @@ async def main():
 
     while True:
         try:
-            async with websockets.connect("ws://localhost:8000/ws") as ws:
+            async with websockets.connect("wss://MCP_CLIENT_URL/ws") as ws:
                 while True:
                     message = await ws.recv()
                     run_tts_service(message)

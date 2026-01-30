@@ -62,7 +62,7 @@ async function connect_agent() {
   while (keepRetrying) {
     try {
       ws = await new Promise((resolve, reject) => {
-        const sock = new WebSocket("ws://localhost:8000/text_input");
+        const sock = new WebSocket("wss://MCP_CLIENT_URL/text_input");
 
         sock.addEventListener("open", () => {
           console.log("WS connected");

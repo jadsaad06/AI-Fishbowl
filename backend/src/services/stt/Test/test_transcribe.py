@@ -4,6 +4,8 @@ Run this to see live transcriptions printed to the console.
 """
 import sys
 import requests
+import websockets
+import asyncio
 import json
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent)) # adds parent dir to the Python path so we can import engine. Lets us import from the directory above where engine.py is
@@ -11,36 +13,61 @@ sys.path.append(str(Path(__file__).parent.parent)) # adds parent dir to the Pyth
 from engine import transcribe_streaming_v2
 
 
-    
+
+
+async def stt_websockt():
+    error_input = None
+    while True:
+        
+        try:
+            async with websockets.connect("wss://MCP_CLIENT_URL/text_input", ping_interval=None, ping_timeout=None, ) as ws:
+
+                if(error_input is not None):
+                    await ws.send(error_input)
+                    error_input = None
+                    response = await ws.recv()
+                    print(response)
+
+
+                try:
+                    # transcribe_streaming_v2() is a generator that yields final transcripts
+                    # This loop will run indefinitely, getting each (highest confidence) transcript as it's returned
+                    for user_input in transcribe_streaming_v2():
+                        # user_input contains the completed transcription text
+                        # This is what would normally be sent to an LLM/agent I'm talking to you, Michelle. 
+                        error_input = user_input
+                        print(f"\n[Transcript]: {user_input}")
+                        print("-" * 50)  # visual separator for style points
+                        print("\nSending to Agent")
+                        await ws.send(user_input)
+                        
+                        response = await ws.recv()
+                        print(response)
+                            
+                except KeyboardInterrupt:
+                    # User pressed Ctrl+C to stop the test
+                    print("\n\nTest stopped by user.")
+                except Exception as e:
+                    # Catch any errors from the STT engine
+                    print(f"\n\nTest failed with error: {e}")
+                    print(error_input)
+                
+
+        except (websockets.exceptions.ConnectionClosedError,
+                websockets.exceptions.ConnectionClosedOK,
+                OSError) as e:
+            print(f"WebSocket disconnected: {e}")
+
+        except Exception as e:
+            print(f"Unexpected WS error: {e}")
+            
+        await asyncio.sleep(10)
+        
 if __name__ == "__main__":
     print("--------------- STT Engine Test ---------------")
     print("Speak into your microphone. Transcripts will appear below.\n")
     
     # Set payload and MCP Server URL
-    url = "http://127.0.0.1:8000/agent"
-    payload = {"user_prompt": ""}
+    url = "wss://mcp-client-186487264479.us-west1.run.app/text_input"
     
-    try:
-        # transcribe_streaming_v2() is a generator that yields final transcripts
-        # This loop will run indefinitely, getting each (highest confidence) transcript as it's returned
-        for user_input in transcribe_streaming_v2():
-            # user_input contains the completed transcription text
-            # This is what would normally be sent to an LLM/agent I'm talking to you, Michelle. 
-            print(f"\n[Transcript]: {user_input}")
-            print("-" * 50)  # visual separator for style points
-            print("\nSending to Agent")
-            
-            # Update payload with transcript
-            payload["user_prompt"] = user_input
-            
-            # Send transcript to Agent
-            response = requests.post(url, json=payload)
-            print(f"Status Code: {response.status_code}")
-            print(f"Response Body: {response.json()}")
-            
-    except KeyboardInterrupt:
-        # User pressed Ctrl+C to stop the test
-        print("\n\nTest stopped by user.")
-    except Exception as e:
-        # Catch any errors from the STT engine
-        print(f"\n\nTest failed with error: {e}")
+    asyncio.run(stt_websockt())
