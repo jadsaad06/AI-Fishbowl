@@ -1,5 +1,4 @@
-import tts_test
-import time
+import tts_functions
 import pathlib
 import websockets
 import asyncio
@@ -45,6 +44,11 @@ if __name__ == "__main__":
 #     try:
 #         text = get_text_callback
 
+        if text:
+            print(f"TTS_SPEECH_STARTED", flush=True)
+            print(f"\nSpeaking: {text!r}")
+            tts_functions.speak_text(text)
+            print(f"TTS_SPEECH_ENDED", flush=True)
 #         if text:
 #             print(f"TTS_SPEECH_STARTED", flush=True)
 #             print(f"\nSpeaking: {text!r}")
@@ -60,6 +64,9 @@ if __name__ == "__main__":
 # capturing = False
 # buffer = []
 
+if __name__ == "__main__":
+    asyncio.run(main())
+    print("Done")
 
 # print("Hello", flush=True)
 # for line in sys.stdin:
