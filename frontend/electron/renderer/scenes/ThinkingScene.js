@@ -6,6 +6,7 @@ import {
   Diver,
 } from "../assets/sprites.js";
 import { BACKGROUNDS, ANIMATED_FISH, ENHANCED_FISH } from "../app.js";
+import { getPrompt } from "../state/store.js";
 
 export class ThinkingScene {
   constructor(app) {
@@ -48,7 +49,7 @@ export class ThinkingScene {
   }
 
   updateTranscript(text) {
-    if (text.includes("Question:")) {
+    if (text.includes("Prompt:")) {
       this.label.setText(text);
     }
   }

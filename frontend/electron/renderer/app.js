@@ -70,7 +70,7 @@ async function connect_agent() {
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
-          sock.send("Hello man!");
+          //sock.send("Hello man!");
           resolve(sock);
         });
 
@@ -78,7 +78,7 @@ async function connect_agent() {
           console.log("Message:", event.data);
           setSubtitles(event.data);
           window.fishbowl.sendToTTS(event.data);
-          setScene(app, "responding");
+          //setScene(app, "responding");
         });
 
         // either error or close => treat as failed/ended connection
@@ -155,7 +155,6 @@ async function init() {
   }
 }
 
-
 window.fishbowl.onUserPrompt((text) => {
   console.log("STT Transcript received:", text);
 
@@ -164,26 +163,20 @@ window.fishbowl.onUserPrompt((text) => {
     return;
   }
 
-  // 2. Visual Update: Show the prompt in the ThinkingScene
-  const formattedText = "Question:" + text;
+  const formattedText = "Prompt: " + text;
   if (currentScene instanceof ThinkingScene) {
     currentScene.updateTranscript(formattedText);
   }
 
   // 3. Socket Communication: Send the raw text to the MCP server
   if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(text); 
+    ws.send(text);
     console.log("STT sent to socket:", text);
-
-    // 4. State Management: Move to thinking state immediately
-    // This ensures the UI transitions even if the Python stdout didn't trigger it
-    setState("thinking"); 
+    setScene("thinking");
   } else {
     console.warn("WebSocket not ready. Could not send STT.");
   }
 });
-
-
 
 /*
 window.fishbowl.onUserPrompt((text) => {

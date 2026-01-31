@@ -11,14 +11,14 @@ def print_flush(text):
 def main():
     for line in sys.stdin:
         if "MCP-AGENT-RESPONSE:" in line:
-            text_to_speak = line.split("MCP-AGENT-RESPONSE:", 1)[1].strip()
+            text_to_speak = line.replace("MCP-AGENT-RESPONSE:", "").strip()
 
             if text_to_speak:
                 print_flush("TTS_SPEECH_STARTED")
                 try:
-                    tts_test.text_to_wav(text_to_speak)
+                    tts_functions.speak_text(text_to_speak)
                 except Exception as e:
-                    print(f"Error in tts_test: {e}", file=sys.stderr)
+                    print(f"Error in tts_functions: {e}", file=sys.stderr)
                 print_flush("TTS_SPEECH_ENDED")
 
 if __name__ == "__main__":
@@ -44,11 +44,13 @@ if __name__ == "__main__":
 #     try:
 #         text = get_text_callback
 
-        if text:
-            print(f"TTS_SPEECH_STARTED", flush=True)
-            print(f"\nSpeaking: {text!r}")
-            tts_functions.speak_text(text)
-            print(f"TTS_SPEECH_ENDED", flush=True)
+# --------------- Lines 49 to 53, 69-71 = Henry's new code ---------
+
+        # if text:
+        #     print(f"TTS_SPEECH_STARTED", flush=True)
+        #     print(f"\nSpeaking: {text!r}")
+        #     tts_functions.speak_text(text)
+        #     print(f"TTS_SPEECH_ENDED", flush=True)
 #         if text:
 #             print(f"TTS_SPEECH_STARTED", flush=True)
 #             print(f"\nSpeaking: {text!r}")
@@ -64,9 +66,9 @@ if __name__ == "__main__":
 # capturing = False
 # buffer = []
 
-if __name__ == "__main__":
-    asyncio.run(main())
-    print("Done")
+# if __name__ == "__main__":
+#     asyncio.run(main())
+#     print("Done")
 
 # print("Hello", flush=True)
 # for line in sys.stdin:

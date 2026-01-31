@@ -284,7 +284,7 @@ export class PulsingLabel {
 
   setText(newText) {
     this.text.text = newText;
-    const isQuestion = newText.includes("Question:");
+    const isQuestion = newText.includes("Prompt:");
     this.drawBackground(isQuestion);
   }
 

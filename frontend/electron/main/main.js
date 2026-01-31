@@ -2,13 +2,13 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const { start } = require("repl");
-require('dotenv').config();
+require("dotenv").config();
 
 const GCP_URL = process.env.GCP_MCP_URL;
 
-
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
 let win;
+let currentAppState = "idle";
 let pythonClient;
 let ttsProcess;
 
@@ -53,6 +53,7 @@ function updateUIState(newState) {
  */
 ipcMain.on("set-ui-state", (event, newState) => {
   console.log("State change requested:", newState);
+  currentAppState = newState;
   win.webContents.send("ui-state-changed", newState);
 });
 
@@ -62,8 +63,6 @@ ipcMain.on("keyboard-prompt", (_, text) => {
 });
 
 function startServices() {
-
-  
   const stt = spawn("python", [
     "-u",
     path.join(
@@ -74,21 +73,21 @@ function startServices() {
 
   stt.stdout.on("data", (data) => {
     const out = data.toString();
-    console.log("[STT Output]:", out);
+    if (currentAppState === "keyboard") {
+      return;
+    }
+
     if (out.includes("[Transcript]:")) {
-      console.log(out)
-      const promptText = out.split("[Transcript]:")[1].trim();
+      console.log(out);
+      const promptText = out.replace("[Transcript]:", "").trim();
       updateUIState("thinking");
       win.webContents.send("display-user-prompt", promptText);
-
     }
 
     if (out.includes("EVENT:MIC_STARTED")) {
       updateUIState("listening");
     }
-
   });
-  
 
   const tts = spawn("python", [
     path.join(__dirname, "../../../backend/src/services/tts/tts_wrapper.py"),
