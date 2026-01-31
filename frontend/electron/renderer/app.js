@@ -12,6 +12,8 @@ import {
 } from "./state/store.js";
 import { setScene, currentScene } from "./scenes/index.js";
 import { RespondingScene } from "./scenes/RespondingScene.js";
+import { ListeningScene } from "./scenes/ListeningScene.js";
+import { ThinkingScene } from "./scenes/ThinkingScene.js";
 
 export const BACKGROUNDS = [
   "assets/images/idle_bg_1.png",
@@ -49,6 +51,8 @@ export const RESPONDERS = [
 const app = new PIXI.Application();
 console.log(BACKGROUNDS);
 
+const url = window.fishbowl.config.gcpUrl;
+
 let ws = null;
 let keepRetrying = false;
 
@@ -62,7 +66,7 @@ async function connect_agent() {
   while (keepRetrying) {
     try {
       ws = await new Promise((resolve, reject) => {
-        const sock = new WebSocket("ws://localhost:8000/text_input");
+        const sock = new WebSocket(`wss://${url}/text_input`);
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
@@ -73,6 +77,7 @@ async function connect_agent() {
         sock.addEventListener("message", (event) => {
           console.log("Message:", event.data);
           setSubtitles(event.data);
+          window.fishbowl.sendToTTS(event.data);
           setScene(app, "responding");
         });
 
@@ -83,7 +88,7 @@ async function connect_agent() {
 
       // Wait until it closes before reconnecting
       await new Promise((resolve) =>
-        ws.addEventListener("close", resolve, { once: true })
+        ws.addEventListener("close", resolve, { once: true }),
       );
     } catch (e) {
       if (!keepRetrying) break;
@@ -92,17 +97,6 @@ async function connect_agent() {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * Initializes the PIXI application, sets up IPC listeners for state changes,
@@ -161,9 +155,44 @@ async function init() {
   }
 }
 
-/** Log unhandled errors and call the init function */
-//init();
 
+window.fishbowl.onUserPrompt((text) => {
+  console.log("STT Transcript received:", text);
+
+  if (getState() === "keyboard") {
+    console.log("Suppressed STT: Keyboard active.");
+    return;
+  }
+
+  // 2. Visual Update: Show the prompt in the ThinkingScene
+  const formattedText = "Question:" + text;
+  if (currentScene instanceof ThinkingScene) {
+    currentScene.updateTranscript(formattedText);
+  }
+
+  // 3. Socket Communication: Send the raw text to the MCP server
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(text); 
+    console.log("STT sent to socket:", text);
+
+    // 4. State Management: Move to thinking state immediately
+    // This ensures the UI transitions even if the Python stdout didn't trigger it
+    setState("thinking"); 
+  } else {
+    console.warn("WebSocket not ready. Could not send STT.");
+  }
+});
+
+
+
+/*
+window.fishbowl.onUserPrompt((text) => {
+  text = "Question:" + text;
+  if (currentScene instanceof ThinkingScene) {
+    currentScene.updateTranscript(text);
+  }
+});
+*/
 
 function setupKeyboardInput() {
   window.addEventListener("keydown", (e) => {
@@ -183,10 +212,9 @@ function setupKeyboardInput() {
         if (!prompt) return;
 
         console.log("Keyboard Prompt Submitted:", prompt);
-        if (ws && ws.readyState == WebSocket.OPEN){
+        if (ws && ws.readyState == WebSocket.OPEN) {
           ws.send(prompt);
-        }
-        else{
+        } else {
           console.log("Agent is not connected to the web server");
         }
 
@@ -214,12 +242,9 @@ function setupKeyboardInput() {
   });
 }
 
-
-async function run_all(){
+async function run_all() {
   await init();
   await connect_agent();
-
-
 }
 
 run_all();

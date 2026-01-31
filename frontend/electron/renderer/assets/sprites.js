@@ -232,6 +232,9 @@ export class PulsingLabel {
       fontSize: 54,
       fill: "#ffffff",
       fontWeight: "bold",
+      align: "center",
+      wordWrap: true,
+      wordWrapWidth: app.screen.width * 0.8,
       dropShadow: true,
       dropShadowColor: "#000000",
       dropShadowBlur: 10,
@@ -253,9 +256,36 @@ export class PulsingLabel {
 
     this.container.addChild(this.bg);
     this.container.addChild(this.text);
+
+    this.drawBackground(false);
+
     this.container.position.set(app.screen.width / 2, app.screen.height / 2);
 
     this.elapsed = 0;
+  }
+
+  drawBackground(isTranscript) {
+    this.bg.clear();
+    const paddingX = 40;
+    const paddingY = 30;
+    const width = this.text.width + paddingX * 2;
+    const height = this.text.height + paddingY * 2;
+
+    this.bg.fill({ color: 0x000000, alpha: 0.8 });
+    this.bg.stroke({ width: 4, color: 0xffffff });
+
+    if (isTranscript) {
+      this.bg.roundRect(-width / 2, -height / 2, width, height, 20);
+    } else {
+      this.bg.ellipse(0, 0, width / 2, height / 2);
+    }
+    this.bg.fill();
+  }
+
+  setText(newText) {
+    this.text.text = newText;
+    const isQuestion = newText.includes("Question:");
+    this.drawBackground(isQuestion);
   }
 
   update(delta) {

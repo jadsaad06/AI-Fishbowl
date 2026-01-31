@@ -16,7 +16,7 @@ from mic_stream import MicrophoneStream
 load_dotenv()
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-DEFAULT_MIC_NAME = "LavMicro"
+DEFAULT_MIC_NAME = "Titanium"
 
 
 def get_request_stream(config, mic_gen):
@@ -75,16 +75,16 @@ def transcribe_streaming_v2(
                 requests=get_request_stream(config_request, mic.generator())                    # get_request_stream() packages our mic chunks into requests
             )                                                                                   # Google will continuously process audio chunks and send back transcription results
 
-            print("Listening. Press Ctrl+C to stop\n")
+            print(f"Listening. Press Ctrl+C to stop\n", flush=True)
             
             # This loop continuously pulls transcription results from Google
             for response in responses_iterator:                                                 # Loop through each response from Google
-                if not response.results:                                                        # Skip empty responses (heartbeat packets)
-                    continue
+                if not response.results:         
+                    continue                                                                       # Skip empty responses (heartbeat packets)
 
                 for result in response.results:                                                 # Each response can have multiple results
                     if not result.alternatives:                                                 # Skip if no transcription alternatives
-                        continue
+                        continue 
                     
                     if result.is_final:                                                         # Only process final results
                         transcript = result.alternatives[0].transcript                          # Get the completed transcription
