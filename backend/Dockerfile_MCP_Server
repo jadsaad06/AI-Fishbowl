@@ -1,0 +1,24 @@
+# Use an image that is constrained.
+FROM python:3.11-slim
+
+WORKDIR /app
+
+
+#I am the maintainer Michel Karam
+LABEL maintainer="karammic@pdx.edu"
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+COPY ./src/mcp_stack ./src/mcp_stack
+
+COPY ./src/services/llm ./src/services/llm
+
+#Make that ur working directory
+WORKDIR /app/src/mcp_stack
+
+
+#The entrypoint command for the container 
+ENTRYPOINT ["python", "server.py"]

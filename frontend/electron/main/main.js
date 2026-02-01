@@ -2,14 +2,15 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const { start } = require("repl");
+require("dotenv").config();
+
+const GCP_URL = process.env.GCP_MCP_URL;
 
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
 let win;
+let currentAppState = "idle";
 let pythonClient;
 let ttsProcess;
-
-
-
 
 /**
  * Create a new window using this function.
@@ -52,55 +53,16 @@ function updateUIState(newState) {
  */
 ipcMain.on("set-ui-state", (event, newState) => {
   console.log("State change requested:", newState);
+  currentAppState = newState;
   win.webContents.send("ui-state-changed", newState);
 });
 
 ipcMain.on("keyboard-prompt", (_, text) => {
   console.log("Keyboard input received:", text);
   // Forward text to Michel ###########
-
-
-
-
 });
 
-
-
 function startServices() {
-
-
-/*
-  const agent = spawn(
-    `fastapi dev ${path.join(__dirname, "../../../backend/src/mcp_stack/client.py")}`,
-    {
-      shell: true,
-      env: {
-        ...process.env,
-        PYTHONUNBUFFERED: "1",
-        PYTHONIOENCODING: "utf-8",
-        // Python 3.7+: force UTF-8 mode
-        PYTHONUTF8: "1",
-      },
-    },
-  );
-  
-
-  
-  agent.stderr.on("data", (d) => console.error("[Agent STDERR]:", d.toString()));
-  agent.on("exit", (code, signal) => console.log("[Agent EXIT]:", { code, signal }));
-  agent.on("error", (err) => console.error("[Agent SPAWN ERROR]:", err));
-  
-
-  agent.stdout.on("data", (data) => {
-    const out = data.toString();
-    console.log("[Agent Output]:", out);
-    if (out.includes("AGENT_RESPONSE:")) {
-      const responseText = out.split("AGENT_RESPONSE")[1].trim();
-      win.webContents.send("render-subtitles", responseText);
-    }
-  });
-*/
-
   const stt = spawn("python", [
     "-u",
     path.join(
@@ -111,19 +73,32 @@ function startServices() {
 
   stt.stdout.on("data", (data) => {
     const out = data.toString();
-    console.log("[STT Output]:", out);
-
-    if (out.includes("Listening. Press Ctrl+C to stop")) {
-      updateUIState("listening");
+    if (currentAppState === "keyboard") {
+      return;
     }
+
     if (out.includes("[Transcript]:")) {
+      console.log(out);
+      const promptText = out.replace("[Transcript]:", "").trim();
       updateUIState("thinking");
+      win.webContents.send("display-user-prompt", promptText);
+    }
+
+    if (out.includes("EVENT:MIC_STARTED")) {
+      updateUIState("listening");
     }
   });
 
   const tts = spawn("python", [
     path.join(__dirname, "../../../backend/src/services/tts/tts_wrapper.py"),
   ]);
+
+  ipcMain.on("send-to-tts", (event, text) => {
+    console.log(text);
+    if (tts && tts.stdin.writable) {
+      tts.stdin.write("MCP-AGENT-RESPONSE:" + text + "\n");
+    }
+  });
 
   tts.stdout.on("data", (data) => {
     const out = data.toString();

@@ -3,13 +3,15 @@ Simple test script to verify the STT engine is working.
 Run this to see live transcriptions printed to the console.
 """
 import sys
-import requests
-import json
+import websockets
+import asyncio
 from pathlib import Path
+import threading
+
+
 sys.path.append(str(Path(__file__).parent.parent)) # adds parent dir to the Python path so we can import engine. Lets us import from the directory above where engine.py is
 
 from engine import transcribe_streaming_v2
-
 
     
 if __name__ == "__main__":
@@ -17,8 +19,6 @@ if __name__ == "__main__":
     print("Speak into your microphone. Transcripts will appear below.\n")
     
     # Set payload and MCP Server URL
-    url = "http://127.0.0.1:8000/agent"
-    payload = {"user_prompt": ""}
     
     try:
         # transcribe_streaming_v2() is a generator that yields final transcripts
@@ -26,17 +26,11 @@ if __name__ == "__main__":
         for user_input in transcribe_streaming_v2():
             # user_input contains the completed transcription text
             # This is what would normally be sent to an LLM/agent I'm talking to you, Michelle. 
-            print(f"\n[Transcript]: {user_input}")
+            print(f"\n[Transcript]: {user_input}", flush=True)
+
             print("-" * 50)  # visual separator for style points
             print("\nSending to Agent")
             
-            # Update payload with transcript
-            payload["user_prompt"] = user_input
-            
-            # Send transcript to Agent
-            response = requests.post(url, json=payload)
-            print(f"Status Code: {response.status_code}")
-            print(f"Response Body: {response.json()}")
             
     except KeyboardInterrupt:
         # User pressed Ctrl+C to stop the test
@@ -44,3 +38,5 @@ if __name__ == "__main__":
     except Exception as e:
         # Catch any errors from the STT engine
         print(f"\n\nTest failed with error: {e}")
+
+

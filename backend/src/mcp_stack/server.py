@@ -3,7 +3,6 @@ import requests
 from dotenv import load_dotenv
 import os
 
-
 load_dotenv()
 
 weather_key = os.getenv("Weather_API_KEY")  
@@ -60,7 +59,7 @@ def Weather_Search(geographic_location : dict) -> dict: # Tool for performing we
     if geographic_location["STATUS"] == "NOT FOUND": #If there is no geographic location given the json, we then back out
         return {"STATUS" : "NO INFORMATION"}
 
-    base_url = f"https://weather.googleapis.com/v1/currentConditions:lookup?key={weather_key}&location.latitude={geographic_location["lat"]}&location.longitude={geographic_location["lng"]}"
+    base_url = f"https://weather.googleapis.com/v1/currentConditions:lookup?key={weather_key}&location.latitude={geographic_location['lat']}&location.longitude={geographic_location['lng']}"
     # This is the weather api given the key, and the geographic lat, and long.
     resp = s.get(base_url)
 
@@ -71,4 +70,4 @@ def Weather_Search(geographic_location : dict) -> dict: # Tool for performing we
 
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="http", host="0.0.0.0", port=8005)

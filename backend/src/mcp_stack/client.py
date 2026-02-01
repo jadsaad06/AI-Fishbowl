@@ -1,10 +1,8 @@
-import asyncio
-import sys
 from pathlib import Path
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from mcp import ClientSession
+from mcp.client.streamable_http import streamable_http_client
 
-from services.llm.QUERY_CHAIN.query import agent_prompt_template, get_context, welcome_text
+from services.llm.QUERY_CHAIN.query import agent_prompt_template, get_context
 
 from langchain.agents import create_agent
 from langchain_mcp_adapters.tools import load_mcp_tools
@@ -12,11 +10,18 @@ from langchain_mcp_adapters.tools import load_mcp_tools
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv()
+
+
+mcp_server_url = os.getenv("MCP_SERVER_URL")
 
 
 class RequestPrompt(BaseModel): # Class for denoting the request that the user will prompt for a post request.
     user_prompt: str
-
 
 
 
@@ -27,21 +32,8 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
     Before running the application, connect the mcp client, to the mcp server.
     The app Argument is for building states, 
     """
-    backend_src = Path(__file__).resolve().parent
-    server_path = backend_src / "server.py" #Resolve the path to where the server is 
-    if not server_path.exists():
-        raise FileNotFoundError(
-            f"Could not find server.py at {server_path}."
-        )
-    
-    server_params = StdioServerParameters( # Create the server cli command to then execute the server 
-        command=sys.executable,
-        args=["-u", str(server_path)],
-        env=None
-    )
 
-
-    async with stdio_client(server_params) as (read, write):  # Establish a new child process and we will execute the server and retrieve read and write streams
+    async with streamable_http_client(f"{mcp_server_url}/mcp") as (read, write, _):  # Grab read and write streams between the server and client
         async with ClientSession(read, write) as session: # Create a connection between the server and client
             await session.initialize() # Create the handshake between the server and client
 
@@ -56,7 +48,6 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
             app.state.agent = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
             app.state.conversation = [] # variable to create the context window
             app.state.ws_connection = None
-
 
             yield
 
@@ -82,20 +73,6 @@ def grab_agent_final_response(resp) -> str:
         return content #If the content solely has the last response then return it.
 
 
-
-@app.websocket("/ws")
-async def ws_tts(ws : WebSocket):
-    await ws.accept()
-
-    app.state.ws_connection = ws 
-
-
-    try:
-        while True:
-            await ws.receive_text()
-        
-    except WebSocketDisconnect:
-        app.state.ws_connection = None
 
 
 
@@ -123,6 +100,7 @@ async def ws_text_input(ws : WebSocket):
             stripped_response = grab_agent_final_response(response)
 
             await app.state.ws_connection_keyboard.send_text(stripped_response)
+            
 
 
             app.state.conversation.append({ # Add the agents response to the context window
@@ -138,48 +116,3 @@ async def ws_text_input(ws : WebSocket):
         pass
 
 
-
-
-
-@app.post("/agent") #This is the path of /agent for a post request to query the agent
-async def call_agent(request : RequestPrompt): #The arg is the payload that the user sent
-
-    app.state.conversation = app.state.conversation[-6:] #Take the 2 most recent conversations.
-
-
-    
-
-    app.state.conversation.append({ # Context, adding the user prompt 
-        "role" : "user",
-        "content" : request.user_prompt
-        })
-    
-    print("Conversation window Before Prompt")
-
-
-    print("----------------------")
-    print(app.state.conversation)
-    print("----------------------")
-
-    
-
-    response = await app.state.agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
-
-    stripped_response = grab_agent_final_response(response)
-
-    print(response)
-    print("\n")
-
-    print("AGENT_RESPONSE: " + stripped_response, flush=True)
-
-    try:
-        await app.state.ws_connection.send_text(stripped_response)
-    except Exception:
-        pass
-
-    app.state.conversation.append({ # Add the agents response to the context window
-        "role" : "assistant",
-        "content" : stripped_response
-        })
-    
-    return {"agent_response" : stripped_response} # Return the agents response

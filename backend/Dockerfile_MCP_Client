@@ -1,0 +1,28 @@
+# Use an image that is constrained.
+FROM python:3.11-slim
+
+WORKDIR /app
+
+
+#I am the maintainer Michel Karam
+LABEL maintainer="karammic@pdx.edu"
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+COPY ./src/mcp_stack/client.py ./src/mcp_stack/__init__.py ./src/mcp_stack/
+
+COPY ./src/services/llm/QUERY_CHAIN ./src/services/llm/QUERY_CHAIN
+
+COPY ./src/services/llm/RAG_DB ./src/services/llm/RAG_DB
+
+
+
+#Make that ur working directory
+WORKDIR /app/src/mcp_stack
+
+
+#The entrypoint command for the container 
+ENTRYPOINT ["fastapi", "dev", "client.py", "--host", "0.0.0.0", "--port", "8000"]

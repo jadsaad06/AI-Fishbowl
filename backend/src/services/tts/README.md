@@ -31,7 +31,7 @@ The following dependencies are required:
 
 - `python-dotenv`
 - `google-genai`
-- `pygame`
+- `pyaudio`
 - `pathlib`
 - `websockets`
 - `asyncio`

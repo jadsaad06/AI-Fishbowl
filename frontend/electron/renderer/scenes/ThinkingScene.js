@@ -6,6 +6,7 @@ import {
   Diver,
 } from "../assets/sprites.js";
 import { BACKGROUNDS, ANIMATED_FISH, ENHANCED_FISH } from "../app.js";
+import { getPrompt } from "../state/store.js";
 
 export class ThinkingScene {
   constructor(app) {
@@ -45,6 +46,12 @@ export class ThinkingScene {
     };
 
     PIXI.Ticker.shared.add(this.update);
+  }
+
+  updateTranscript(text) {
+    if (text.includes("Prompt:")) {
+      this.label.setText(text);
+    }
   }
 
   async init(app) {
