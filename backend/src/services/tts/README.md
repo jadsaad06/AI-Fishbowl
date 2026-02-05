@@ -34,7 +34,7 @@ The following dependencies are required:
 - `pyaudio`
 - `pathlib`
 - `websockets`
-- `asyncio`
+- `asyncio` (For tts_test only)
 
 ## Important Note
 
