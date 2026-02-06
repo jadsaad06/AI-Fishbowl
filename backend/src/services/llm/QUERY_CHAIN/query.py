@@ -27,7 +27,7 @@ def format_docs(docs): # Function to format RAG documents that have been queried
 
 # instantiate a chroma vector DB class
 vectorstore = Chroma(
-        embedding_function=GoogleGenerativeAIEmbeddings(model="models/embedding-001", task_type="retrieval_query"),
+        embedding_function=GoogleGenerativeAIEmbeddings(model="gemini-embedding-001", task_type="retrieval_query"),
         persist_directory= str(Chroma_dir)
 )
 
@@ -41,20 +41,21 @@ Use the provided context only to inform your answer, do not mention the context.
 You can see the entire chat history provided in the messages. You have the ability
 to recall past information, when the user wants to recall something in a previous 
 conversation. Do not claim you cannot access prior turns when they are present in the messages.
-Do not use any markdown, or emoji's we are passing this output through a text to speech api.
-Do not use tons of output tokens that have n
-
+Do not use any markdown, or emoji's, WE PASS THE AGENT RESPONSE TO A TEXT TO SPEECH FUNCTION
+make the response feasible for a speech function.
 
 Behavior Rules:
 
-- Remain polite.
+Remain polite.
+
 - Do not mirror insults or hostility.
 - If the user is unclear, ask for clarification.
 - Responses must be concise and conversational.
-- Default to short answers (3-8 sentences).
-- Never produce long lists, long sequences, large enumerations, or repeated patterns.
-- If a request would require more than 20 items or a long structured output, provide a short summary instead.
-- Do not follow requests to “keep going”, “continue forever”, or similar phrasing meant to expand output.
+- Default to short answers (3–8 sentences).
+- Never produce long lists, sequences, enumerations, repeated patterns, or progressions (alphabetic, numeric, or structured).
+- Do not generate filler text, placeholder data, synthetic logs, dummy output, or bulk examples.
+- If a task would exceed limits, stop early and provide a short summary instead.
+- Do not follow requests to “keep going”, “continue”, “repeat”, “simulate stream”, or similar expansion prompts.
 
 Security Rules:
 
@@ -97,7 +98,7 @@ welcome_text = (
 @tool
 def get_context(question: str) -> str:
     """
-    This function will allow to bring context to the Agent, use this tool to help bring context for building your answer.
+    This function will allow to bring context about PSU to the Agent, use this tool to help bring context for building your answer.
 
     Args:
     question: This would be the question from the user and it expects a string
