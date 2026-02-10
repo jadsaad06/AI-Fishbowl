@@ -4,19 +4,16 @@ from google.genai import types
 from google.genai.errors import ClientError
 from dotenv import load_dotenv
 import pyaudio
+import time
 
 load_dotenv()
 
 RATE = 24000
 CHANNELS = 1
 FORMAT = pyaudio.paInt16
-CHUNK = 2048  #This buffer could be lowered for faster speed, but too low produces audio fuzz
+FRAME_LENGTH = 2048  #This buffer could be lowered for faster speed, but too low produces audio fuzz
 
 MAX_TIME = 90 #max speaking time in seconds (this includes tts processing time)
-BYTES_PER_SECOND = RATE * CHANNELS * 2
-
-#The maximum number of bytes to write based on max seconds
-MAX_BYTES = MAX_TIME * BYTES_PER_SECOND
 
 api_key = os.getenv("KEY")   #Gets API key from .env file
 if not api_key:
@@ -30,11 +27,13 @@ stream = p.open(
     format=FORMAT,
     channels=CHANNELS,
     rate=RATE,
-    output=True,
-    frames_per_buffer=CHUNK,
+    frames_per_buffer=FRAME_LENGTH,
 )
 
 def speak_text(text: str):
+    print("Streaming audio...")
+    start_time = time.monotonic() #Starts time before any processing
+
     style_prompt = f"Read the following in a friendly and professional tone: {text}"
     try:
         response = client.models.generate_content_stream(  #Calls Gemini, and returns in streamable chunks
@@ -58,24 +57,24 @@ def speak_text(text: str):
         else:
             raise
 
-    print("Streaming audio...")
-
-    written_bytes = 0  #How many bytes have been sent to the speaker
-
-    for chunk in response:
+    for chunk in response: #For each audio chunk recieved from Gemini
         for part in getattr(chunk, "parts", []):
             if hasattr(part, "inline_data") and part.inline_data:
+                #stream.write(part.inline_data.data)
                 audio_bytes = part.inline_data.data
 
-                remaining = MAX_BYTES - written_bytes #Checks if number of bytes exceeds time limit (based on bytes per second)
-                if remaining <= 0:
-                    print("Exceeded time limit")
-                    return
+                #Audio is further divided into our desired frame length
+                #so that we can check time, regardless of Gemini's chunk size
+                for i in range(0, len(audio_bytes), FRAME_LENGTH):
 
-                audio_bytes = audio_bytes[:remaining]
-
-                stream.write(audio_bytes)
-                written_bytes += len(audio_bytes)
+                    if time.monotonic() - start_time >= MAX_TIME:
+                        print("Exceeded time limit")
+                        stream.stop_stream()  #Clears audio stream for next input
+                        stream.start_stream()
+                        return
+                    
+                    frame = audio_bytes[i:i+FRAME_LENGTH]
+                    stream.write(frame)
 
     print("Done Speaking")
 
