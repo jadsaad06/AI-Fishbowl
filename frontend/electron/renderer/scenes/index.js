@@ -3,6 +3,7 @@
  * Based on the current application state, it initializes and switches between different scenes.
  */
 import { IdleScene } from "./IdleScene.js";
+import { IdleSceneAnime } from "./IdleSceneAnime.js";
 import { ListeningScene } from "./ListeningScene.js";
 import { ThinkingScene } from "./ThinkingScene.js";
 import { RespondingScene } from "./RespondingScene.js";
@@ -44,7 +45,7 @@ export function setScene(app, state) {
       currentScene = new ErrorScene();
       break;
     default:
-      currentScene = new IdleScene(app);
+      currentScene = new IdleSceneAnime(app);
   }
 
   app.stage.addChild(currentScene.container);

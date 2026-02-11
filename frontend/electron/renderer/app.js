@@ -16,12 +16,8 @@ import { ListeningScene } from "./scenes/ListeningScene.js";
 import { ThinkingScene } from "./scenes/ThinkingScene.js";
 
 export const BACKGROUNDS = [
-  "assets/images/idle_bg_1.png",
-  "assets/images/idle_bg_2.png",
-  "assets/images/idle_bg_3.png",
-  "assets/images/idle_bg_4.png",
-  "assets/images/idle_bg_5.png",
-  "assets/images/idle_bg_6.png",
+  "assets/images/idle_bg_main.png",
+  "assets/images/idle_bg_main_2.png",
 ];
 
 export const ANIMATED_FISH = [

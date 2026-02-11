@@ -14,11 +14,11 @@ export class IdleScene {
     this.container.addChild(this.bgManager.container);
 
     this.swarm = new FishSwarm(
-      30,
+      20,
       app.screen.width,
       app.screen.height,
-      ENHANCED_FISH,
-      120
+      ANIMATED_FISH,
+      120,
     );
     this.container.addChild(this.swarm.container);
 
