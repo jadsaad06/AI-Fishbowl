@@ -9,8 +9,9 @@ const GCP_URL = process.env.GCP_MCP_URL;
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
 let win;
 let currentAppState = "idle";
+let agentOwnsTurn = false;
 let pythonClient;
-let ttsProcess;
+let sttProcess = null;
 
 /**
  * Create a new window using this function.
@@ -36,8 +37,20 @@ function createWindow() {
   win.loadFile(path.join(__dirname, "../renderer/index.html"));
 }
 
+function shouldForwardSTT(state) {
+  return state === "idle" || state === "listening";
+}
+
 function updateUIState(newState) {
+  if (currentAppState === newState) return;
   console.log("State Transition: ", newState);
+  currentAppState = newState;
+
+  if (newState === "idle") {
+    startSTT();
+  } else if (newState === "thinking" || newState === "responding") {
+    stopSTT();
+  }
   if (win) {
     win.webContents.send("ui-state-changed", newState);
   }
@@ -62,8 +75,11 @@ ipcMain.on("keyboard-prompt", (_, text) => {
   // Forward text to Michel ###########
 });
 
-function startServices() {
-  const stt = spawn("python", [
+function startSTT() {
+  if (sttProcess) return;
+
+  console.log("[SYSTEM] Spawning STT/VAD Process");
+  sttProcess = spawn("python", [
     "-u",
     path.join(
       __dirname,
@@ -71,23 +87,83 @@ function startServices() {
     ),
   ]);
 
-  stt.stdout.on("data", (data) => {
+  sttProcess.stdout.on("data", (data) => {
     const out = data.toString();
-    if (currentAppState === "keyboard") {
-      return;
-    }
+    if (currentAppState === "keyboard") return;
 
     if (out.includes("[Transcript]:")) {
-      console.log(out);
       const promptText = out.replace("[Transcript]:", "").trim();
-      updateUIState("thinking");
-      win.webContents.send("display-user-prompt", promptText);
+
+      if (shouldForwardSTT(currentAppState)) {
+        agentOwnsTurn = true;
+        updateUIState("thinking");
+        win.webContents.send("display-user-prompt", promptText);
+      }
     }
 
     if (out.includes("EVENT:MIC_STARTED")) {
-      updateUIState("listening");
+      if (!agentOwnsTurn && currentAppState === "idle") {
+        updateUIState("listening");
+      }
     }
   });
+
+  sttProcess.on("close", () => {
+    console.log("[SYSTEM] Killing STT Process Terminated.");
+    sttProcess = null;
+  });
+}
+
+function stopSTT() {
+  if (sttProcess) {
+    console.log("[SYSTEM] Killing STT Process (Mic Disconnect)...");
+    sttProcess.kill();
+    sttProcess = null;
+  }
+}
+
+function startServices() {
+  if (!sttProcess) {
+    startSTT();
+  }
+  // const stt = spawn("python", [
+  //   "-u",
+  //   path.join(
+  //     __dirname,
+  //     "../../../backend/src/services/stt/Test/test_transcribe.py",
+  //   ),
+  // ]);
+
+  // stt.stdout.on("data", (data) => {
+  //   const out = data.toString();
+  //   if (currentAppState === "keyboard") {
+  //     return;
+  //   }
+
+  //   if (out.includes("[Transcript]:")) {
+  //     const promptText = out.replace("[Transcript]:", "").trim();
+  //     if (!shouldForwardSTT(currentAppState)) {
+  //       console.log(
+  //         `[STT IGNORED] State=${currentAppState}, text=${promptText}`,
+  //       );
+  //       return;
+  //     }
+  //     console.log("[STT ACCEPTED]:", promptText);
+  //     agentOwnsTurn = true;
+  //     updateUIState("thinking");
+  //     win.webContents.send("display-user-prompt", promptText);
+  //   }
+
+  //   if (out.includes("EVENT:MIC_STARTED")) {
+  //     if (agentOwnsTurn) {
+  //       console.log("[MIC IGNORED] Agent owns turn");
+  //       return;
+  //     }
+  //     if (currentAppState === "idle") {
+  //       updateUIState("listening");
+  //     }
+  //   }
+  // });
 
   const tts = spawn("python", [
     path.join(__dirname, "../../../backend/src/services/tts/tts_wrapper.py"),
@@ -109,6 +185,7 @@ function startServices() {
       updateUIState("responding");
     }
     if (out.includes("TTS_SPEECH_ENDED")) {
+      agentOwnsTurn = false;
       updateUIState("idle");
     }
   });
@@ -117,7 +194,5 @@ function startServices() {
 // When Electron has finished initialization, create the kiosk browser window.
 app.whenReady().then(() => {
   createWindow();
-  console.log(path.join(__dirname, "../../../backend/src/mcp_stack/client.py"));
-
   startServices();
 });

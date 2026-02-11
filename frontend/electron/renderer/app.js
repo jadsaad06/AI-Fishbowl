@@ -154,8 +154,6 @@ async function init() {
 }
 
 window.fishbowl.onUserPrompt((text) => {
-  console.log("STT Transcript received:", text);
-
   if (getState() === "keyboard") {
     console.log("Suppressed STT: Keyboard active.");
     return;
@@ -170,22 +168,13 @@ window.fishbowl.onUserPrompt((text) => {
 
   // 3. Socket Communication: Send the raw text to the MCP server
   if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(finalText);
     console.log("STT sent to socket:", finalText);
+    ws.send(finalText);
     setScene("thinking");
   } else {
     console.warn("WebSocket not ready. Could not send STT.");
   }
 });
-
-/*
-window.fishbowl.onUserPrompt((text) => {
-  text = "Question:" + text;
-  if (currentScene instanceof ThinkingScene) {
-    currentScene.updateTranscript(text);
-  }
-});
-*/
 
 function setupKeyboardInput() {
   window.addEventListener("keydown", (e) => {

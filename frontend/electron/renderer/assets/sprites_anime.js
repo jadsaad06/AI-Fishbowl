@@ -27,6 +27,9 @@ export class ModernBox {
         tmaxY = -Infinity;
 
       targetArray.forEach((target) => {
+        if (!target || target.destroyed || !target.anchor) {
+          return;
+        }
         if (target.text === "" && targetArray.length === 1) {
           tminX = -10;
           tminY = -10;
