@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
-
+import { RESPONDERS } from "../app.js";
+import { subscribeResponder } from "../state/store.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 
 export class ModernBox {
@@ -10,154 +11,236 @@ export class ModernBox {
     this.boxAlpha = alpha;
   }
 
-  reshape(targets) {
-    const targetArray = Array.isArray(targets) ? targets : [targets];
+  reshape(targets, fixedSize = null) {
+    let width, height, minX, minY;
 
-    let minX = Infinity,
-      minY = Infinity;
-    let maxX = -Infinity,
-      maxY = -Infinity;
+    if (fixedSize) {
+      width = fixedSize.width;
+      height = fixedSize.height;
+      minX = -width / 2;
+      minY = -height / 2;
+    } else {
+      const targetArray = Array.isArray(targets) ? targets : [targets];
+      let tminX = Infinity,
+        tminY = Infinity;
+      let tmaxX = -Infinity,
+        tmaxY = -Infinity;
 
-    targetArray.forEach((target) => {
-      const w = target.width;
-      const h = target.height;
-      const x = target.x - target.anchor.x * w;
-      const y = target.y - target.anchor.y * h;
+      targetArray.forEach((target) => {
+        if (target.text === "" && targetArray.length === 1) {
+          tminX = -10;
+          tminY = -10;
+          tmaxX = 10;
+          tmaxY = 10;
+          return;
+        }
 
-      minX = Math.min(minX, x);
-      minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x + w);
-      maxY = Math.max(maxY, y + h);
-    });
+        const w = target.width;
+        const h = target.height;
+        const ax = target.anchor ? target.anchor.x : 0;
+        const ay = target.anchor ? target.anchor.y : 0;
 
-    const width = maxX - minX + this.padding * 2;
-    const height = maxY - minY + this.padding * 2;
+        const x = target.x - ax * w;
+        const y = target.y - ay * h;
+
+        tminX = Math.min(tminX, x);
+        tminY = Math.min(tminY, y);
+        tmaxX = Math.max(tmaxX, x + w);
+        tmaxY = Math.max(tmaxY, y + h);
+      });
+
+      width = tmaxX - tminX + this.padding * 2;
+      height = tmaxY - tminY + this.padding * 2;
+      minX = tminX - this.padding;
+      minY = tminY - this.padding;
+    }
 
     this.graphics.clear();
     this.graphics.fill({ color: this.color, alpha: this.boxAlpha });
-    this.graphics.roundRect(
-      minX - this.padding,
-      minY - this.padding,
-      width,
-      height,
-      12,
-    );
+    this.graphics.stroke({ width: 1, color: 0x333333 });
+    this.graphics.roundRect(minX, minY, width, height, 12);
     this.graphics.fill();
   }
+}
+
+export class ResponderEnclosure {
+  constructor(imagePath, name, padding = 20, isHeader = false) {
+    this.container = new PIXI.Container();
+    this.bg = new ModernBox(padding);
+    this.container.addChild(this.bg.graphics);
+
+    const baseStyle = {
+      fontFamily: "Roboto",
+      fill: "#ffffff",
+      align: "center",
+    };
+
+    if (imagePath) {
+      this.sprite = PIXI.Sprite.from(imagePath);
+      this.sprite.anchor.set(0.5);
+
+      fitSprite(this.sprite, 200, 200);
+      this.sprite.y = -40;
+      this.container.addChild(this.sprite);
+    }
+
+    this.label = new PIXI.Text(name, {
+      ...baseStyle,
+      fontSize: isHeader ? 64 : 24,
+      fontWeight: isHeader ? "bold" : "normal",
+    });
+    this.label.anchor.set(0.5);
+    if (this.sprite) {
+      this.label.y = this.sprite.y + this.sprite.height / 2 + 80;
+    } else {
+      this.label.y = 0;
+    }
+    this.container.addChild(this.label);
+
+    this.subLabel = new PIXI.Text("", {
+      ...baseStyle,
+      fontSize: 24,
+      fill: "#bdefff",
+    });
+    this.subLabel.anchor.set(0.5);
+    this.subLabel.y = 80;
+    this.subLabel.visible = isHeader;
+    this.container.addChild(this.subLabel);
+
+    this.refresh();
+  }
+
+  refresh(fixedSize = null) {
+    const targets = [this.label];
+    if (this.sprite) targets.push(this.sprite);
+    if (this.subLabel && this.subLabel.text !== "") targets.push(this.subLabel);
+
+    this.bg.reshape(targets, fixedSize);
+  }
+}
+
+function fitSprite(sprite, maxWidth, maxHeight) {
+  const scale = Math.min(
+    maxWidth / sprite.texture.width,
+    maxHeight / sprite.texture.height,
+  );
+
+  sprite.scale.set(scale);
 }
 
 export class AnimeIdleText {
   constructor(app) {
     this.app = app;
-
     this.container = new PIXI.Container();
     this.container.position.set(app.screen.width / 2, app.screen.height / 2);
 
-    this.bgBox = new ModernBox(40);
-    this.container.addChild(this.bgBox.graphics);
+    this.centerBox = new ResponderEnclosure(null, "", 40, true);
 
-    this.header = new PIXI.Text("", {
-      fontFamily: "Roboto",
-      fontSize: 64,
-      fill: "#ffffff",
+    const gap = 300;
+    this.responders = [
+      new ResponderEnclosure(RESPONDERS[0], "Bob"),
+      new ResponderEnclosure(RESPONDERS[1], "Jimbo"),
+      new ResponderEnclosure(RESPONDERS[2], "Bongo"),
+      new ResponderEnclosure(null, "M: Mic | S: Settings", 20),
+    ];
+    this.responders[0].subLabel.text = "Press 1 to select Bob";
+    this.responders[1].subLabel.text = "Press 2 to select Jimbo";
+    this.responders[2].subLabel.text = "Press 3 to select Bongo";
+
+    this.responders.forEach((r, i) => {
+      r.container.scale.set(0);
+      if (i < 3) {
+        r.subLabel.visible = true;
+        r.refresh({ width: 280, height: 350 });
+      } else r.refresh();
     });
-    this.header.anchor.set(0.5);
-    this.header.y = -50;
 
-    this.subheader = new PIXI.Text("", {
-      fontFamily: "Roboto",
-      fontSize: 32,
-      fill: "#bdefff",
-    });
-    this.subheader.anchor.set(0.5);
-    this.subheader.y = 20;
+    this.responders[0].container.position.set(-gap - 80, 0);
+    this.responders[1].container.position.set(0, -gap);
+    this.responders[2].container.position.set(gap + 80, 0);
+    this.responders[3].container.position.set(0, gap);
 
-    this.container.addChild(this.header, this.subheader);
+    this.container.addChild(this.centerBox.container);
+    this.responders.forEach((r) => this.container.addChild(r.container));
 
     this.playAnimation();
-
-    this.repeatInterval = setInterval(() => {
-      this.playAnimation();
-    }, 10000);
+    this.unsubscribeResponder = subscribeResponder((selected) => {
+      this.responders.forEach((r, i) => {
+        if (i < 3) {
+          r.bg.color = selected === i + 1 ? 0x1e90ff : 0x1a1a1a;
+          r.refresh({ width: 280, height: 350 });
+        }
+      });
+    });
+    this.repeatInterval = setInterval(() => this.playAnimation(), 10000);
   }
 
   playAnimation() {
-    anime.remove([
-      this.container,
-      this.header,
-      this.subheader,
-      this.bgBox.graphics,
-    ]);
+    anime.remove([this.container, this.centerBox.container.scale]);
+    this.responders.forEach((r) => anime.remove(r.container.scale));
 
-    const headerText = "AI Fishbowl";
-    const subheaderText = "Your aquatic CS companion";
-    const state = { headerChars: 0, subheaderChars: 0 };
+    const hText = "AI Fishbowl";
+    const sText = "Your Aquatic CS Companion";
+    const state = { hChars: 0, sChars: 0 };
 
-    this.header.text = "";
-    this.subheader.text = "";
     this.container.alpha = 0;
-    this.bgBox.graphics.alpha = 0;
+    this.centerBox.label.text = "";
+    this.centerBox.subLabel.text = "";
+    this.centerBox.container.scale.set(0);
 
-    anime
-      .timeline({ autoplay: true })
+    const tl = anime.timeline({ autoplay: true });
+
+    tl.add({
+      targets: this.container,
+      alpha: [0, 1],
+      duration: 600,
+      easing: "linear",
+    })
       .add({
-        targets: this.container,
-        alpha: [0, 1],
-        y: [this.app.screen.height / 2 + 20, this.app.screen.height / 2],
+        targets: this.centerBox.container.scale,
+        x: [0, 1],
+        y: [0, 1],
         duration: 800,
-        easing: "easeOutExpo",
+        easing: "easeOutBack",
       })
-      .add(
-        {
-          targets: this.bgBox.graphics,
-          alpha: [0, 1],
-          duration: 500,
-          easing: "linear",
-        },
-        "-400",
-      )
       .add({
         targets: state,
-        headerChars: headerText.length,
-        duration: 800,
+        hChars: hText.length,
+        duration: 700,
         easing: "linear",
         update: () => {
-          this.header.text = headerText.slice(0, Math.floor(state.headerChars));
-          this.bgBox.reshape([this.header, this.subheader]);
+          this.centerBox.label.text = hText.slice(0, Math.floor(state.hChars));
+          this.centerBox.refresh();
         },
       })
       .add({
         targets: state,
-        subheaderChars: subheaderText.length,
-        duration: 1200,
+        sChars: sText.length,
+        duration: 900,
         easing: "linear",
         update: () => {
-          this.subheader.text = subheaderText.slice(
+          this.centerBox.subLabel.text = sText.slice(
             0,
-            Math.floor(state.subheaderChars),
+            Math.floor(state.sChars),
           );
-          this.bgBox.reshape([this.header, this.subheader]);
+          this.centerBox.subLabel.y = this.centerBox.label.height / 2 + 25;
+          this.centerBox.refresh();
         },
       })
-
       .add({
-        targets: [this.header.scale, this.subheader.scale],
-        x: 1.03,
-        y: 1.03,
-        duration: 1500,
-        direction: "alternate",
-        loop: true,
-        easing: "easeInOutSine",
+        targets: this.responders.map((r) => r.container.scale),
+        x: [0, 1],
+        y: [0, 1],
+        delay: anime.stagger(150),
+        duration: 700,
+        easing: "easeOutBack",
       });
   }
 
   destroy() {
+    if (this.unsubscribeResponder) this.unsubscribeResponder();
     if (this.repeatInterval) clearInterval(this.repeatInterval);
     anime.remove(this.container);
-    anime.remove(this.header);
-    anime.remove(this.subheader);
-    anime.remove(this.header.scale);
-    anime.remove(this.subheader.scale);
     this.container.destroy({ children: true });
   }
 }

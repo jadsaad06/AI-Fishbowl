@@ -9,6 +9,8 @@ import {
   setPrompt,
   getPrompt,
   getState,
+  setResponder,
+  getResponder,
 } from "./state/store.js";
 import { setScene, currentScene } from "./scenes/index.js";
 import { RespondingScene } from "./scenes/RespondingScene.js";
@@ -159,15 +161,17 @@ window.fishbowl.onUserPrompt((text) => {
     return;
   }
 
+  const responder = getResponder();
   const formattedText = "Prompt: " + text;
+  const finalText = responder ? `RESPONDER_NUM:${responder}\n${text}` : text;
   if (currentScene instanceof ThinkingScene) {
     currentScene.updateTranscript(formattedText);
   }
 
   // 3. Socket Communication: Send the raw text to the MCP server
   if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(text);
-    console.log("STT sent to socket:", text);
+    ws.send(finalText);
+    console.log("STT sent to socket:", finalText);
     setScene("thinking");
   } else {
     console.warn("WebSocket not ready. Could not send STT.");
@@ -188,6 +192,11 @@ function setupKeyboardInput() {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
 
     const currentState = getState();
+    if (e.key === "1" || e.key === "2" || e.key === "3") {
+      setResponder(Number(e.key));
+      console.log("Responder selected:", e.key);
+      return;
+    }
 
     if (e.key.toLowerCase() === "k" && currentState !== "keyboard") {
       e.preventDefault();
@@ -197,12 +206,16 @@ function setupKeyboardInput() {
 
     if (currentState === "keyboard") {
       if (e.key === "Enter") {
+        const responder = getResponder();
         const prompt = getPrompt().trim();
+        const finalPrompt = responder
+          ? `RESPONDER_NUM:${responder}\n${prompt}`
+          : prompt;
         if (!prompt) return;
 
         console.log("Keyboard Prompt Submitted:", prompt);
         if (ws && ws.readyState == WebSocket.OPEN) {
-          ws.send(prompt);
+          ws.send(finalPrompt);
         } else {
           console.log("Agent is not connected to the web server");
         }

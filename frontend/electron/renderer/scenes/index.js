@@ -28,6 +28,9 @@ export function setScene(app, state) {
   }
 
   switch (state) {
+    case "idle":
+      currentScene = new IdleSceneAnime(app);
+      break;
     case "keyboard":
       currentScene = new KeyboardScene(app);
       break;
