@@ -1,4 +1,5 @@
 import * as PIXI from "pixi.js";
+import { getResponder } from "../state/store.js";
 import {
   createBackground,
   FishSwarm,
@@ -34,7 +35,10 @@ export class RespondingScene {
     this.initBackground(app);
 
     const targetWidth = 350;
-    this.responder = createResponder(app, RESPONDERS, targetWidth);
+    const selectedID = getResponder();
+    const responderIndex = selectedID && selectedID > 0 ? selectedID - 1 : 0;
+    const responderPath = RESPONDERS[responderIndex];
+    this.responder = createResponder(app, responderPath, targetWidth);
     this.container.addChild(this.responder);
 
     this.targetX = this.responder.x + app.screen.width * 0.1;

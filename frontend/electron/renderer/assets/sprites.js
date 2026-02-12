@@ -207,9 +207,8 @@ export class FishSwarm {
   }
 }
 
-export function createResponder(app, imageList = [], targetWidth = 200) {
-  const path = imageList[Math.floor(Math.random() * imageList.length)];
-  const texture = PIXI.Texture.from(path);
+export function createResponder(app, imagePath, targetWidth = 200) {
+  const texture = PIXI.Texture.from(imagePath);
   const responder = new PIXI.Sprite(texture);
 
   responder.anchor.set(0.5);
