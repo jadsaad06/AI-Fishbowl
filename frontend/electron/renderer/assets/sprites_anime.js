@@ -245,9 +245,9 @@ export class AnimeIdleText {
     const gap = 300;
     const instructions =
       "- Press 'k' To Type Prompt\n" +
-      "- Press 'r' To Reset Responder\n" +
+      "- Press 'r' To Select Random Responder\n" +
       "- Press 1/2/3 To Select Your Responder\n" +
-      "- Press 'i' To View Responder Lore";
+      "- Press 'i' To Open/Close Responder Lore";
     this.responders = [
       new ResponderEnclosure(RESPONDERS[0], "Bob"),
       new ResponderEnclosure(RESPONDERS[1], "Jimbo"),

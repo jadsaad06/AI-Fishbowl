@@ -198,6 +198,13 @@ function setupKeyboardInput() {
       return;
     }
 
+    if (e.key.toLowerCase() === "r") {
+      const randomID = Math.floor(Math.random() * 3) + 1;
+      console.log("Random Responder Selected:", randomID);
+      setResponder(randomID);
+      return;
+    }
+
     if (e.key.toLowerCase() === "k" && currentState !== "keyboard") {
       e.preventDefault();
       window.fishbowl.setState("keyboard");
