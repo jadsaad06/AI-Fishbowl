@@ -38,3 +38,24 @@ python VAD.py # or: python mic-input.py
 ```
 - When recording is completed, a file will be created in the `hardware/src` directory named `mic-input.wav` with the recorded audio.
 - If a previous mic-input.wav file exists, it will be overwritten when a new one is created.
+
+### Muting And Unmuting LavMicro
+- Scripts are provided in `hardware/src` to mute and unmute the LavMicro source by name using `pactl` (PulseAudio/PipeWire).
+- The mute state is explicit and persistent until changed again (mute stays muted until unmuted, and vice versa).
+```
+# starting from the hardware directory
+cd src
+./mute-mic.sh
+./unmute-mic.sh
+```
+- You can also use the single script form:
+```
+cd hardware/src
+./mic-management.sh mute
+./mic-management.sh unmute
+./mic-management.sh status
+```
+- If needed on another system, set `MIC_MATCH` to a different device identifier:
+```
+MIC_MATCH=MyMic ./mic-management.sh mute
+```

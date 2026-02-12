@@ -16,7 +16,7 @@ from mic_stream import MicrophoneStream
 load_dotenv()
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-DEFAULT_MIC_NAME = "Titanium"
+DEFAULT_MIC_NAME = "LavMicro"
 
 
 def get_request_stream(config, mic_gen):

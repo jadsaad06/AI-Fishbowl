@@ -12,6 +12,28 @@ let currentAppState = "idle";
 let pythonClient;
 let ttsProcess;
 
+//code added by Daniel for microphone control
+const micControlScript = path.join(
+  __dirname,
+  "../../../hardware/src/mic-management.sh",
+);
+
+function syncMicForState(state) {
+  let action;
+  if (state === "responding") action = "mute";
+  if (state === "idle") action = "unmute";
+  if (!action) return;
+
+  const micProc = spawn(micControlScript, [action]);
+  micProc.stderr.on("data", (data) => {
+    console.error(`[Mic ${action} error] ${data.toString().trim()}`);
+  });
+  micProc.on("error", (err) => {
+    console.error(`[Mic ${action} spawn error]`, err);
+  });
+}
+//end of code added by Daniel (except where the function is called)
+
 /**
  * Create a new window using this function.
  * Before the window is initialized, it runs the preload.js script to set up a secure context for IPC communication.
@@ -37,6 +59,7 @@ function createWindow() {
 }
 
 function updateUIState(newState) {
+  syncMicForState(newState);
   console.log("State Transition: ", newState);
   if (win) {
     win.webContents.send("ui-state-changed", newState);
@@ -53,6 +76,7 @@ function updateUIState(newState) {
  */
 ipcMain.on("set-ui-state", (event, newState) => {
   console.log("State change requested:", newState);
+  syncMicForState(newState);
   currentAppState = newState;
   win.webContents.send("ui-state-changed", newState);
 });
