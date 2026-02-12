@@ -279,6 +279,8 @@ export class AnimeIdleText {
 
     this.playAnimation();
     this.unsubscribeResponder = subscribeResponder((selected) => {
+      if (!this.container || this.container.destroyed || !this.responders)
+        return;
       this.responders.forEach((r, i) => {
         if (i < 3) {
           r.bg.color = selected === i + 1 ? 0x1e90ff : 0x1a1a1a;
@@ -333,6 +335,7 @@ export class AnimeIdleText {
         duration: 900,
         easing: "linear",
         update: () => {
+          if (!this.centerBox || this.centerBox.container.destroyed) return;
           this.centerBox.subLabel.text = sText.slice(
             0,
             Math.floor(state.sChars),
@@ -352,11 +355,26 @@ export class AnimeIdleText {
   }
 
   destroy() {
-    if (this.unsubscribeResponder) this.unsubscribeResponder();
-    if (this.repeatInterval) clearInterval(this.repeatInterval);
+    if (this.unsubscribeResponder) {
+      this.unsubscribeResponder();
+      this.unsubscribeResponder = null;
+    }
+
+    if (this.repeatInterval) {
+      clearInterval(this.repeatInterval);
+      this.repeatInterval = null;
+    }
+
     anime.remove(this.container);
-    this.responders.forEach((r) => anime.remove(r.container.scale));
-    anime.remove(this.centerBox.container.scale);
-    this.container.destroy({ children: true });
+    if (this.responders) {
+      this.responders.forEach((r) => anime.remove(r.container.scale));
+    }
+    if (this.centerBox) {
+      anime.remove(this.centerBox.container.scale);
+    }
+
+    if (this.container && !this.container.destroyed) {
+      this.container.destroy({ children: true });
+    }
   }
 }

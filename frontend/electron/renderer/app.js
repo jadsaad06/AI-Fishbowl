@@ -152,6 +152,10 @@ async function init() {
         currentScene.destroy();
       }
       setScene(app, state);
+
+      if (infoOverlay && infoOverlay.container) {
+        app.stage.addChild(infoOverlay.container);
+      }
     });
 
     /** Default landing page initialization */
@@ -169,6 +173,13 @@ window.fishbowl.onUserPrompt((text) => {
     console.log("Suppressed STT: Keyboard active.");
     return;
   }
+  const currentState = getState();
+  if (
+    currentState !== "listening" &&
+    currentState !== "idle" &&
+    currentState !== "thinking"
+  )
+    return;
 
   const responder = getResponder();
   const formattedText = "Prompt: " + text;
@@ -181,7 +192,9 @@ window.fishbowl.onUserPrompt((text) => {
   if (ws && ws.readyState === WebSocket.OPEN) {
     console.log("STT sent to socket:", finalText);
     ws.send(finalText);
-    setScene("thinking");
+    if (getState() !== "thinking") {
+      window.fishbowl.setState("thinking");
+    }
   } else {
     console.warn("WebSocket not ready. Could not send STT.");
   }
