@@ -17,6 +17,7 @@ import { setScene, currentScene } from "./scenes/index.js";
 import { RespondingScene } from "./scenes/RespondingScene.js";
 import { ListeningScene } from "./scenes/ListeningScene.js";
 import { ThinkingScene } from "./scenes/ThinkingScene.js";
+import { InfoOverlay } from "./assets/sprites_anime.js";
 
 export const BACKGROUNDS = [
   "assets/images/idle_bg_main.png",
@@ -97,6 +98,8 @@ async function connect_agent() {
   }
 }
 
+let infoOverlay;
+
 /**
  * Initializes the PIXI application, sets up IPC listeners for state changes,
  * and subscribes to the state store to update scenes accordingly.
@@ -153,6 +156,8 @@ async function init() {
 
     /** Default landing page initialization */
     setScene(app, "idle");
+    infoOverlay = new InfoOverlay(app);
+    app.stage.addChild(infoOverlay.container);
     setupKeyboardInput();
   } catch (error) {
     console.error("Failed to initialize PIXI application:", error);
@@ -198,6 +203,18 @@ function setupKeyboardInput() {
       window.fishbowl.setState("keyboard");
       return;
     }
+
+    if (e.key.toLowerCase() === "i") {
+      if (infoOverlay) infoOverlay.toggle();
+      return;
+    }
+
+    if (
+      infoOverlay &&
+      infoOverlay.container.visible &&
+      e.key.toLowerCase() !== "i"
+    )
+      return;
 
     if (currentState === "keyboard") {
       if (e.key === "Enter") {

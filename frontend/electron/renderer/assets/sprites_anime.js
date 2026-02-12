@@ -1,7 +1,22 @@
 import * as PIXI from "pixi.js";
 import { RESPONDERS } from "../app.js";
-import { subscribeResponder } from "../state/store.js";
+import { subscribeResponder, getResponder } from "../state/store.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
+
+const BIO_DATA = [
+  {
+    name: "Bob",
+    bio: "- The cutest seahorse found on the Pacific Coast\n- Empathetic, Charismatic, and Considerate are qualities that Bob prides himself with\n- PS: He is a little sensitive",
+  },
+  {
+    name: "Jimbo",
+    bio: "- A little rough around the edges, but such is life on the Atlantic Coast\n- Extremely helpful, however, he can be a little crude and expects you to leave your ego at the door",
+  },
+  {
+    name: "Bongo",
+    bio: "- No one knows where he's from, other responders call him an alien\n- Very proud of his multi-color outfit",
+  },
+];
 
 export class ModernBox {
   constructor(padding = 30, color = 0x1a1a1a, alpha = 0.9) {
@@ -127,6 +142,89 @@ export class ResponderEnclosure {
   }
 }
 
+class ResponderCard {
+  constructor(index, width = 400, height = 600) {
+    this.container = new PIXI.Container();
+
+    const cardBg = new PIXI.Graphics()
+      .fill({ color: 0x2a2a2a, alpha: 1 })
+      .stroke({ width: 2, color: 0x1e90ff })
+      .roundRect(-width / 2, -height / 2, width, height, 20)
+      .fill();
+    this.container.addChild(cardBg);
+
+    const sprite = PIXI.Sprite.from(RESPONDERS[index]);
+    sprite.anchor.set(0.5);
+    sprite.y = -120;
+    const scale = 150 / sprite.texture.width;
+    sprite.scale.set(scale);
+    this.container.addChild(sprite);
+
+    const nameLabel = new PIXI.Text(BIO_DATA[index].name, {
+      fontFamily: "Times New Roman",
+      fontSize: 36,
+      fontWeight: "bold",
+      fill: "#1e90ff",
+    });
+    nameLabel.anchor.set(0.5);
+    this.container.addChild(nameLabel);
+
+    const bioLabel = new PIXI.Text(BIO_DATA[index].bio, {
+      fontFamily: "Roboto",
+      fontSize: 20,
+      fill: "#ffffff",
+      align: "center",
+      lineHeight: 28,
+      wordWrap: true,
+      wordWrapWidth: width - 50,
+    });
+
+    bioLabel.anchor.set(0.5, 0);
+    bioLabel.y = 100;
+    this.container.addChild(bioLabel);
+  }
+}
+
+export class InfoOverlay {
+  constructor(app) {
+    this.app = app;
+    this.container = new PIXI.Container();
+    this.container.visible = false;
+
+    const dimmer = new PIXI.Graphics()
+      .fill({ color: 0x000000, alpha: 0.85 })
+      .rect(0, 0, app.screen.width, app.screen.height)
+      .fill();
+    this.container.addChild(dimmer);
+
+    const cardContainer = new PIXI.Container();
+    const spacing = 450;
+
+    BIO_DATA.forEach((_, i) => {
+      const card = new ResponderCard(i);
+      card.container.x = (i - 1) * spacing;
+      cardContainer.addChild(card.container);
+    });
+
+    cardContainer.x = app.screen.width / 2;
+    cardContainer.y = app.screen.height / 2;
+    this.container.addChild(cardContainer);
+
+    const closeTxt = new PIXI.Text("Press 'I' to Close", {
+      fontFamily: "Roboto",
+      fontSize: 18,
+      fill: "#888888",
+    });
+    closeTxt.anchor.set(0.5);
+    closeTxt.position.set(app.screen.width / 2, app.screen.height - 50);
+    this.container.addChild(closeTxt);
+  }
+
+  toggle() {
+    this.container.visible = !this.container.visible;
+  }
+}
+
 function fitSprite(sprite, maxWidth, maxHeight) {
   const scale = Math.min(
     maxWidth / sprite.texture.width,
@@ -145,20 +243,28 @@ export class AnimeIdleText {
     this.centerBox = new ResponderEnclosure(null, "", 40, true);
 
     const gap = 300;
+    const instructions =
+      "- Press 'k' To Type Prompt\n" +
+      "- Press 'r' To Reset Responder\n" +
+      "- Press 1/2/3 To Select Your Responder\n" +
+      "- Press 'i' To View Responder Lore";
     this.responders = [
       new ResponderEnclosure(RESPONDERS[0], "Bob"),
       new ResponderEnclosure(RESPONDERS[1], "Jimbo"),
       new ResponderEnclosure(RESPONDERS[2], "Bongo"),
-      new ResponderEnclosure(null, "M: Mic | S: Settings", 20),
+      new ResponderEnclosure(null, instructions, 20),
     ];
     this.responders[0].subLabel.text = "Press 1 to select Bob";
     this.responders[1].subLabel.text = "Press 2 to select Jimbo";
     this.responders[2].subLabel.text = "Press 3 to select Bongo";
 
+    const initialSelected = getResponder();
+
     this.responders.forEach((r, i) => {
       r.container.scale.set(0);
       if (i < 3) {
         r.subLabel.visible = true;
+        r.bg.color = initialSelected === i + 1 ? 0x1e90ff : 0x1a1a1a;
         r.refresh({ width: 280, height: 350 });
       } else r.refresh();
     });

@@ -5,6 +5,8 @@ const { start } = require("repl");
 require("dotenv").config();
 
 const GCP_URL = process.env.GCP_MCP_URL;
+app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication");
+app.commandLine.appendSwitch("log-level", "3");
 
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
 let win;
