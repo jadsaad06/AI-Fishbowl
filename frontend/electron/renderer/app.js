@@ -205,36 +205,6 @@ function setupKeyboardInput() {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
 
     const currentState = getState();
-    if (e.key === "1" || e.key === "2" || e.key === "3") {
-      setResponder(Number(e.key));
-      console.log("Responder selected:", e.key);
-      return;
-    }
-
-    if (e.key.toLowerCase() === "r") {
-      const randomID = Math.floor(Math.random() * 3) + 1;
-      console.log("Random Responder Selected:", randomID);
-      setResponder(randomID);
-      return;
-    }
-
-    if (e.key.toLowerCase() === "k" && currentState !== "keyboard") {
-      e.preventDefault();
-      window.fishbowl.setState("keyboard");
-      return;
-    }
-
-    if (e.key.toLowerCase() === "i") {
-      if (infoOverlay) infoOverlay.toggle();
-      return;
-    }
-
-    if (
-      infoOverlay &&
-      infoOverlay.container.visible &&
-      e.key.toLowerCase() !== "i"
-    )
-      return;
 
     if (currentState === "keyboard") {
       if (e.key === "Enter") {
@@ -272,6 +242,37 @@ function setupKeyboardInput() {
       if (e.key.length === 1) {
         setPrompt(getPrompt() + e.key);
       }
+    } else {
+      if (e.key === "1" || e.key === "2" || e.key === "3") {
+        setResponder(Number(e.key));
+        console.log("Responder selected:", e.key);
+        return;
+      }
+
+      if (e.key.toLowerCase() === "r") {
+        const randomID = Math.floor(Math.random() * 3) + 1;
+        console.log("Random Responder Selected:", randomID);
+        setResponder(randomID);
+        return;
+      }
+
+      if (e.key.toLowerCase() === "k" && currentState !== "keyboard") {
+        e.preventDefault();
+        window.fishbowl.setState("keyboard");
+        return;
+      }
+
+      if (e.key.toLowerCase() === "i") {
+        if (infoOverlay) infoOverlay.toggle();
+        return;
+      }
+
+      if (
+        infoOverlay &&
+        infoOverlay.container.visible &&
+        e.key.toLowerCase() !== "i"
+      )
+        return;
     }
   });
 }
