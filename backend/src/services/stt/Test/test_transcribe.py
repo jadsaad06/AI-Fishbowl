@@ -3,22 +3,32 @@ Simple test script to verify the STT engine is working.
 Run this to see live transcriptions printed to the console.
 """
 import sys
-import websockets
-import asyncio
 from pathlib import Path
 import threading
 
-
 sys.path.append(str(Path(__file__).parent.parent)) # adds parent dir to the Python path so we can import engine. Lets us import from the directory above where engine.py is
 
-from engine import transcribe_streaming_v2
+from engine import transcribe_streaming_v2, get_current_mic
 
-    
+
+def stdin_listener():
+    """Listen for PAUSE/RESUME commands from parent process."""
+    for line in sys.stdin:
+        cmd = line.strip().upper()
+        mic = get_current_mic()
+        if mic:
+            if cmd == "PAUSE":
+                mic.pause()
+            elif cmd == "RESUME":
+                mic.resume()
+
 if __name__ == "__main__":
     print("--------------- STT Engine Test ---------------")
     print("Speak into your microphone. Transcripts will appear below.\n")
     
-    # Set payload and MCP Server URL
+    # Start stdin listener as daemon thread (exits when main thread exits)
+    listener_thread = threading.Thread(target=stdin_listener, daemon=True)
+    listener_thread.start()
     
     try:
         # transcribe_streaming_v2() is a generator that yields final transcripts
@@ -38,5 +48,3 @@ if __name__ == "__main__":
     except Exception as e:
         # Catch any errors from the STT engine
         print(f"\n\nTest failed with error: {e}")
-
-

@@ -12,6 +12,9 @@ export class ModernBox {
   }
 
   reshape(targets, fixedSize = null) {
+    if (!this.graphics || this.graphics.destroyed) {
+      return;
+    }
     let width, height, minX, minY;
 
     if (fixedSize) {
@@ -58,11 +61,13 @@ export class ModernBox {
       minY = tminY - this.padding;
     }
 
-    this.graphics.clear();
-    this.graphics.fill({ color: this.color, alpha: this.boxAlpha });
-    this.graphics.stroke({ width: 1, color: 0x333333 });
-    this.graphics.roundRect(minX, minY, width, height, 12);
-    this.graphics.fill();
+    if (this.graphics.context) {
+      this.graphics.clear();
+      this.graphics.fill({ color: this.color, alpha: this.boxAlpha });
+      this.graphics.stroke({ width: 1, color: 0x333333 });
+      this.graphics.roundRect(minX, minY, width, height, 12);
+      this.graphics.fill();
+    }
   }
 }
 
@@ -244,6 +249,8 @@ export class AnimeIdleText {
     if (this.unsubscribeResponder) this.unsubscribeResponder();
     if (this.repeatInterval) clearInterval(this.repeatInterval);
     anime.remove(this.container);
+    this.responders.forEach((r) => anime.remove(r.container.scale));
+    anime.remove(this.centerBox.container.scale);
     this.container.destroy({ children: true });
   }
 }

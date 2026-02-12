@@ -2,6 +2,7 @@
  * Main application file for the Electron renderer process. (Frontend)
  */
 import * as PIXI from "pixi.js";
+import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 import {
   subscribe,
   setState,
@@ -142,6 +143,11 @@ async function init() {
      */
     subscribe((state) => {
       console.log("Store Updated, Setting Scene:", state);
+      anime.remove("*");
+
+      if (currentScene && typeof currentScene.destroy === "function") {
+        currentScene.destroy();
+      }
       setScene(app, state);
     });
 
