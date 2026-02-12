@@ -210,7 +210,7 @@ export class InfoOverlay {
     cardContainer.y = app.screen.height / 2;
     this.container.addChild(cardContainer);
 
-    const closeTxt = new PIXI.Text("Press 'I' to Close", {
+    const closeTxt = new PIXI.Text("Press I to Close", {
       fontFamily: "Roboto",
       fontSize: 18,
       fill: "#888888",
