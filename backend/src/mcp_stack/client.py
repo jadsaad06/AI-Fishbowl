@@ -1,7 +1,7 @@
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
-from services.llm.QUERY_CHAIN.query import agent_prompt_template, get_context
+from services.llm.QUERY_CHAIN.query import agent_prompt_template_Bob, agent_prompt_template_Jimbo, agent_prompt_template_Bongo, get_context
 
 from langchain.agents import create_agent
 from langchain_mcp_adapters.tools import load_mcp_tools
@@ -59,7 +59,9 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                             MCP_Tools.append(tool)
 
 
-                        app.state.agent = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                        app.state.agent_Bob = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Bob, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                        app.state.agent_Jimbo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Jimbo, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                        app.state.agent_Bongo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Bongo, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
 
                         app.state.agent_ready = True # If we made it to this point where we have an agent object set, then the agent is ready.
 
@@ -74,7 +76,9 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                 print(e)
 
             finally: # We finally set the agent to no object since the connection between the MCP server and client is gone, so we don't know what MCP server tools we may have anymore if we consider a new connection.
-                app.state.agent = None
+                app.state.agent_Bob = None
+                app.state.agent_Jimbo = None
+                app.state.agent_Bongo = None
                 app.state.agent_ready = False # The agent will not be ready in the case that the MCP server is disconnected
             
             if not stop_agent.is_set(): # We will try to reconnect to the MCP server every 10 seconds if the event object is not set 
@@ -123,6 +127,7 @@ def grab_agent_final_response(resp) -> str:
 async def ws_text_input(ws : WebSocket):
     await ws.accept()
 
+    current_agent = app.state.agent_Bob
 
     if app.state.ws_connection_keyboard != None:
         await ws.send_text("There is an on-going connection with the MCP agent, please try again when there is no connections.")
@@ -134,38 +139,47 @@ async def ws_text_input(ws : WebSocket):
     try:
         while True:
             text = await ws.receive_text()
+            print(text, flush=True)
+
+            if text == "PERSONALIZATION: 1":
+                current_agent = app.state.agent_Bob
+            elif text == "PERSONALIZATION: 2":
+                current_agent = app.state.agent_Jimbo
+            elif text == "PERSONALIZATION: 3":
+                current_agent = app.state.agent_Bongo
+
+            else:
+                    
+                if app.state.agent_ready is False: # If the agent status isn't ready then we won't use the MCP Client (May be due to the MCP server not running), then we will send a message back to the user, and break
+                    await ws.send_text("MCP Client is temporarily unavailable, retrying again.")
+                    ws.close(code=1000)
+                    return
+
+                if current_agent is None: # If the agent itself is not an object, we won't be able to use the agent, so we have to exit, and notify the user that the Agent is not ready yet.
+                    await ws.send_text("MCP agent is not ready yet. Try again in a moment.")
+                    await ws.close(code=1000)
+                    return
+
+                app.state.conversation = app.state.conversation[-6:] #Take the 2 most recent conversations.
+                
+
+                app.state.conversation.append({ # Context, adding the user prompt 
+                    "role" : "user",
+                    "content" : text
+                    })
 
 
-            if app.state.agent_ready is False: # If the agent status isn't ready then we won't use the MCP Client (May be due to the MCP server not running), then we will send a message back to the user, and break
-                await ws.send_text("MCP Client is temporarily unavailable, retrying again.")
-                ws.close(code=1000)
-                return
+                response = await current_agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
+                stripped_response = grab_agent_final_response(response)
 
-            if app.state.agent is None: # If the agent itself is not an object, we won't be able to use the agent, so we have to exit, and notify the user that the Agent is not ready yet.
-                await ws.send_text("MCP agent is not ready yet. Try again in a moment.")
-                await ws.close(code=1000)
-                return
+                await app.state.ws_connection_keyboard.send_text(stripped_response)
+                
 
-            app.state.conversation = app.state.conversation[-6:] #Take the 2 most recent conversations.
-            
 
-            app.state.conversation.append({ # Context, adding the user prompt 
-                "role" : "user",
-                "content" : text
+                app.state.conversation.append({ # Add the agents response to the context window
+                "role" : "assistant",
+                "content" : stripped_response
                 })
-
-
-            response = await app.state.agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
-            stripped_response = grab_agent_final_response(response)
-
-            await app.state.ws_connection_keyboard.send_text(stripped_response)
-            
-
-
-            app.state.conversation.append({ # Add the agents response to the context window
-            "role" : "assistant",
-            "content" : stripped_response
-            })
 
 
     except WebSocketDisconnect:

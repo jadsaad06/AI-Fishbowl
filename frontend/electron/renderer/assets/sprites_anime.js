@@ -419,7 +419,7 @@ export class AnimeIdleText {
         }
       });
     });
-    this.repeatInterval = setInterval(() => this.playAnimation(), 10000);
+    this.repeatInterval = setInterval(() => this.playAnimation(), 60000);
   }
 
   playAnimation() {

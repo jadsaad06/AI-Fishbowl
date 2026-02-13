@@ -79,7 +79,7 @@ async function connect_agent() {
   while (keepRetrying) {
     try {
       ws = await new Promise((resolve, reject) => {
-        const sock = new WebSocket(`wss://${url}/text_input`);
+        const sock = new WebSocket(`ws://${url}/text_input`);
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
@@ -201,15 +201,14 @@ window.fishbowl.onUserPrompt((text) => {
 
   const responder = getResponder();
   const formattedText = "You Said: " + text;
-  const finalText = responder ? `RESPONDER_NUM:${responder}\n${text}` : text;
   if (currentScene instanceof ThinkingSceneAnime) {
     currentScene.updateTranscript(formattedText);
   }
 
   // 3. Socket Communication: Send the raw text to the MCP server
   if (ws && ws.readyState === WebSocket.OPEN) {
-    console.log("STT sent to socket:", finalText);
-    ws.send(finalText);
+    console.log("STT sent to socket:", formattedText);
+    ws.send(text);
     if (getState() !== "thinking") {
       window.fishbowl.setState("thinking");
     }
@@ -228,14 +227,11 @@ function setupKeyboardInput() {
       if (e.key === "Enter") {
         const responder = getResponder();
         const prompt = getPrompt().trim();
-        const finalPrompt = responder
-          ? `RESPONDER_NUM:${responder}\n${prompt}`
-          : prompt;
         if (!prompt) return;
 
         console.log("Keyboard Prompt Submitted:", prompt);
         if (ws && ws.readyState == WebSocket.OPEN) {
-          ws.send(finalPrompt);
+          ws.send(prompt);
         } else {
           console.log("Agent is not connected to the web server");
         }
@@ -262,15 +258,34 @@ function setupKeyboardInput() {
       }
     } else {
       if (e.key === "1" || e.key === "2" || e.key === "3") {
-        setResponder(Number(e.key));
-        console.log("Responder selected:", e.key);
+        if (getResponder() === Number(e.key)){
+          return;
+        }
+        else{
+          setResponder(Number(e.key));
+          console.log("Responder selected:", e.key);
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send("PERSONALIZATION: " + e.key);
+          }
+        }
+
         return;
       }
 
       if (e.key.toLowerCase() === "r") {
         const randomID = Math.floor(Math.random() * 3) + 1;
-        console.log("Random Responder Selected:", randomID);
-        setResponder(randomID);
+        if (getResponder() === Number(randomID)){
+          return;
+        }
+        else{
+          console.log("Responder selected:", randomID);
+          setResponder(randomID);
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send("PERSONALIZATION: " + randomID);
+          }
+        }
+
+
         return;
       }
 
