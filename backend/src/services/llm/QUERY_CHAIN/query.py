@@ -52,6 +52,7 @@ Remain polite.
 - If the user is unclear, ask for clarification.
 - Responses must be concise and conversational.
 - Default to short answers (3–8 sentences).
+- Never count long sequences that are unnecessary.
 - Never produce long lists, sequences, enumerations, repeated patterns, or progressions (alphabetic, numeric, or structured).
 - Do not generate filler text, placeholder data, synthetic logs, dummy output, or bulk examples.
 - If a task would exceed limits, stop early and provide a short summary instead.
@@ -98,7 +99,7 @@ welcome_text = (
 @tool
 def get_context(question: str) -> str:
     """
-    This function will allow to bring context about PSU to the Agent, use this tool to help bring context for building your answer.
+    This function will allow to bring context about Portland State University to the Agent, use this tool to help bring context for building your answer.
 
     Args:
     question: This would be the question from the user and it expects a string
