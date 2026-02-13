@@ -18,14 +18,13 @@ async def main():
                 tts_functions.speak_text(text)
             
             await asyncio.sleep(0.5)
-        
-        except KeyboardInterrupt:
-            print("\nTest stopped")
-            break
 
         except Exception as e:
             print(f"Error: {e}")
             await asyncio.sleep(1)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\nTest stopped")
