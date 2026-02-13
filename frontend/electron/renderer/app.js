@@ -14,11 +14,12 @@ import {
   getResponder,
 } from "./state/store.js";
 import { setScene, currentScene } from "./scenes/index.js";
-import { RespondingScene } from "./scenes/RespondingScene.js";
-import { ListeningScene } from "./scenes/ListeningScene.js";
-import { ThinkingScene } from "./scenes/ThinkingScene.js";
+// import { RespondingScene } from "./scenes/RespondingScene.js";
+// import { ListeningScene } from "./scenes/ListeningScene.js";
+// import { ThinkingScene } from "./scenes/ThinkingScene.js";
 import { InfoOverlay } from "./assets/sprites_anime.js";
 import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
+import { ListeningSceneAnime } from "./scenes/ListeningSceneAnime.js";
 
 export const BACKGROUNDS = [
   "assets/images/idle_bg_main.png",
@@ -154,7 +155,7 @@ async function init() {
         console.log("IPC Received Subtitles: ", text);
         setSubtitles(text);
 
-        if (currentScene instanceof RespondingScene) {
+        if (currentScene instanceof RespondingSceneAnime) {
           currentScene.updateSubtitles(text);
         }
       });
