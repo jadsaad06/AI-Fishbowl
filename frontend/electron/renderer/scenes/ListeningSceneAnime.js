@@ -157,7 +157,7 @@ export class ListeningSceneAnime {
     if (this.ripples) this.ripples.forEach((r) => anime.remove(r));
     anime.remove(this.syncGroup);
 
-    if (this.bgManager) this.bgManager.destroy();
+    //if (this.bgManager) this.bgManager.destroy();
     if (this.container && !this.container.destroyed) {
       this.container.destroy({ children: true });
     }

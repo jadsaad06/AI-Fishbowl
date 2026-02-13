@@ -38,8 +38,8 @@ if __name__ == "__main__":
             # This is what would normally be sent to an LLM/agent I'm talking to you, Michelle. 
             print(f"\n[Transcript]: {user_input}", flush=True)
 
-            print("-" * 50)  # visual separator for style points
-            print("\nSending to Agent")
+            # print("-" * 50)  # visual separator for style points
+            # print("\nSending to Agent")
             
             
     except KeyboardInterrupt:

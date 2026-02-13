@@ -122,6 +122,7 @@ async function init() {
     await PIXI.Assets.load(RESPONDERS);
     await PIXI.Assets.load("assets/images/ocean_diver.png");
     await PIXI.Assets.load("assets/images/listening_fish_cropped.png");
+    await PIXI.Assets.load("assets/images/thinking_fish.png");
     await PIXI.Assets.load(LISTENING_BACKGROUND);
     await PIXI.Assets.load(THINKING_BACKGROUNDS);
 

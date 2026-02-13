@@ -64,73 +64,73 @@ ipcMain.on("keyboard-prompt", (_, text) => {
   // Forward text to Michel ###########
 });
 
-// function startServices() {
-//   const stt = spawn("python", [
-//     "-u",
-//     path.join(
-//       __dirname,
-//       "../../../backend/src/services/stt/Test/test_transcribe.py",
-//     ),
-//   ]);
+function startServices() {
+  const stt = spawn("python", [
+    "-u",
+    path.join(
+      __dirname,
+      "../../../backend/src/services/stt/Test/test_transcribe.py",
+    ),
+  ]);
 
-//   stt.stdout.on("data", (data) => {
-//     const out = data.toString();
-//     if (currentAppState === "keyboard") {
-//       return;
-//     }
+  stt.stdout.on("data", (data) => {
+    const out = data.toString();
+    if (currentAppState === "keyboard") {
+      return;
+    }
 
-//     if (out.includes("[Transcript]:")) {
-//       console.log(out);
-//       const promptText = out.replace("[Transcript]:", "").trim();
-//       updateUIState("thinking");
-//       win.webContents.send("display-user-prompt", promptText);
-//     }
+    if (out.includes("[Transcript]:")) {
+      console.log(out);
+      const promptText = out.replace("[Transcript]:", "").trim();
+      updateUIState("thinking");
+      win.webContents.send("display-user-prompt", promptText);
+    }
 
-//     if (out.includes("EVENT:MIC_STARTED")) {
-//       updateUIState("listening");
-//     }
-//   });
+    if (out.includes("EVENT:MIC_STARTED")) {
+      updateUIState("listening");
+    }
+  });
 
-//   const tts = spawn("python", [
-//     path.join(__dirname, "../../../backend/src/services/tts/tts_wrapper.py"),
-//   ]);
+  const tts = spawn("python", [
+    path.join(__dirname, "../../../backend/src/services/tts/tts_wrapper.py"),
+  ]);
 
-//   ipcMain.on("send-to-tts", (event, text) => {
-//     console.log(text);
-//     if (tts && tts.stdin.writable) {
-//       tts.stdin.write("MCP-AGENT-RESPONSE:" + text + "\n");
-//     }
-//   });
+  ipcMain.on("send-to-tts", (event, text) => {
+    console.log(text);
+    if (tts && tts.stdin.writable) {
+      tts.stdin.write("MCP-AGENT-RESPONSE:" + text + "\n");
+    }
+  });
 
-//   tts.stdout.on("data", (data) => {
-//     const out = data.toString();
+  tts.stdout.on("data", (data) => {
+    const out = data.toString();
 
-//     console.log("[TTS]: " + out);
+    console.log("[TTS]: " + out);
 
-//     if (out.includes("TTS_SPEECH_STARTED")) {
-//       setTimeout(() => {
-//         updateUIState("responding");
-//       }, 700);
-//       //updateUIState("responding");
+    if (out.includes("TTS_SPEECH_STARTED")) {
+      setTimeout(() => {
+        updateUIState("responding");
+      }, 700);
+      //updateUIState("responding");
 
-//       // Pause the STT engine
-//       if (stt && stt.stdin.writable) {
-//         stt.stdin.write("pause\n");
-//       }
-//     }
-//     if (out.includes("TTS_SPEECH_ENDED")) {
-//       //updateUIState("idle");
+      // Pause the STT engine
+      if (stt && stt.stdin.writable) {
+        stt.stdin.write("pause\n");
+      }
+    }
+    if (out.includes("TTS_SPEECH_ENDED")) {
+      //updateUIState("idle");
 
-//       // Resume the STT engine after a short delay to ensure audio has finished
-//       setTimeout(() => {
-//         updateUIState("idle");
-//         if (stt && stt.stdin.writable) {
-//           stt.stdin.write("resume\n");
-//         }
-//       }, 2500); // 500ms delay
-//     }
-//   });
-// }
+      // Resume the STT engine after a short delay to ensure audio has finished
+      setTimeout(() => {
+        updateUIState("idle");
+        if (stt && stt.stdin.writable) {
+          stt.stdin.write("resume\n");
+        }
+      }, 2500); // 500ms delay
+    }
+  });
+}
 
 // When Electron has finished initialization, create the kiosk browser window.
 app.whenReady().then(() => {
