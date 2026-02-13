@@ -1,4 +1,3 @@
-from pathlib import Path
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
@@ -12,6 +11,8 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
+import asyncio
+
 
 
 load_dotenv()
@@ -33,25 +34,67 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
     The app Argument is for building states, 
     """
 
-    async with streamable_http_client(f"{mcp_server_url}/mcp") as (read, write, _):  # Grab read and write streams between the server and client
-        async with ClientSession(read, write) as session: # Create a connection between the server and client
-            await session.initialize() # Create the handshake between the server and client
-
-            tools = await load_mcp_tools(session) # Load mcp tools from the server
-
-            MCP_Tools = [] # Hold all the MCP tools
-            MCP_Tools.append(get_context)
-            for tool in tools:
-                MCP_Tools.append(tool)
+    app.state.agent_ready = False # Is the Agent obj ready or not
+    app.state.ws_connection_keyboard = None # to denote whether we have 1 persistent ws connection
+    stop_agent = asyncio.Event() # Create an event object to alert asyncio tasks that an event occured. 
 
 
-            app.state.agent = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
-            app.state.conversation = [] # variable to create the context window
-            app.state.ws_connection = None
+    async def run_forever():
+        
+        app.state.conversation = [] # variable to create the context window
 
-            yield
 
-    """AFTER the application is done running, perform a cleanup. (performs nothing)"""
+
+        while not stop_agent.is_set():
+            try:    
+                async with streamable_http_client(f"{mcp_server_url}/mcp") as (read, write, _):  # Grab read and write streams between the server and client
+                    async with ClientSession(read, write) as session: # Create a connection between the server and client
+                        await session.initialize() # Create the handshake between the server and client
+
+                        tools = await load_mcp_tools(session) # Load mcp tools from the server
+
+                        MCP_Tools = [] # Hold all the MCP tools
+                        MCP_Tools.append(get_context)
+                        for tool in tools:
+                            MCP_Tools.append(tool)
+
+
+                        app.state.agent = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template, tools=MCP_Tools) # Create an agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+
+                        app.state.agent_ready = True # If we made it to this point where we have an agent object set, then the agent is ready.
+
+                        while not stop_agent.is_set(): # While the event object is not set, then we will continuously loop through inside the client session to keep the session alive
+                            await session.send_ping() # Send a ping to the MCP server to ensure the MCP server is alive
+                            print("ping ok")
+                            await asyncio.sleep(60) # Take a 1 minute break interval to avoid flooding
+
+
+            except Exception as e: # If the session ping was not successful, or some other issue occured, we assume that the MCP server disconnected, and print the error.
+                print("MCP Server connection failed, trying again")
+                print(e)
+
+            finally: # We finally set the agent to no object since the connection between the MCP server and client is gone, so we don't know what MCP server tools we may have anymore if we consider a new connection.
+                app.state.agent = None
+                app.state.agent_ready = False # The agent will not be ready in the case that the MCP server is disconnected
+            
+            if not stop_agent.is_set(): # We will try to reconnect to the MCP server every 10 seconds if the event object is not set 
+                await asyncio.sleep(10)
+
+
+    task = asyncio.create_task(run_forever()) # Create an async task for running the MCP Client Agent.
+        
+    try:
+        yield # Once we are reaching the end of the MCP Client lifetime, we will perform the following 
+
+    finally:
+
+        stop_agent.set() # Set the event object
+        task.cancel() # Signal to the task to safely exit. 
+
+        try:
+            await task # Wait for the task to safely exit
+        except Exception as e: # If the task didn't safely exit, then show the exception
+            print(f"Task wasn't cleaned up safely: {e}")
 
 
 
@@ -79,15 +122,31 @@ def grab_agent_final_response(resp) -> str:
 @app.websocket("/text_input")
 async def ws_text_input(ws : WebSocket):
     await ws.accept()
+
+
+    if app.state.ws_connection_keyboard != None:
+        await ws.send_text("There is an on-going connection with the MCP agent, please try again when there is no connections.")
+        await ws.close(code=1000)
+        return
+
     app.state.ws_connection_keyboard = ws
 
     try:
         while True:
             text = await ws.receive_text()
 
+
+            if app.state.agent_ready is False: # If the agent status isn't ready then we won't use the MCP Client (May be due to the MCP server not running), then we will send a message back to the user, and break
+                await ws.send_text("MCP Client is temporarily unavailable, retrying again.")
+                ws.close(code=1000)
+                return
+
+            if app.state.agent is None: # If the agent itself is not an object, we won't be able to use the agent, so we have to exit, and notify the user that the Agent is not ready yet.
+                await ws.send_text("MCP agent is not ready yet. Try again in a moment.")
+                await ws.close(code=1000)
+                return
+
             app.state.conversation = app.state.conversation[-6:] #Take the 2 most recent conversations.
-
-
             
 
             app.state.conversation.append({ # Context, adding the user prompt 
