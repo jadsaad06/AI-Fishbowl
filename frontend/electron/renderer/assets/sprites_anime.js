@@ -18,6 +18,136 @@ const BIO_DATA = [
   },
 ];
 
+export class PulseText {
+  constructor(text = "", style = {}, options = {}) {
+    this.options = {
+      minScale: 0.9,
+      maxScale: 1.1,
+      minAlpha: 0.5,
+      maxAlpha: 1,
+      duration: 1200,
+      easing: "easeInOutSine",
+      ...options,
+    };
+
+    this.container = new PIXI.Container();
+
+    this.textObject = new PIXI.Text(text, style);
+    this.textObject.anchor.set(0.5);
+
+    this.container.addChild(this.textObject);
+
+    this._animation = null;
+    this.play();
+  }
+
+  play() {
+    if (this._animation) {
+      this._animation.pause();
+    }
+
+    this._animation = anime({
+      targets: this.textObject,
+      alpha: [this.options.minAlpha, this.options.maxAlpha],
+      scale: [this.options.minScale, this.options.maxScale],
+      duration: this.options.duration,
+      easing: this.options.easing,
+      direction: "alternate",
+      loop: true,
+    });
+  }
+
+  stop() {
+    if (this._animation) {
+      this._animation.pause();
+      this._animation = null;
+    }
+  }
+
+  setText(newText) {
+    this.textObject.text = newText;
+  }
+
+  destroy() {
+    this.stop();
+    anime.remove(this.textObject);
+
+    if (this.container && !this.container.destroyed) {
+      this.container.destroy({ children: true });
+    }
+  }
+}
+
+export class TypewriterText {
+  constructor(text = "", style = {}, options = {}) {
+    this.fullText = text;
+
+    this.options = {
+      durationPerChar: 40,
+      easing: "linear",
+      loop: false,
+      ...options,
+    };
+
+    this.container = new PIXI.Container();
+
+    this.textObject = new PIXI.Text("", style);
+    this.textObject.anchor.set(0.5);
+    this.container.addChild(this.textObject);
+
+    this._animation = null;
+    this._state = { chars: 0 };
+  }
+
+  setText(newText) {
+    this.fullText = newText;
+    this.textObject.text = "";
+  }
+
+  play() {
+    if (this._animation) {
+      this._animation.pause();
+    }
+
+    this._state.chars = 0;
+    this.textObject.text = "";
+
+    this._animation = anime({
+      targets: this._state,
+      chars: this.fullText.length,
+      duration: this.fullText.length * this.options.durationPerChar,
+      easing: this.options.easing,
+      round: 1,
+      update: () => {
+        if (!this.textObject || this.textObject.destroyed) return;
+
+        const count = Math.floor(this._state.chars);
+        this.textObject.text = this.fullText.slice(0, count);
+      },
+      complete: () => {
+        if (this.options.loop) {
+          this.play();
+        }
+      },
+    });
+  }
+
+  stop() {
+    if (this._animation) {
+      this._animation.pause();
+      this._animation = null;
+    }
+  }
+
+  destroy() {
+    this.stop();
+    anime.remove(this._state);
+    if (this.container && !this.container.destroyed) {
+      this.container.destroy({ children: true });
+    }
+  }
+}
+
 export class ModernBox {
   constructor(padding = 30, color = 0x1a1a1a, alpha = 0.9) {
     this.graphics = new PIXI.Graphics();

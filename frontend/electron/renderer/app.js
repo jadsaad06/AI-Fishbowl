@@ -24,6 +24,8 @@ export const BACKGROUNDS = [
   "assets/images/idle_bg_main_2.png",
 ];
 
+export const LISTENING_BACKGROUND = ["assets/images/light_background_1.png"];
+
 export const ANIMATED_FISH = [
   "assets/images/fish_blue.png",
   "assets/images/fish_brown.png",
@@ -113,6 +115,8 @@ async function init() {
     await PIXI.Assets.load(ENHANCED_FISH);
     await PIXI.Assets.load(RESPONDERS);
     await PIXI.Assets.load("assets/images/ocean_diver.png");
+    await PIXI.Assets.load("assets/images/listening_fish_cropped.png");
+    await PIXI.Assets.load(LISTENING_BACKGROUND);
 
     /** Displays the application document */
     await app.init({

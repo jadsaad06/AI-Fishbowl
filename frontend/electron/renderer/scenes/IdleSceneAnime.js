@@ -33,7 +33,7 @@ export class IdleSceneAnime {
 
     this.bgInterval = setInterval(() => {
       this.bgManager.next();
-    }, 5000);
+    }, 25000);
   }
 
   destroy() {
