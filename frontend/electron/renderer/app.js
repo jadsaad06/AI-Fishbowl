@@ -25,12 +25,19 @@ export const BACKGROUNDS = [
   "assets/images/idle_bg_main_2.png",
 ];
 
+export const LISTENING_BACKGROUND = ["assets/images/light_background_1.png"];
+
 export const THINKING_BACKGROUNDS = [
   "assets/images/background_3.png",
   "assets/images/deep_sea_bg.jpg",
 ];
 
-export const LISTENING_BACKGROUND = ["assets/images/light_background_1.png"];
+export const RESPONDING_BACKGROUNDS = [
+  "assets/images/background_1.png",
+  "assets/images/deep_sea_bg.jpg",
+  "assets/images/background_3.png",
+  "assets/images/background_6.png",
+];
 
 export const ANIMATED_FISH = [
   "assets/images/fish_blue.png",
@@ -125,6 +132,7 @@ async function init() {
     await PIXI.Assets.load("assets/images/thinking_fish.png");
     await PIXI.Assets.load(LISTENING_BACKGROUND);
     await PIXI.Assets.load(THINKING_BACKGROUNDS);
+    await PIXI.Assets.load(RESPONDING_BACKGROUNDS);
 
     /** Displays the application document */
     await app.init({
