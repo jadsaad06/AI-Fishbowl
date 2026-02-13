@@ -256,7 +256,7 @@ function setupKeyboardInput() {
         return;
       }
 
-      if (e.key.toLowerCase() === "k" && currentState !== "keyboard") {
+      if (e.key.toLowerCase() === "k" && currentState === "idle") {
         e.preventDefault();
         window.fishbowl.setState("keyboard");
         return;

@@ -108,7 +108,10 @@ function startServices() {
     console.log("[TTS]: " + out);
 
     if (out.includes("TTS_SPEECH_STARTED")) {
-      updateUIState("responding");
+      setTimeout(() => {
+        updateUIState("responding");
+      }, 700);
+      //updateUIState("responding");
 
       // Pause the STT engine
       if (stt && stt.stdin.writable) {
