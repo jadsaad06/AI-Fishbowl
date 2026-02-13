@@ -73,7 +73,7 @@ export class ListeningSceneAnime {
     this.pulseText = new PulseText(
       "Don't worry, I'm paying attention!\nPSU made me good at multi-tasking :)",
       {
-        fontFamily: "Roboto",
+        fontFamily: "Garamond",
         fontSize: 28,
         fill: "#FFC35C",
         wordWrap: true,

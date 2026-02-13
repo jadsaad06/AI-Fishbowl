@@ -47,6 +47,34 @@ export class BackgroundManager {
   }
 }
 
+export class BackgroundRandomizer {
+  constructor(app, texturePaths) {
+    this.app = app;
+    this.container = new PIXI.Container();
+
+    const randomPath =
+      texturePaths[Math.floor(Math.random() * texturePaths.length)];
+
+    this.sprite = new PIXI.Sprite(PIXI.Assets.get(randomPath));
+    this.sprite.anchor.set(0.5);
+    this.sprite.x = app.screen.width / 2;
+    this.sprite.y = app.screen.height / 2;
+
+    this.applyCoverScale();
+    this.container.addChild(this.sprite);
+  }
+
+  applyCoverScale() {
+    if (!this.sprite.texture) return;
+
+    const ratio = Math.max(
+      this.app.screen.width / this.sprite.texture.width,
+      this.app.screen.height / this.sprite.texture.height,
+    );
+    this.sprite.scale.set(ratio);
+  }
+}
+
 export function createFishSprite(fishList = [], targetWidth = 100) {
   const path = fishList[Math.floor(Math.random() * fishList.length)];
 

@@ -18,10 +18,16 @@ import { RespondingScene } from "./scenes/RespondingScene.js";
 import { ListeningScene } from "./scenes/ListeningScene.js";
 import { ThinkingScene } from "./scenes/ThinkingScene.js";
 import { InfoOverlay } from "./assets/sprites_anime.js";
+import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
 
 export const BACKGROUNDS = [
   "assets/images/idle_bg_main.png",
   "assets/images/idle_bg_main_2.png",
+];
+
+export const THINKING_BACKGROUNDS = [
+  "assets/images/background_3.png",
+  "assets/images/deep_sea_bg.jpg",
 ];
 
 export const LISTENING_BACKGROUND = ["assets/images/light_background_1.png"];
@@ -117,6 +123,7 @@ async function init() {
     await PIXI.Assets.load("assets/images/ocean_diver.png");
     await PIXI.Assets.load("assets/images/listening_fish_cropped.png");
     await PIXI.Assets.load(LISTENING_BACKGROUND);
+    await PIXI.Assets.load(THINKING_BACKGROUNDS);
 
     /** Displays the application document */
     await app.init({
@@ -186,9 +193,9 @@ window.fishbowl.onUserPrompt((text) => {
     return;
 
   const responder = getResponder();
-  const formattedText = "Prompt: " + text;
+  const formattedText = "You Said: " + text;
   const finalText = responder ? `RESPONDER_NUM:${responder}\n${text}` : text;
-  if (currentScene instanceof ThinkingScene) {
+  if (currentScene instanceof ThinkingSceneAnime) {
     currentScene.updateTranscript(formattedText);
   }
 

@@ -5,8 +5,9 @@
 //import { IdleScene } from "./IdleScene.js";
 import { IdleSceneAnime } from "./IdleSceneAnime.js";
 import { ListeningSceneAnime } from "./ListeningSceneAnime.js";
+import { ThinkingSceneAnime } from "./ThinkingSceneAnime.js";
 //import { ListeningScene } from "./ListeningScene.js";
-import { ThinkingScene } from "./ThinkingScene.js";
+// import { ThinkingScene } from "./ThinkingScene.js";
 import { RespondingScene } from "./RespondingScene.js";
 import { ErrorScene } from "./ErrorScene.js";
 import { KeyboardScene } from "./KeyboardScene.js";
@@ -39,7 +40,7 @@ export function setScene(app, state) {
       currentScene = new ListeningSceneAnime(app);
       break;
     case "thinking":
-      currentScene = new ThinkingScene(app);
+      currentScene = new ThinkingSceneAnime(app);
       break;
     case "responding":
       const text = getSubtitles();
