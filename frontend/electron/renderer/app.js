@@ -274,7 +274,7 @@ function setupKeyboardInput() {
         return;
       }
 
-      if (e.key.toLowerCase() === "i") {
+      if (e.key.toLowerCase() === "l") {
         if (infoOverlay) infoOverlay.toggle();
         return;
       }
@@ -282,7 +282,7 @@ function setupKeyboardInput() {
       if (
         infoOverlay &&
         infoOverlay.container.visible &&
-        e.key.toLowerCase() !== "i"
+        e.key.toLowerCase() !== "l"
       )
         return;
     }

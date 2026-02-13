@@ -239,6 +239,7 @@ export class ResponderEnclosure {
 
     this.label = new PIXI.Text(name, {
       ...baseStyle,
+      fontFamily: isHeader ? "Brush Script MT" : "Garamond",
       fontSize: isHeader ? 64 : 24,
       fontWeight: isHeader ? "bold" : "normal",
     });
@@ -340,7 +341,7 @@ export class InfoOverlay {
     cardContainer.y = app.screen.height / 2;
     this.container.addChild(cardContainer);
 
-    const closeTxt = new PIXI.Text("Press I to Close", {
+    const closeTxt = new PIXI.Text("Press L to Close", {
       fontFamily: "Roboto",
       fontSize: 18,
       fill: "#888888",
@@ -377,7 +378,7 @@ export class AnimeIdleText {
       "- Press 'k' To Type Prompt\n" +
       "- Press 'r' To Select Random Responder\n" +
       "- Press 1/2/3 To Select Your Responder\n" +
-      "- Press 'i' To Open/Close Responder Lore";
+      "- Press 'L' To Open/Close Responder Lore";
     this.responders = [
       new ResponderEnclosure(RESPONDERS[0], "Bob"),
       new ResponderEnclosure(RESPONDERS[1], "Jimbo"),
