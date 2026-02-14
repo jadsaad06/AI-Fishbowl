@@ -2,6 +2,7 @@
  * Main application file for the Electron renderer process. (Frontend)
  */
 import * as PIXI from "pixi.js";
+import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 import {
   subscribe,
   setState,
@@ -9,19 +10,32 @@ import {
   setPrompt,
   getPrompt,
   getState,
+  setResponder,
+  getResponder,
 } from "./state/store.js";
 import { setScene, currentScene } from "./scenes/index.js";
-import { RespondingScene } from "./scenes/RespondingScene.js";
-import { ListeningScene } from "./scenes/ListeningScene.js";
-import { ThinkingScene } from "./scenes/ThinkingScene.js";
+import { InfoOverlay } from "./assets/sprites_anime.js";
+import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
+import { ListeningSceneAnime } from "./scenes/ListeningSceneAnime.js";
+import { RespondingSceneAnime } from "./scenes/RespondingSceneAnime.js";
 
 export const BACKGROUNDS = [
-  "assets/images/idle_bg_1.png",
-  "assets/images/idle_bg_2.png",
-  "assets/images/idle_bg_3.png",
-  "assets/images/idle_bg_4.png",
-  "assets/images/idle_bg_5.png",
-  "assets/images/idle_bg_6.png",
+  "assets/images/idle_bg_main.png",
+  "assets/images/idle_bg_main_2.png",
+];
+
+export const LISTENING_BACKGROUND = ["assets/images/light_background_1.png"];
+
+export const THINKING_BACKGROUNDS = [
+  "assets/images/background_3.png",
+  "assets/images/deep_sea_bg.jpg",
+];
+
+export const RESPONDING_BACKGROUNDS = [
+  "assets/images/background_1.png",
+  "assets/images/deep_sea_bg.jpg",
+  "assets/images/background_3.png",
+  "assets/images/background_6.png",
 ];
 
 export const ANIMATED_FISH = [
@@ -55,6 +69,8 @@ const url = window.fishbowl.config.gcpUrl;
 
 let ws = null;
 let keepRetrying = false;
+let fullAgentResponse = "";
+let responseTimeout = null;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -76,8 +92,15 @@ async function connect_agent() {
 
         sock.addEventListener("message", (event) => {
           console.log("Message:", event.data);
-          setSubtitles(event.data);
-          window.fishbowl.sendToTTS(event.data);
+          fullAgentResponse += event.data;
+
+          if (responseTimeout) clearTimeout(responseTimeout);
+
+          responseTimeout = setTimeout(() => {
+            setSubtitles(event.data);
+            window.fishbowl.sendToTTS(fullAgentResponse);
+            fullAgentResponse = "";
+          }, 500);
           //setScene(app, "responding");
         });
 
@@ -98,6 +121,8 @@ async function connect_agent() {
   }
 }
 
+let infoOverlay;
+
 /**
  * Initializes the PIXI application, sets up IPC listeners for state changes,
  * and subscribes to the state store to update scenes accordingly.
@@ -111,6 +136,11 @@ async function init() {
     await PIXI.Assets.load(ENHANCED_FISH);
     await PIXI.Assets.load(RESPONDERS);
     await PIXI.Assets.load("assets/images/ocean_diver.png");
+    await PIXI.Assets.load("assets/images/listening_fish_cropped.png");
+    await PIXI.Assets.load("assets/images/thinking_fish.png");
+    await PIXI.Assets.load(LISTENING_BACKGROUND);
+    await PIXI.Assets.load(THINKING_BACKGROUNDS);
+    await PIXI.Assets.load(RESPONDING_BACKGROUNDS);
 
     /** Displays the application document */
     await app.init({
@@ -132,7 +162,7 @@ async function init() {
         console.log("IPC Received Subtitles: ", text);
         setSubtitles(text);
 
-        if (currentScene instanceof RespondingScene) {
+        if (currentScene instanceof RespondingSceneAnime) {
           currentScene.updateSubtitles(text);
         }
       });
@@ -144,11 +174,28 @@ async function init() {
      */
     subscribe((state) => {
       console.log("Store Updated, Setting Scene:", state);
+      if (
+        state === "responding" &&
+        currentScene instanceof RespondingSceneAnime
+      ) {
+        return;
+      }
+      anime.remove("*");
+
+      if (currentScene && typeof currentScene.destroy === "function") {
+        currentScene.destroy();
+      }
       setScene(app, state);
+
+      if (infoOverlay && infoOverlay.container) {
+        app.stage.addChild(infoOverlay.container);
+      }
     });
 
     /** Default landing page initialization */
     setScene(app, "idle");
+    infoOverlay = new InfoOverlay(app);
+    app.stage.addChild(infoOverlay.container);
     setupKeyboardInput();
   } catch (error) {
     console.error("Failed to initialize PIXI application:", error);
@@ -156,36 +203,35 @@ async function init() {
 }
 
 window.fishbowl.onUserPrompt((text) => {
-  console.log("STT Transcript received:", text);
-
   if (getState() === "keyboard") {
     console.log("Suppressed STT: Keyboard active.");
     return;
   }
+  const currentState = getState();
+  if (
+    currentState !== "listening" &&
+    currentState !== "idle" &&
+    currentState !== "thinking"
+  )
+    return;
 
-  const formattedText = "Prompt: " + text;
-  if (currentScene instanceof ThinkingScene) {
+  const responder = getResponder();
+  const formattedText = "You Said: " + text;
+  if (currentScene instanceof ThinkingSceneAnime) {
     currentScene.updateTranscript(formattedText);
   }
 
   // 3. Socket Communication: Send the raw text to the MCP server
   if (ws && ws.readyState === WebSocket.OPEN) {
+    console.log("STT sent to socket:", formattedText);
     ws.send(text);
-    console.log("STT sent to socket:", text);
-    setScene("thinking");
+    if (getState() !== "thinking") {
+      window.fishbowl.setState("thinking");
+    }
   } else {
     console.warn("WebSocket not ready. Could not send STT.");
   }
 });
-
-/*
-window.fishbowl.onUserPrompt((text) => {
-  text = "Question:" + text;
-  if (currentScene instanceof ThinkingScene) {
-    currentScene.updateTranscript(text);
-  }
-});
-*/
 
 function setupKeyboardInput() {
   window.addEventListener("keydown", (e) => {
@@ -193,14 +239,9 @@ function setupKeyboardInput() {
 
     const currentState = getState();
 
-    if (e.key.toLowerCase() === "k" && currentState !== "keyboard") {
-      e.preventDefault();
-      window.fishbowl.setState("keyboard");
-      return;
-    }
-
     if (currentState === "keyboard") {
       if (e.key === "Enter") {
+        const responder = getResponder();
         const prompt = getPrompt().trim();
         if (!prompt) return;
 
@@ -231,6 +272,53 @@ function setupKeyboardInput() {
       if (e.key.length === 1) {
         setPrompt(getPrompt() + e.key);
       }
+    } else {
+      if (e.key === "1" || e.key === "2" || e.key === "3") {
+        if (getResponder() === Number(e.key)) {
+          return;
+        } else {
+          setResponder(Number(e.key));
+          console.log("Responder selected:", e.key);
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send("PERSONALIZATION: " + e.key);
+          }
+        }
+
+        return;
+      }
+
+      if (e.key.toLowerCase() === "r") {
+        const randomID = Math.floor(Math.random() * 3) + 1;
+        if (getResponder() === Number(randomID)) {
+          return;
+        } else {
+          console.log("Responder selected:", randomID);
+          setResponder(randomID);
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send("PERSONALIZATION: " + randomID);
+          }
+        }
+
+        return;
+      }
+
+      if (e.key.toLowerCase() === "k" && currentState === "idle") {
+        e.preventDefault();
+        window.fishbowl.setState("keyboard");
+        return;
+      }
+
+      if (e.key.toLowerCase() === "l") {
+        if (infoOverlay) infoOverlay.toggle();
+        return;
+      }
+
+      if (
+        infoOverlay &&
+        infoOverlay.container.visible &&
+        e.key.toLowerCase() !== "l"
+      )
+        return;
     }
   });
 }

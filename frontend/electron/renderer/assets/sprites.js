@@ -47,6 +47,34 @@ export class BackgroundManager {
   }
 }
 
+export class BackgroundRandomizer {
+  constructor(app, texturePaths) {
+    this.app = app;
+    this.container = new PIXI.Container();
+
+    const randomPath =
+      texturePaths[Math.floor(Math.random() * texturePaths.length)];
+
+    this.sprite = new PIXI.Sprite(PIXI.Assets.get(randomPath));
+    this.sprite.anchor.set(0.5);
+    this.sprite.x = app.screen.width / 2;
+    this.sprite.y = app.screen.height / 2;
+
+    this.applyCoverScale();
+    this.container.addChild(this.sprite);
+  }
+
+  applyCoverScale() {
+    if (!this.sprite.texture) return;
+
+    const ratio = Math.max(
+      this.app.screen.width / this.sprite.texture.width,
+      this.app.screen.height / this.sprite.texture.height,
+    );
+    this.sprite.scale.set(ratio);
+  }
+}
+
 export function createFishSprite(fishList = [], targetWidth = 100) {
   const path = fishList[Math.floor(Math.random() * fishList.length)];
 
@@ -207,9 +235,8 @@ export class FishSwarm {
   }
 }
 
-export function createResponder(app, imageList = [], targetWidth = 200) {
-  const path = imageList[Math.floor(Math.random() * imageList.length)];
-  const texture = PIXI.Texture.from(path);
+export function createResponder(app, imagePath, targetWidth = 200) {
+  const texture = PIXI.Texture.from(imagePath);
   const responder = new PIXI.Sprite(texture);
 
   responder.anchor.set(0.5);
@@ -222,87 +249,6 @@ export function createResponder(app, imageList = [], targetWidth = 200) {
 
   return responder;
 }
-
-export class PulsingLabel {
-  constructor(app, text = "INTERACT TO START") {
-    this.container = new PIXI.Container();
-
-    const style = new PIXI.TextStyle({
-      fontFamily: "Times New Roman",
-      fontSize: 54,
-      fill: "#ffffff",
-      fontWeight: "bold",
-      align: "center",
-      wordWrap: true,
-      wordWrapWidth: app.screen.width * 0.8,
-      dropShadow: true,
-      dropShadowColor: "#000000",
-      dropShadowBlur: 10,
-      dropShadowDistance: 0,
-    });
-
-    this.text = new PIXI.Text(text, style);
-    this.text.anchor.set(0.5);
-
-    const padding = 60;
-    const ellipseWidth = this.text.width + padding * 2;
-    const ellipseHeight = this.text.height + padding * 4;
-
-    this.bg = new PIXI.Graphics();
-
-    this.bg.ellipse(0, 0, ellipseWidth / 2, ellipseHeight / 2);
-    this.bg.fill({ color: 0x000000, alpha: 0.8 });
-    this.bg.stroke({ width: 4, color: 0xffffff });
-
-    this.container.addChild(this.bg);
-    this.container.addChild(this.text);
-
-    this.drawBackground(false);
-
-    this.container.position.set(app.screen.width / 2, app.screen.height / 2);
-
-    this.elapsed = 0;
-  }
-
-  drawBackground(isTranscript) {
-    this.bg.clear();
-    const paddingX = 40;
-    const paddingY = 30;
-    const width = this.text.width + paddingX * 2;
-    const height = this.text.height + paddingY * 2;
-
-    this.bg.fill({ color: 0x000000, alpha: 0.8 });
-    this.bg.stroke({ width: 4, color: 0xffffff });
-
-    if (isTranscript) {
-      this.bg.roundRect(-width / 2, -height / 2, width, height, 20);
-    } else {
-      this.bg.ellipse(0, 0, width / 2, height / 2);
-    }
-    this.bg.fill();
-  }
-
-  setText(newText) {
-    this.text.text = newText;
-    const isQuestion = newText.includes("Prompt:");
-    this.drawBackground(isQuestion);
-  }
-
-  update(delta) {
-    this.elapsed += 0.01;
-
-    this.container.alpha = 0.6 + Math.sin(this.elapsed) * 0.4;
-  }
-}
-
-export const CommonStyles = {
-  header: new PIXI.TextStyle({
-    fontFamily: "Times New Roman",
-    fontSize: 36,
-    fill: "#0f0202ff",
-    fontWeight: "bold",
-  }),
-};
 
 export function autoScale(sprite, targetWidth) {
   if (!sprite.texture || !sprite.texture.width || sprite.texture.width === 0)

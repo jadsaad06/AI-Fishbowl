@@ -6,6 +6,7 @@
     "start": "electron ."
   },
   "dependencies": {
+    "animejs": "^4.3.5",
     "dotenv": "^17.2.3",
     "pixi.js": "^8.15.0"
   },

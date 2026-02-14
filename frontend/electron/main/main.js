@@ -5,12 +5,12 @@ const { start } = require("repl");
 require("dotenv").config();
 
 const GCP_URL = process.env.GCP_MCP_URL;
+app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication");
+app.commandLine.appendSwitch("log-level", "3");
 
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
 let win;
 let currentAppState = "idle";
-let pythonClient;
-let ttsProcess;
 
 /**
  * Create a new window using this function.
@@ -80,12 +80,21 @@ function startServices() {
     if (out.includes("[Transcript]:")) {
       console.log(out);
       const promptText = out.replace("[Transcript]:", "").trim();
-      updateUIState("thinking");
-      win.webContents.send("display-user-prompt", promptText);
+      if (currentAppState === "idle" || currentAppState === "listening") {
+        updateUIState("thinking");
+        if (stt && stt.stdin.writable) {
+          stt.stdin.write("pause\n");
+        }
+        win.webContents.send("display-user-prompt", promptText);
+      } else {
+        console.log(`[STT IGNORED] System busy in state: ${currentAppState}`);
+      }
     }
 
     if (out.includes("EVENT:MIC_STARTED")) {
-      updateUIState("listening");
+      if (currentAppState === "idle") {
+        updateUIState("listening");
+      }
     }
   });
 
@@ -106,10 +115,20 @@ function startServices() {
     console.log("[TTS]: " + out);
 
     if (out.includes("TTS_SPEECH_STARTED")) {
-      updateUIState("responding");
+      setTimeout(() => {
+        updateUIState("responding");
+      }, 700);
     }
     if (out.includes("TTS_SPEECH_ENDED")) {
-      updateUIState("idle");
+      //updateUIState("idle");
+
+      // Resume the STT engine after a short delay to ensure audio has finished
+      setTimeout(() => {
+        updateUIState("idle");
+        if (stt && stt.stdin.writable) {
+          stt.stdin.write("resume\n");
+        }
+      }, 2500); // 500ms delay
     }
   });
 }

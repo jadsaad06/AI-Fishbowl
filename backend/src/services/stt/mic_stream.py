@@ -14,7 +14,7 @@ import math
 import sys
 from array import array
 from collections import deque
-
+import threading
 import pyaudio
 
 
@@ -74,7 +74,10 @@ class MicrophoneStream:
         self.format = pyaudio.paInt16                   # Recommended by Google
 
         self.audio_interface = pyaudio.PyAudio()        # Initialize PyAudio
-
+        
+        self._paused = False # Add this to the class to track if the stream is paused
+        self._pause_lock = threading.Lock() # Add this to the class to lock the pause state
+        
         try:
             if index is None and name_contains:
                 index = find_input_device_index(name_contains, self.audio_interface)
@@ -139,6 +142,21 @@ class MicrophoneStream:
             self.stream.close()
         self.audio_interface.terminate()
 
+
+    def pause(self):
+        self._paused = True
+        print("EVENT:MIC_PAUSED", flush=True)
+
+    def resume(self):
+        self._paused = False
+        print("EVENT:MIC_RESUMED", flush=True)
+    
+    @property
+    def is_paused(self):
+        with self._pause_lock:
+            return self._paused
+    
+    
     def generator(self):    # Infinite loop to get audio chunks for STT
         if not self.vad_enabled:
             while True:
@@ -163,6 +181,11 @@ class MicrophoneStream:
             data = self.stream.read(self.chunk, exception_on_overflow=False)
             if not data:
                 break
+            
+            # If the stream is paused, yield silence and continue
+            if self.is_paused:
+                yield self._silence_chunk
+                continue
 
             rms = _rms(data, self.sample_width)
             is_speech = rms >= self.vad_energy_threshold
