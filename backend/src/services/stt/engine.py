@@ -4,7 +4,7 @@ The is the documentation I am referencing. Note that it supports the
 transcription of live audio and audio files.
 
 PIPELINE:
-Microphone -> PyAudio -> MicrophoneStream -> get_request_stream() -> Google Cloud STT API -> responses_iterator -> Terminal Output
+Microphone -> PyAudio -> MicrophoneStream -> whisper.cpp server (/inference) -> Final Transcripts (fallback: Google STT)
 """
 
 import os
