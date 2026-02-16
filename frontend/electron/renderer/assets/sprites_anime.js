@@ -179,6 +179,165 @@ export class TypewriterText {
   }
 }
 
+export class Enclosure {
+  constructor({
+    x = 0,
+    y = 0,
+    header = null,
+    subheader = null,
+    footer = null,
+    imagePath = null,
+    imageMaxWidth = 200,
+    imageMaxHeight = 200,
+    padding = 30,
+    boxColor = 0x1a1a1a,
+    boxAlpha = 0.9,
+    fixedSize = null,
+    headerStyle = {},
+    subheaderStyle = {},
+    footerStyle = {},
+  } = {}) {
+    this.container = new PIXI.Container();
+
+    this.container.position.set(x, y);
+
+    this.box = new ModernBox(padding, boxColor, boxAlpha);
+    this.container.addChild(this.box.graphics);
+
+    const baseStyle = {
+      fontFamily: "Roboto",
+      fill: "#ffffff",
+      align: "center",
+    };
+
+    if (header) {
+      this.header = new PIXI.Text(header, {
+        ...baseStyle,
+        fontSize: 42,
+        fontWeight: "bold",
+        ...headerStyle,
+      });
+      this.header.anchor.set(0.5);
+      this.container.addChild(this.header);
+    }
+
+    if (imagePath) {
+      this.image = PIXI.Sprite.from(imagePath);
+      this.image.anchor.set(0.5);
+
+      const scale = Math.min(
+        imageMaxWidth / this.image.texture.width,
+        imageMaxHeight / this.image.texture.height,
+      );
+      this.image.scale.set(scale);
+      this.container.addChild(this.image);
+    }
+
+    if (subheader) {
+      this.subheader = new PIXI.Text(subheader, {
+        ...baseStyle,
+        fontSize: 24,
+        fill: "#bdefff",
+        wordWrap: true,
+        wordWrapWidth: fixedSize ? fixedSize.width - padding * 2 : 400,
+        ...subheaderStyle,
+      });
+      this.subheader.anchor.set(0.5);
+      this.container.addChild(this.subheader);
+    }
+
+    if (footer) {
+      this.footer = new PIXI.Text(footer, {
+        ...baseStyle,
+        fontSize: 18,
+        fill: "#888888",
+        ...footerStyle,
+      });
+      this.footer.anchor.set(0.5);
+      this.container.addChild(this.footer);
+    }
+
+    this.fixedSize = fixedSize;
+    this.layout();
+  }
+
+  layout() {
+    let yOffset = 0;
+    const gap = 20;
+
+    const elements = [];
+
+    if (this.header) elements.push(this.header);
+    if (this.image) elements.push(this.image);
+    if (this.subheader) elements.push(this.subheader);
+    if (this.footer) elements.push(this.footer);
+
+    let currentY = 0;
+
+    elements.forEach((el, index) => {
+      const halfHeight = el.height / 2;
+
+      if (index === 0) {
+        currentY = halfHeight;
+      } else {
+        const prevHalfHeight = elements[index - 1].height / 2;
+        currentY += prevHalfHeight + gap + halfHeight;
+      }
+
+      el.y = currentY;
+    });
+
+    const totalHeight = currentY + elements[elements.length - 1].height / 2;
+    elements.forEach((el) => {
+      el.y -= totalHeight / 2;
+    });
+
+    this.box.reshape(elements, this.fixedSize);
+  }
+
+  setPosition(x, y) {
+    this.container.position.set(x, y);
+  }
+
+  moveBy(dx, dy) {
+    this.container.position.x += dx;
+    this.container.position.y += dy;
+  }
+
+  setHeader(text) {
+    if (!this.header) return;
+    this.header.text = text;
+    this.layout();
+  }
+
+  setSubheader(text) {
+    if (!this.subheader) return;
+    this.subheader.text = text;
+    this.layout();
+  }
+
+  setFooter(text) {
+    if (!this.footer) return;
+    this.footer.text = text;
+    this.layout();
+  }
+
+  setBoxColor(color) {
+    this.box.color = color;
+    this.layout();
+  }
+
+  refresh() {
+    this.layout();
+  }
+
+  destroy() {
+    if (this.container && !this.container.destroyed) {
+      this.container.destroy({ children: true });
+    }
+  }
+}
+
 export class ModernBox {
   constructor(padding = 30, color = 0x1a1a1a, alpha = 0.9) {
     this.graphics = new PIXI.Graphics();

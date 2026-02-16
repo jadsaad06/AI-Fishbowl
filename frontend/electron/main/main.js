@@ -138,5 +138,5 @@ app.whenReady().then(() => {
   createWindow();
   console.log(path.join(__dirname, "../../../backend/src/mcp_stack/client.py"));
 
-  startServices();
+  //startServices();
 });
