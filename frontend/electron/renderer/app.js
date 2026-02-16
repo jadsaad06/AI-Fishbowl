@@ -17,6 +17,7 @@ import { setScene, currentScene } from "./scenes/index.js";
 import { InfoOverlay } from "./assets/sprites_anime.js";
 import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
 import { ListeningSceneAnime } from "./scenes/ListeningSceneAnime.js";
+import { RespondingSceneAnime } from "./scenes/RespondingSceneAnime.js";
 
 export const BACKGROUNDS = [
   "assets/images/idle_bg_main.png",
@@ -68,6 +69,8 @@ const url = window.fishbowl.config.gcpUrl;
 
 let ws = null;
 let keepRetrying = false;
+let fullAgentResponse = "";
+let responseTimeout = null;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -79,7 +82,7 @@ async function connect_agent() {
   while (keepRetrying) {
     try {
       ws = await new Promise((resolve, reject) => {
-        const sock = new WebSocket(`ws://${url}/text_input`);
+        const sock = new WebSocket(`wss://${url}/text_input`);
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
@@ -89,8 +92,15 @@ async function connect_agent() {
 
         sock.addEventListener("message", (event) => {
           console.log("Message:", event.data);
-          setSubtitles(event.data);
-          window.fishbowl.sendToTTS(event.data);
+          fullAgentResponse += event.data;
+
+          if (responseTimeout) clearTimeout(responseTimeout);
+
+          responseTimeout = setTimeout(() => {
+            setSubtitles(event.data);
+            window.fishbowl.sendToTTS(fullAgentResponse);
+            fullAgentResponse = "";
+          }, 500);
           //setScene(app, "responding");
         });
 
@@ -164,6 +174,12 @@ async function init() {
      */
     subscribe((state) => {
       console.log("Store Updated, Setting Scene:", state);
+      if (
+        state === "responding" &&
+        currentScene instanceof RespondingSceneAnime
+      ) {
+        return;
+      }
       anime.remove("*");
 
       if (currentScene && typeof currentScene.destroy === "function") {
@@ -258,10 +274,9 @@ function setupKeyboardInput() {
       }
     } else {
       if (e.key === "1" || e.key === "2" || e.key === "3") {
-        if (getResponder() === Number(e.key)){
+        if (getResponder() === Number(e.key)) {
           return;
-        }
-        else{
+        } else {
           setResponder(Number(e.key));
           console.log("Responder selected:", e.key);
           if (ws && ws.readyState === WebSocket.OPEN) {
@@ -274,17 +289,15 @@ function setupKeyboardInput() {
 
       if (e.key.toLowerCase() === "r") {
         const randomID = Math.floor(Math.random() * 3) + 1;
-        if (getResponder() === Number(randomID)){
+        if (getResponder() === Number(randomID)) {
           return;
-        }
-        else{
+        } else {
           console.log("Responder selected:", randomID);
           setResponder(randomID);
           if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send("PERSONALIZATION: " + randomID);
           }
         }
-
 
         return;
       }

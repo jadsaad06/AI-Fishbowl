@@ -99,6 +99,37 @@ export class TypewriterText {
     this._state = { chars: 0 };
   }
 
+  appendText(extraText) {
+    if (!extraText) return;
+
+    const previousLength = this.fullText.length;
+    this.fullText += extraText;
+
+    if (!this._animation) {
+      this.play();
+      return;
+    }
+
+    const currentChars = Math.floor(this._state.chars);
+
+    this._animation.pause();
+
+    this._animation = anime({
+      targets: this._state,
+      chars: this.fullText.length,
+      duration:
+        (this.fullText.length - currentChars) * this.options.durationPerChar,
+      easing: this.options.easing,
+      round: 1,
+      update: () => {
+        if (!this.textObject || this.textObject.destroyed) return;
+
+        const count = Math.floor(this._state.chars);
+        this.textObject.text = this.fullText.slice(0, count);
+      },
+    });
+  }
+
   setText(newText) {
     this.fullText = newText;
     this.textObject.text = "";

@@ -64,13 +64,20 @@ export class RespondingSceneAnime {
     this.typewriter.container.addChildAt(this.subBox.graphics, 0);
     this.syncGroup.addChild(this.typewriter.container);
 
-    this.updateSubtitles(initialSubtitles || testSubtitles);
+    this.typewriter.setText(initialSubtitles || testSubtitles);
+
+    //this.updateSubtitles(initialSubtitles || testSubtitles);
 
     this.initAnimations();
 
     this.updateLoop = () => {
       if (this.subBox && this.typewriter) {
-        if (this.typewriter.textObject.height > this.MAX_HEIGHT) {
+        const isAnimating =
+          this.typewriter._animation && !this.typewriter._animation.paused;
+        if (
+          !isAnimating &&
+          this.typewriter.textObject.height > this.MAX_HEIGHT
+        ) {
           this.truncateText();
         }
         this.subBox.reshape(this.typewriter.textObject);
@@ -120,10 +127,10 @@ export class RespondingSceneAnime {
   updateSubtitles(newText) {
     if (!this.typewriter) return;
 
-    const safeText =
-      newText.length > 1000 ? newText.substring(0, 1000) + "..." : newText;
+    // const safeText =
+    //   newText.length > 1000 ? newText.substring(0, 1000) + "..." : newText;
     this.typewriter.stop();
-    this.typewriter.setText(safeText);
+    this.typewriter.setText(newText);
     this.typewriter.play();
   }
 
