@@ -11,13 +11,8 @@ except ImportError:
     print("Error: pywhispercpp not installed. Run 'pip install pywhispercpp'")
     sys.exit(1)
 
-# Import your existing MicrophoneStream class here (or ensure it's in the same file)
-# Assuming MicrophoneStream is defined as provided in your prompt...
 from mic_stream import MicrophoneStream
 
-# ==========================================
-# 1. Helper: VAD Wrapper
-# ==========================================
 class VADAudioStream(MicrophoneStream):
     """
     Wraps the existing MicrophoneStream to yield 'None' when silence is detected.
@@ -26,29 +21,13 @@ class VADAudioStream(MicrophoneStream):
     def generator(self):
         # Initialize internal VAD counters (re-implementing logic for yielding signals)
         # Note: We rely on the existing VAD logic but need to inject the "None" signal
-        # Since we can't easily inject into the existing generator without modifying the class,
-        # we will create a new generator loop here that mimics the original but adds the signal.
-        
-        # ... (This replicates your class's logic but adds the 'yield None' on silence)
-        # To keep it simple, you can just ADD `yield None` to your existing class
-        # right after `print("EVENT:MIC_STOPPED", flush=True)` inside MicrophoneStream.
-        
-        # IF YOU CANNOT MODIFY THE ORIGINAL CLASS, USE THIS WRAPPER LOGIC:
         iterator = super().generator()
         
         # We need to detect the console output or state change. 
-        # Since we can't easily detect the print statement, the cleanest way 
-        # is to modify your original MicrophoneStream class slightly.
-        #
-        # ACTION REQUIRED: In your MicrophoneStream.generator method:
-        # Find: print("EVENT:MIC_STOPPED", flush=True)
-        # Add below it: yield None
+        # Since we can't easily detect the print statement, the cleanest way is to identify the None
         
         return iterator
 
-# ==========================================
-# 2. Hybrid Transcriber Class
-# ==========================================
 
 class HybridTranscriber:
     def __init__(self, model_name="base.en", n_threads=4):
@@ -83,7 +62,7 @@ class HybridTranscriber:
         """
         text_result = ""
 
-        # --- A. Try Local Whisper ---
+        # Try Local Whisper
         if self.local_available:
             try:
                 # Convert Int16 bytes -> Float32 NumPy array (Normalized -1.0 to 1.0)
@@ -103,7 +82,7 @@ class HybridTranscriber:
             except Exception as e:
                 print(f" [Local Error]: {e}")
 
-        # --- B. Fallback to Google ---
+        # Fallback to Google
         if self.google_available:
             print(" [Fallback]: Sending to Google Cloud...")
             try:
@@ -119,9 +98,6 @@ class HybridTranscriber:
         
         return None
 
-# ==========================================
-# 3. Main Execution
-# ==========================================
 
 def main():
     # CONFIG
@@ -129,9 +105,6 @@ def main():
     CHUNK_MS = 30
     
     transcriber = HybridTranscriber(model_name="base.en")
-    
-    # NOTE: You must modify your MicrophoneStream.generator() to `yield None` 
-    # when silence is detected (after "EVENT:MIC_STOPPED"), otherwise we won't know when to process.
     
     # Initialize your stream (ensure arguments match your class definition)
     with MicrophoneStream(rate=SAMPLE_RATE, chunk_duration_ms=CHUNK_MS, vad_enabled=True) as stream:
@@ -141,7 +114,7 @@ def main():
         
         for chunk in stream.generator():
             # Handling the special signal for "End of Speech"
-            # If you modified MicrophoneStream to yield None:
+            # identifies the yield None that occurs at end of speech
             if chunk is None:
                 if len(audio_buffer) > 0:
                     # Send to transcriber
@@ -153,10 +126,6 @@ def main():
             # If standard audio chunk
             audio_buffer.extend(chunk)
             
-            # Backup plan: If you CANNOT modify MicrophoneStream to yield None,
-            # you can check the stream.is_paused status or rely on the console output 
-            # if you redirect stdout, but that is messy. 
-            # Ideally, modify the MicrophoneStream class as described above.
 
 if __name__ == "__main__":
     main()
