@@ -129,7 +129,8 @@ run() {
              echo "*****Whisper Server active (PID: $SERVER_PID)."
         else
              echo "*****Warning: Whisper Server failed to start. See $LOG_FILE for details."
-             SERVER_PID=""
+       	     echo "*****Skipping local server. App will use Google Cloud STT."
+             SERVER_PID="" # reset server PID since it didn't start
         fi
     else
         echo "*****Whisper binary not found at $WHISPER_BIN"
