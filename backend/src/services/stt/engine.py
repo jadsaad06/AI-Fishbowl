@@ -4,7 +4,7 @@ The is the documentation I am referencing. Note that it supports the
 transcription of live audio and audio files.
 
 PIPELINE:
-Microphone -> PyAudio -> MicrophoneStream -> get_request_stream() -> Google Cloud STT API -> responses_iterator -> Terminal Output
+Microphone -> PyAudio -> MicrophoneStream -> whisper.cpp server (/inference) -> Final Transcripts (fallback: Google STT)
 """
 
 import os
@@ -61,9 +61,7 @@ class HybridTranscriber:
         try:
             # Prepare WAV file in memory
             # Note: We send the audio at the MIC's native rate.
-            # The whisper.cpp server usually handles resampling, but 16k is safest if you can.
-            # If your mic is 48k, the server might handle it, or we might need to resample here.
-            # For now, let's send what we have.
+            # The whisper.cpp server usually handles resampling, but 16k is safest
             wav_file = self._convert_to_wav(int16_bytes, mic_rate)
 
             files = {
@@ -94,15 +92,9 @@ class HybridTranscriber:
         except Exception as e:
             print(f"[Local Server] Error: {e}", file=sys.stderr)
 
-        # 2. Fallback to Google
+        # Fallback to Google
         if self.google_available:
             try:
-                # If mic rate isn't 16000, Google requires us to specify the correct rate
-                # or resample. Here we assume Google config matches or handles it.
-                # Ideally, resample to 16k before sending to Google if config says 16k.
-
-                # Simple check: If mic is 48k and config is 16k, this might fail without resampling.
-                # For simplicity in this snippet, we send raw bytes.
 
                 audio = speech.RecognitionAudio(content=int16_bytes)
 
