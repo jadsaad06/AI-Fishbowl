@@ -275,7 +275,13 @@ function setupKeyboardInput() {
         setPrompt(getPrompt() + e.key);
       }
     } else {
-      if (e.key === "1" || e.key === "2" || e.key === "3") {
+      if (
+        e.key === "1" ||
+        e.key === "2" ||
+        e.key === "3" ||
+        e.key === "4" ||
+        e.key === "5"
+      ) {
         if (getResponder() === Number(e.key)) {
           return;
         } else {

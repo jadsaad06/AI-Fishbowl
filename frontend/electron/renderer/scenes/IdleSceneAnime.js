@@ -15,17 +15,12 @@ export class IdleSceneAnime {
     this.container = new PIXI.Container();
 
     this.shuffleBoxes = [];
+    this.fixedBoxes = [];
 
     this.shufflePositions = [
-      // Top Row (Pushed higher to 15% to clear the Header Box)
-      { x: app.screen.width * 0.18, y: app.screen.height * 0.15 }, // Top Left
-      { x: app.screen.width * 0.82, y: app.screen.height * 0.15 }, // Top Right
-
-      // Bottom Row (Pushed lower to 85% to clear the Fact Box)
-      { x: app.screen.width * 0.18, y: app.screen.height * 0.85 }, // Bottom Left
-      { x: app.screen.width * 0.35, y: app.screen.height * 0.85 }, // Top Center (Jimbo's row)
-      { x: app.screen.width * 0.65, y: app.screen.height * 0.85 }, // Bottom Center (Below Fact Box)
-      { x: app.screen.width * 0.82, y: app.screen.height * 0.85 }, // Bottom Right
+      { x: app.screen.width * 0.2, y: app.screen.height * 0.8 },
+      { x: app.screen.width * 0.5, y: app.screen.height * 0.8 },
+      { x: app.screen.width * 0.8, y: app.screen.height * 0.8 },
     ];
 
     this.bgManager = new BackgroundManager(app, BACKGROUNDS);
@@ -108,18 +103,28 @@ export class IdleSceneAnime {
       "The first webcam was created at Cambridge to monitor the water level of a coffee pot.",
     ];
 
-    const names = ["Bob", "Jimbo", "Bongo", "Koko", "Kiki"];
+    const names = ["Pinto", "Jimbo", "Bongo", "Koko", "Kiki"];
 
     for (let i = 0; i < names.length; i++) {
       const responderBox = new Enclosure({
         header: names[i],
         imagePath: RESPONDERS[i],
         subheader: `Press ${i + 1} for ${names[i]}`,
-        fixedSize: { width: 280, height: 400 },
+        fixedSize: { width: 280, height: 350 },
         headerStyle: { fontSize: 36, fontFamily: "Brush Script MT" },
       });
 
-      this.shuffleBoxes.push(responderBox);
+      if (i < 3) {
+        this.shuffleBoxes.push(responderBox);
+      } else {
+        const fixedPos =
+          i === 3
+            ? { x: app.screen.width * 0.75, y: app.screen.height * 0.2 }
+            : { x: app.screen.width * 0.9, y: app.screen.height * 0.2 };
+
+        responderBox.setPosition(fixedPos.x, fixedPos.y);
+        this.fixedBoxes.push(responderBox);
+      }
     }
 
     this.instructionsBox = new Enclosure({
@@ -133,11 +138,18 @@ export class IdleSceneAnime {
       fixedSize: { width: 350, height: 300 },
     });
 
-    this.shuffleBoxes.push(this.instructionsBox);
+    this.instructionsBox.setPosition(
+      app.screen.width * 0.18,
+      app.screen.height * 0.2,
+    );
+    this.fixedBoxes.push(this.instructionsBox);
 
+    this.fixedBoxes.forEach((box) => this.container.addChild(box.container));
     this.shuffleBoxes.forEach((box, index) => {
-      const pos = this.shufflePositions[index];
-      box.setPosition(pos.x, pos.y);
+      box.setPosition(
+        this.shufflePositions[index].x,
+        this.shufflePositions[index].y,
+      );
       this.container.addChild(box.container);
     });
 
@@ -145,7 +157,7 @@ export class IdleSceneAnime {
       header: "Here's a fact for you:",
       headerStyle: { fontSize: 30, fontFamily: "Times New Roman" },
       subheader: this.factsList[0],
-      fixedSize: { width: 800, height: 220 },
+      fixedSize: { width: app.screen.width - 400, height: 220 },
       boxColor: 0x1e1e2e,
       verticalGap: 50,
       yOffset: -10,
@@ -178,7 +190,7 @@ export class IdleSceneAnime {
         fontSize: 24,
         fill: "#ffffff",
         wordWrap: true,
-        wordWrapWidth: 740,
+        wordWrapWidth: app.screen.width - 440,
         align: "center",
       },
       {
@@ -206,11 +218,7 @@ export class IdleSceneAnime {
       this.shuffleEnclosures();
       this.updateFunFact();
       this.bgManager.next();
-    }, 50000);
-
-    // this.factInterval = setInterval(() => {
-    //   this.updateFunFact();
-    // }, 5000);
+    }, 25000);
   }
 
   shuffleEnclosures() {
@@ -321,102 +329,6 @@ export class IdleSceneAnime {
       .catch(() => fetchTrivia())
       .catch(() => fallbackLocal());
   }
-
-  // updateFunFact() {
-  //   //if (!this.factsList || this.factsList.length === 0) return;
-  //   // -------- OPTION 1: Open Trivia DB API (DO NOT REMOVE) --------
-  //   // const category = Math.random() > 0.5 ? 18 : 27;
-  //   // const category = 18;
-  //   // const url = `https://opentdb.com/api.php?amount=1&category=${category}&type=boolean`;
-
-  //   // -------- OPTION 2: Wikipedia On This Day API (DO NOT REMOVE) --------
-  //   // const today = new Date();
-  //   // const month = today.getMonth() + 1;
-  //   // const day = today.getDate();
-
-  //   // const url = `https://en.wikipedia.org/api/rest_v1/feed/onthisday/selected/${month}/${day}`;
-
-  //   // -------- OPTION 3: Wikipedia Category API (DO NOT REMOVE) --------
-  //   // const category = "Category:Computer_science";
-  //   // const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=categorymembers&gcmtitle=${category}&gcmlimit=1&prop=extracts&exintro&explaintext&exchars=300`;
-
-  //   // -------- OPTION 4: Ninjas Historical Events API (DO NOT REMOVE) --------
-  //   const url = "https://api.api-ninjas.com/v1/historicalevents?text=computer";
-  //   const apiKey = window.fishbowl.config.apiNinjasKey;
-
-  //   fetch(url, {
-  //     method: "GET",
-  //     headers: {
-  //       "X-Api-Key": apiKey,
-  //       "Content-Type": "application/json",
-  //     },
-  //   })
-  //     .then((response) => response.json())
-  //     // -------- OPTION 1: Open Trivia DB API Implementation (DO NOT REMOVE) --------
-  //     // .then((data) => {
-  //     //   if (data.results && data.results.length > 0) {
-  //     //     const item = data.results[0];
-  //     //     const decodedFact = this.decodeHTML(item.question);
-  //     //     this.funFactSubTypewriter.setText(decodedFact);
-  //     //     this.funFactSubTypewriter.play();
-  //     //     this.funFactBox.layout();
-  //     //   }
-  //     // })
-
-  //     // -------- OPTION 2: Wikipedia On This Day API Implementation (DO NOT REMOVE) --------
-  //     // .then((data) => {
-  //     //   if (data.selected && data.selected.length > 0) {
-  //     //     const randomIndex = Math.floor(Math.random() * data.selected.length);
-  //     //     const event = data.selected[randomIndex];
-
-  //     //     const fact = `${event.year}: ${event.text}`;
-
-  //     //     this.funFactSubTypewriter.setText(fact);
-  //     //     this.funFactSubTypewriter.play();
-  //     //     this.funFactBox.layout();
-  //     //   }
-  //     // })
-
-  //     // -------- OPTION 3: Wikipedia Category API Implementation (DO NOT REMOVE) --------
-  //     // .then((data) => {
-  //     //   const pages = data.query.pages;
-  //     //   const pageId = Object.keys(pages)[0];
-  //     //   const fact = pages[pageId].extract;
-
-  //     //   if (fact) {
-  //     //     this.funFactSubTypewriter.setText(fact);
-  //     //     this.funFactSubTypewriter.play();
-  //     //     this.funFactBox.layout();
-  //     //   }
-  //     // })
-
-  //     // -------- OPTION 4: Ninjas Historical Events API Implementation (DO NOT REMOVE) --------
-  //     .then((data) => {
-  //       if (data && data.length > 0) {
-  //         const randomIndex = Math.floor(Math.random() * data.length);
-  //         const item = data[randomIndex];
-
-  //         const fact = `${item.year}: ${item.event}`;
-
-  //         this.funFactSubTypewriter.setText(fact);
-  //         this.funFactSubTypewriter.play();
-  //         this.funFactBox.layout();
-  //       }
-  //     })
-  //     .catch((err) => {
-  //       const randomIndex = Math.floor(Math.random() * this.factsList.length);
-  //       this.funFactSubTypewriter.setText(this.factsList[randomIndex]);
-  //       this.funFactSubTypewriter.play();
-  //       this.funFactBox.layout();
-  //     });
-  // }
-
-  // OPTION 1: Helper function to decode HTML entities from API responses (DO NOT REMOVE)
-  // decodeHTML(html) {
-  //   const txt = document.createElement("textarea");
-  //   txt.innerHTML = html;
-  //   return txt.value;
-  // }
 
   destroy() {
     if (this.headerTypewriter) this.headerTypewriter.destroy();
