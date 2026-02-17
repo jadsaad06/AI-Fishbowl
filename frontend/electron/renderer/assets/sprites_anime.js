@@ -196,10 +196,15 @@ export class Enclosure {
     headerStyle = {},
     subheaderStyle = {},
     footerStyle = {},
+    verticalGap = 30,
+    yOffset = 0,
   } = {}) {
     this.container = new PIXI.Container();
 
     this.container.position.set(x, y);
+
+    this.verticalGap = verticalGap;
+    this.yOffset = yOffset;
 
     this.box = new ModernBox(padding, boxColor, boxAlpha);
     this.container.addChild(this.box.graphics);
@@ -262,20 +267,20 @@ export class Enclosure {
   }
 
   layout() {
-    let yOffset = 0;
-    const gap = 20;
+    const gap = this.verticalGap;
 
-    const elements = [];
-
-    if (this.header) elements.push(this.header);
-    if (this.image) elements.push(this.image);
-    if (this.subheader) elements.push(this.subheader);
-    if (this.footer) elements.push(this.footer);
+    const elements = [
+      this.header,
+      this.image,
+      this.subheader,
+      this.footer,
+    ].filter(Boolean);
 
     let currentY = 0;
 
-    elements.forEach((el, index) => {
-      const halfHeight = el.height / 2;
+    elements.forEach((element, index) => {
+      const target = element;
+      const halfHeight = target.height / 2;
 
       if (index === 0) {
         currentY = halfHeight;
@@ -283,13 +288,16 @@ export class Enclosure {
         const prevHalfHeight = elements[index - 1].height / 2;
         currentY += prevHalfHeight + gap + halfHeight;
       }
-
-      el.y = currentY;
+      element.y = currentY;
     });
 
-    const totalHeight = currentY + elements[elements.length - 1].height / 2;
-    elements.forEach((el) => {
-      el.y -= totalHeight / 2;
+    const totalHeight =
+      elements.length > 0
+        ? currentY + elements[elements.length - 1].height / 2
+        : 0;
+
+    elements.forEach((element) => {
+      element.y -= totalHeight / 2 - this.yOffset;
     });
 
     this.box.reshape(elements, this.fixedSize);
