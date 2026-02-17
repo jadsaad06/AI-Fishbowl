@@ -128,6 +128,7 @@ async def ws_text_input(ws : WebSocket):
     await ws.accept()
 
     current_agent = app.state.agent_Bob
+    current_personality_id = "1"
 
     if app.state.ws_connection_keyboard != None:
         await ws.send_text("There is an on-going connection with the MCP agent, please try again when there is no connections.")
@@ -140,13 +141,16 @@ async def ws_text_input(ws : WebSocket):
         while True:
             text = await ws.receive_text()
             print(text, flush=True)
-
+            #Added personality id for TTS -Henry
             if text == "PERSONALIZATION: 1":
                 current_agent = app.state.agent_Bob
+                current_personality_id = "1"
             elif text == "PERSONALIZATION: 2":
                 current_agent = app.state.agent_Jimbo
+                current_personality_id = "2"
             elif text == "PERSONALIZATION: 3":
                 current_agent = app.state.agent_Bongo
+                current_personality_id = "3"
 
             else:
                     
@@ -172,7 +176,7 @@ async def ws_text_input(ws : WebSocket):
                 response = await current_agent.ainvoke({"messages": app.state.conversation}) #asynchronously invoke the agent
                 stripped_response = grab_agent_final_response(response)
 
-                await app.state.ws_connection_keyboard.send_text(stripped_response)
+                await app.state.ws_connection_keyboard.send_text(f"{current_personality_id}:{stripped_response}")
                 
 
 

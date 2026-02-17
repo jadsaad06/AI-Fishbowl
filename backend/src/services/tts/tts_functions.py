@@ -31,11 +31,22 @@ stream = p.open(
     frames_per_buffer=FRAME_LENGTH,
 )
 
-def speak_text(text: str):
+def speak_text(text: str, personality_id: str):
     print("Streaming audio...")
     start_time = time.monotonic() #Starts time before any processing
 
-    style_prompt = f"Read the following in a friendly and professional tone: {text}"
+    if personality_id == "1":
+        style_prompt = f"You are a cute, sensitive little guy. Read the following in a friendly and professional tone: {text}"
+
+    elif personality_id == "2":
+        style_prompt = f"You are a tired, annoyed, and sometimes sarcastic professor. Read the following: {text}"
+
+    elif personality_id == "3":
+        style_prompt =f"You are odd, with slightly abnormal speech patterns. Read the following: {text}"
+
+    else:
+        style_prompt = f"Read the following in a friendly and professional tone: {text}"
+
     try:
         response = client.models.generate_content_stream(  #Calls Gemini, and returns in streamable chunks
             model = "gemini-2.5-flash-preview-tts",

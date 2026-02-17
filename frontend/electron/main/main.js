@@ -11,6 +11,7 @@ app.commandLine.appendSwitch("log-level", "3");
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
 let win;
 let currentAppState = "idle";
+let currentResponder = 1; //Added for use by TTS -Henry
 
 /**
  * Create a new window using this function.
@@ -62,6 +63,12 @@ ipcMain.on("keyboard-prompt", (_, text) => {
   // Forward text to Michel ###########
 });
 
+ipcMain.on("set-responder", (_, id) => {
+  console.log("Personality set to:", id);
+  currentResponder = id;
+  // Added by to be read by TTS -Henry
+});
+
 function startServices() {
   const stt = spawn("python", [
     "-u",
@@ -105,7 +112,7 @@ function startServices() {
   ipcMain.on("send-to-tts", (event, text) => {
     console.log(text);
     if (tts && tts.stdin.writable) {
-      tts.stdin.write("MCP-AGENT-RESPONSE:" + text + "\n");
+      tts.stdin.write("MCP-AGENT-RESPONSE:" + text + "\n"); //Modified to send personality to TTS -Henry
     }
   });
 

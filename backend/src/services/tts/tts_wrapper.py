@@ -11,12 +11,22 @@ def print_flush(text):
 def main():
     for line in sys.stdin:
         if "MCP-AGENT-RESPONSE:" in line:
-            text_to_speak = line.replace("MCP-AGENT-RESPONSE:", "").strip()
+            payload = line.replace("MCP-AGENT-RESPONSE:", "").strip()
+
+            parts = payload.split(":", 1)
+
+            if len(parts) == 2:
+                personality_id, text_to_speak = parts
+            else: 
+                personality_id = "1"
+                text_to_speak = payload
+
+            print("PERSONALITY:", personality_id)
 
             if text_to_speak:
                 print_flush("TTS_SPEECH_STARTED")
                 try:
-                    tts_functions.speak_text(text_to_speak)
+                    tts_functions.speak_text(text_to_speak, personality_id)
                 except Exception as e:
                     print(f"Error in tts_functions: {e}", file=sys.stderr)
                 print_flush("TTS_SPEECH_ENDED")

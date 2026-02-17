@@ -282,6 +282,10 @@ function setupKeyboardInput() {
           if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send("PERSONALIZATION: " + e.key);
           }
+
+          if (window.electronAPI && window.electronAPI.setResponder) { //Added to send personality to frontend to be passed on to TTS -Henry
+            ws.electronAPI.setResponder(Number(e.key));
+          }
         }
 
         return;
