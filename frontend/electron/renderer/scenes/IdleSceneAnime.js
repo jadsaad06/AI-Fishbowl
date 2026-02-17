@@ -2,7 +2,11 @@ import * as PIXI from "pixi.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 import { BackgroundManager, FishSwarm } from "../assets/sprites.js";
 
-import { AnimeIdleText, Enclosure } from "../assets/sprites_anime.js";
+import {
+  AnimeIdleText,
+  Enclosure,
+  TypewriterText,
+} from "../assets/sprites_anime.js";
 import { BACKGROUNDS, ANIMATED_FISH, RESPONDERS } from "../app.js";
 
 export class IdleSceneAnime {
@@ -50,6 +54,51 @@ export class IdleSceneAnime {
     this.headerBox.setPosition(app.screen.width / 2, app.screen.height * 0.2);
 
     this.container.addChild(this.headerBox.container);
+
+    if (this.headerBox.header) {
+      this.headerBox.container.removeChild(this.headerBox.header);
+    }
+    if (this.headerBox.subheader) {
+      this.headerBox.container.removeChild(this.headerBox.subheader);
+    }
+
+    this.headerTypewriter = new TypewriterText(
+      "AI Fishbowl",
+      {
+        fontSize: 80,
+        fontFamily: "Brush Script MT",
+        fill: "#ffffff",
+        align: "center",
+      },
+      {
+        durationPerChar: 50,
+      },
+    );
+
+    this.headerTypewriter.textObject.anchor.set(0.5);
+
+    this.subheaderTypewriter = new TypewriterText(
+      "Your Aquatic CS Companion",
+      {
+        fontSize: 32,
+        fontFamily: "Garamond",
+        fill: "#ffffff",
+        align: "center",
+      },
+      {
+        durationPerChar: 60,
+      },
+    );
+
+    this.subheaderTypewriter.textObject.anchor.set(0.5);
+
+    this.headerBox.container.addChild(this.headerTypewriter.container);
+    this.headerBox.container.addChild(this.subheaderTypewriter.container);
+    this.headerBox.header = this.headerTypewriter.textObject;
+    this.headerBox.subheader = this.subheaderTypewriter.textObject;
+    this.headerBox.layout();
+    this.headerTypewriter.play();
+    this.subheaderTypewriter.play();
 
     this.factsList = [
       "Parrotfish produce about 85% of the white sand on tropical beaches by eating and excreting coral.",
@@ -99,6 +148,53 @@ export class IdleSceneAnime {
       boxColor: 0x1e1e2e,
     });
 
+    if (this.funFactBox.header) {
+      this.funFactBox.container.removeChild(this.funFactBox.header);
+    }
+    if (this.funFactBox.subheader) {
+      this.funFactBox.container.removeChild(this.funFactBox.subheader);
+    }
+
+    this.funFactTypewriter = new TypewriterText(
+      "Here's a fact for you:",
+      {
+        fontSize: 64,
+        fontFamily: "Brush Script MT",
+        fill: "#ffffff",
+        align: "center",
+      },
+      {
+        durationPerChar: 50,
+      },
+    );
+    this.funFactTypewriter.textObject.anchor.set(0.5);
+
+    this.funFactSubTypewriter = new TypewriterText(
+      this.factsList[0],
+      {
+        fontSize: 24,
+        fill: "#ffffff",
+        wordWrap: true,
+        wordWrapWidth: 740,
+        align: "center",
+      },
+      {
+        durationPerChar: 60,
+      },
+    );
+
+    this.funFactSubTypewriter.textObject.anchor.set(0.5);
+
+    this.funFactBox.container.addChild(this.funFactTypewriter.container);
+    this.funFactBox.container.addChild(this.funFactSubTypewriter.container);
+    this.funFactBox.header = this.funFactTypewriter.textObject;
+    this.funFactBox.subheader = this.funFactSubTypewriter.textObject;
+
+    this.funFactBox.layout();
+
+    this.funFactTypewriter.play();
+    this.funFactSubTypewriter.play();
+
     this.funFactBox.setPosition(app.screen.width / 2, app.screen.height * 0.5);
 
     this.container.addChild(this.funFactBox.container);
@@ -107,7 +203,7 @@ export class IdleSceneAnime {
       this.shuffleEnclosures();
       this.updateFunFact();
       this.bgManager.next();
-    }, 5000);
+    }, 10000);
 
     // this.factInterval = setInterval(() => {
     //   this.updateFunFact();
@@ -130,6 +226,11 @@ export class IdleSceneAnime {
         easing: "easeInOutQuad",
       });
     });
+
+    this.headerTypewriter.play();
+    this.subheaderTypewriter.play();
+    this.funFactTypewriter.play();
+    this.funFactSubTypewriter.play();
   }
 
   updateFunFact() {
@@ -144,12 +245,16 @@ export class IdleSceneAnime {
         if (data.results && data.results.length > 0) {
           const item = data.results[0];
           const decodedFact = this.decodeHTML(item.question);
-          this.funFactBox.setSubheader(decodedFact);
+          this.funFactSubTypewriter.setText(decodedFact);
+          this.funFactSubTypewriter.play();
+          this.funFactBox.layout();
         }
       })
       .catch((err) => {
         const randomIndex = Math.floor(Math.random() * this.factsList.length);
-        this.funFactBox.setSubheader(this.factsList[randomIndex]);
+        this.funFactSubTypewriter.setText(this.factsList[randomIndex]);
+        this.funFactSubTypewriter.play();
+        this.funFactBox.layout();
       });
   }
 
@@ -160,6 +265,7 @@ export class IdleSceneAnime {
   }
 
   destroy() {
+    if (this.headerTypewriter) this.headerTypewriter.destroy();
     if (this.shuffleInterval) {
       clearInterval(this.shuffleInterval);
       this.shuffleInterval = null;
