@@ -2,10 +2,14 @@
  * Scene manager for the PIXI landing page.
  * Based on the current application state, it initializes and switches between different scenes.
  */
-import { IdleScene } from "./IdleScene.js";
-import { ListeningScene } from "./ListeningScene.js";
-import { ThinkingScene } from "./ThinkingScene.js";
-import { RespondingScene } from "./RespondingScene.js";
+//import { IdleScene } from "./IdleScene.js";
+import { IdleSceneAnime } from "./IdleSceneAnime.js";
+import { ListeningSceneAnime } from "./ListeningSceneAnime.js";
+import { ThinkingSceneAnime } from "./ThinkingSceneAnime.js";
+import { RespondingSceneAnime } from "./RespondingSceneAnime.js";
+//import { ListeningScene } from "./ListeningScene.js";
+// import { ThinkingScene } from "./ThinkingScene.js";
+// import { RespondingScene } from "./RespondingScene.js";
 import { ErrorScene } from "./ErrorScene.js";
 import { KeyboardScene } from "./KeyboardScene.js";
 import { getSubtitles } from "../state/store.js";
@@ -27,24 +31,27 @@ export function setScene(app, state) {
   }
 
   switch (state) {
+    case "idle":
+      currentScene = new IdleSceneAnime(app);
+      break;
     case "keyboard":
       currentScene = new KeyboardScene(app);
       break;
     case "listening":
-      currentScene = new ListeningScene(app);
+      currentScene = new ListeningSceneAnime(app);
       break;
     case "thinking":
-      currentScene = new ThinkingScene(app);
+      currentScene = new ThinkingSceneAnime(app);
       break;
     case "responding":
       const text = getSubtitles();
-      currentScene = new RespondingScene(app, text);
+      currentScene = new RespondingSceneAnime(app, text);
       break;
     case "error":
       currentScene = new ErrorScene();
       break;
     default:
-      currentScene = new IdleScene(app);
+      currentScene = new IdleSceneAnime(app);
   }
 
   app.stage.addChild(currentScene.container);

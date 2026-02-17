@@ -17,7 +17,7 @@ load_dotenv()
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 DEFAULT_MIC_NAME = "Titanium"
-
+_current_mic = None
 
 def get_request_stream(config, mic_gen):
     yield config                                                                                # First yield must be the config request
@@ -36,6 +36,8 @@ def transcribe_streaming_v2(
     print("Initializing.\n")
     client = SpeechClient() # Instantiates a client
 
+    global _current_mic
+    
     try:
         name_contains = mic_name if mic_index is None else None
         with MicrophoneStream(
@@ -45,6 +47,7 @@ def transcribe_streaming_v2(
             vad_keepalive=vad_keepalive,
             vad_keepalive_ms=vad_keepalive_ms,
         ) as mic:
+            _current_mic = mic
             print(
                 f"Using: {mic.device_name} | {mic.rate}Hz, {mic.channels} channel(s)"
             )
@@ -95,3 +98,6 @@ def transcribe_streaming_v2(
     except Exception as e:
         print(f"\n\nError: {e}")
         raise
+
+def get_current_mic():
+    return _current_mic
