@@ -239,93 +239,176 @@ export class IdleSceneAnime {
   }
 
   updateFunFact() {
-    //if (!this.factsList || this.factsList.length === 0) return;
-    // -------- OPTION 1: Open Trivia DB API (DO NOT REMOVE) --------
-    // const category = Math.random() > 0.5 ? 18 : 27;
-    // const category = 18;
-    // const url = `https://opentdb.com/api.php?amount=1&category=${category}&type=boolean`;
+    const applyFact = (text) => {
+      this.funFactSubTypewriter.setText(text);
+      this.funFactSubTypewriter.play();
+      this.funFactBox.layout();
+    };
 
-    // -------- OPTION 2: Wikipedia On This Day API (DO NOT REMOVE) --------
-    // const today = new Date();
-    // const month = today.getMonth() + 1;
-    // const day = today.getDate();
+    const fallbackLocal = () => {
+      const randomIndex = Math.floor(Math.random() * this.factsList.length);
+      applyFact(this.factsList[randomIndex]);
+    };
 
-    // const url = `https://en.wikipedia.org/api/rest_v1/feed/onthisday/selected/${month}/${day}`;
+    const fetchNinjas = () => {
+      const url =
+        "https://api.api-ninjas.com/v1/historicalevents?text=computer";
+      // const apiKey = window.fishbowl.config.apiNinjasKey;
 
-    // -------- OPTION 3: Wikipedia Category API (DO NOT REMOVE) --------
-    // const category = "Category:Computer_science";
-    // const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=categorymembers&gcmtitle=${category}&gcmlimit=1&prop=extracts&exintro&explaintext&exchars=300`;
-
-    // -------- OPTION 4: Ninjas Historical Events API (DO NOT REMOVE) --------
-    const url = "https://api.api-ninjas.com/v1/historicalevents?text=computer";
-    const apiKey = window.fishbowl.config.apiNinjasKey;
-
-    fetch(url, {
-      method: "GET",
-      headers: {
-        "X-Api-Key": apiKey,
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => response.json())
-      // -------- OPTION 1: Open Trivia DB API Implementation (DO NOT REMOVE) --------
-      // .then((data) => {
-      //   if (data.results && data.results.length > 0) {
-      //     const item = data.results[0];
-      //     const decodedFact = this.decodeHTML(item.question);
-      //     this.funFactSubTypewriter.setText(decodedFact);
-      //     this.funFactSubTypewriter.play();
-      //     this.funFactBox.layout();
-      //   }
-      // })
-
-      // -------- OPTION 2: Wikipedia On This Day API Implementation (DO NOT REMOVE) --------
-      // .then((data) => {
-      //   if (data.selected && data.selected.length > 0) {
-      //     const randomIndex = Math.floor(Math.random() * data.selected.length);
-      //     const event = data.selected[randomIndex];
-
-      //     const fact = `${event.year}: ${event.text}`;
-
-      //     this.funFactSubTypewriter.setText(fact);
-      //     this.funFactSubTypewriter.play();
-      //     this.funFactBox.layout();
-      //   }
-      // })
-
-      // -------- OPTION 3: Wikipedia Category API Implementation (DO NOT REMOVE) --------
-      // .then((data) => {
-      //   const pages = data.query.pages;
-      //   const pageId = Object.keys(pages)[0];
-      //   const fact = pages[pageId].extract;
-
-      //   if (fact) {
-      //     this.funFactSubTypewriter.setText(fact);
-      //     this.funFactSubTypewriter.play();
-      //     this.funFactBox.layout();
-      //   }
-      // })
-
-      // -------- OPTION 4: Ninjas Historical Events API Implementation (DO NOT REMOVE) --------
-      .then((data) => {
-        if (data && data.length > 0) {
-          const randomIndex = Math.floor(Math.random() * data.length);
-          const item = data[randomIndex];
-
-          const fact = `${item.year}: ${item.event}`;
-
-          this.funFactSubTypewriter.setText(fact);
-          this.funFactSubTypewriter.play();
-          this.funFactBox.layout();
-        }
+      const apiKey = "";
+      return fetch(url, {
+        method: "GET",
+        headers: { "X-Api-Key": apiKey, "Content-Type": "application/json" },
       })
-      .catch((err) => {
-        const randomIndex = Math.floor(Math.random() * this.factsList.length);
-        this.funFactSubTypewriter.setText(this.factsList[randomIndex]);
-        this.funFactSubTypewriter.play();
-        this.funFactBox.layout();
-      });
+        .then((res) => {
+          if (!res.ok) throw new Error("Ninjas Limit Reached");
+          return res.json();
+        })
+        .then((data) => {
+          if (data && data.length > 0) {
+            const item = data[Math.floor(Math.random() * data.length)];
+
+            applyFact(`${item.year}: ${item.event}`);
+          } else {
+            throw new Error("No Ninjas Data");
+          }
+        });
+    };
+
+    const fetchWiki = () => {
+      const today = new Date();
+      const month = today.getMonth() + 1;
+      const day = today.getDate();
+
+      const url = `https://en.wikipedia.org/api/rest_v1/feed/onthisday/selected/${month}/${day}`;
+
+      return fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.selected && data.selected.length > 0) {
+            const event =
+              data.selected[Math.floor(Math.random() * data.selected.length)];
+
+            applyFact(`${event.year}: ${event.text}`);
+          } else {
+            throw new Error("No Wiki Data");
+          }
+        });
+    };
+
+    const fetchTrivia = () => {
+      const url = `https://opentdb.com/api.php?amount=1&category=18&type=boolean`;
+
+      return fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.results && data.results.length > 0) {
+            const item = data.results[0];
+            const fact = this.decodeHTML
+              ? this.decodeHTML(item.question)
+              : item.question;
+
+            applyFact(fact);
+          } else {
+            throw new Error("No Trivia Data");
+          }
+        });
+    };
+
+    fetchNinjas()
+      .catch(() => fetchWiki())
+      .catch(() => fetchTrivia())
+      .catch(() => fallbackLocal());
   }
+
+  // updateFunFact() {
+  //   //if (!this.factsList || this.factsList.length === 0) return;
+  //   // -------- OPTION 1: Open Trivia DB API (DO NOT REMOVE) --------
+  //   // const category = Math.random() > 0.5 ? 18 : 27;
+  //   // const category = 18;
+  //   // const url = `https://opentdb.com/api.php?amount=1&category=${category}&type=boolean`;
+
+  //   // -------- OPTION 2: Wikipedia On This Day API (DO NOT REMOVE) --------
+  //   // const today = new Date();
+  //   // const month = today.getMonth() + 1;
+  //   // const day = today.getDate();
+
+  //   // const url = `https://en.wikipedia.org/api/rest_v1/feed/onthisday/selected/${month}/${day}`;
+
+  //   // -------- OPTION 3: Wikipedia Category API (DO NOT REMOVE) --------
+  //   // const category = "Category:Computer_science";
+  //   // const url = `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=categorymembers&gcmtitle=${category}&gcmlimit=1&prop=extracts&exintro&explaintext&exchars=300`;
+
+  //   // -------- OPTION 4: Ninjas Historical Events API (DO NOT REMOVE) --------
+  //   const url = "https://api.api-ninjas.com/v1/historicalevents?text=computer";
+  //   const apiKey = window.fishbowl.config.apiNinjasKey;
+
+  //   fetch(url, {
+  //     method: "GET",
+  //     headers: {
+  //       "X-Api-Key": apiKey,
+  //       "Content-Type": "application/json",
+  //     },
+  //   })
+  //     .then((response) => response.json())
+  //     // -------- OPTION 1: Open Trivia DB API Implementation (DO NOT REMOVE) --------
+  //     // .then((data) => {
+  //     //   if (data.results && data.results.length > 0) {
+  //     //     const item = data.results[0];
+  //     //     const decodedFact = this.decodeHTML(item.question);
+  //     //     this.funFactSubTypewriter.setText(decodedFact);
+  //     //     this.funFactSubTypewriter.play();
+  //     //     this.funFactBox.layout();
+  //     //   }
+  //     // })
+
+  //     // -------- OPTION 2: Wikipedia On This Day API Implementation (DO NOT REMOVE) --------
+  //     // .then((data) => {
+  //     //   if (data.selected && data.selected.length > 0) {
+  //     //     const randomIndex = Math.floor(Math.random() * data.selected.length);
+  //     //     const event = data.selected[randomIndex];
+
+  //     //     const fact = `${event.year}: ${event.text}`;
+
+  //     //     this.funFactSubTypewriter.setText(fact);
+  //     //     this.funFactSubTypewriter.play();
+  //     //     this.funFactBox.layout();
+  //     //   }
+  //     // })
+
+  //     // -------- OPTION 3: Wikipedia Category API Implementation (DO NOT REMOVE) --------
+  //     // .then((data) => {
+  //     //   const pages = data.query.pages;
+  //     //   const pageId = Object.keys(pages)[0];
+  //     //   const fact = pages[pageId].extract;
+
+  //     //   if (fact) {
+  //     //     this.funFactSubTypewriter.setText(fact);
+  //     //     this.funFactSubTypewriter.play();
+  //     //     this.funFactBox.layout();
+  //     //   }
+  //     // })
+
+  //     // -------- OPTION 4: Ninjas Historical Events API Implementation (DO NOT REMOVE) --------
+  //     .then((data) => {
+  //       if (data && data.length > 0) {
+  //         const randomIndex = Math.floor(Math.random() * data.length);
+  //         const item = data[randomIndex];
+
+  //         const fact = `${item.year}: ${item.event}`;
+
+  //         this.funFactSubTypewriter.setText(fact);
+  //         this.funFactSubTypewriter.play();
+  //         this.funFactBox.layout();
+  //       }
+  //     })
+  //     .catch((err) => {
+  //       const randomIndex = Math.floor(Math.random() * this.factsList.length);
+  //       this.funFactSubTypewriter.setText(this.factsList[randomIndex]);
+  //       this.funFactSubTypewriter.play();
+  //       this.funFactBox.layout();
+  //     });
+  // }
 
   // OPTION 1: Helper function to decode HTML entities from API responses (DO NOT REMOVE)
   // decodeHTML(html) {
