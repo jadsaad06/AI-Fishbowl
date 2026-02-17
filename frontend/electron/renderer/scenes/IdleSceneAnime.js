@@ -17,14 +17,15 @@ export class IdleSceneAnime {
     this.shuffleBoxes = [];
 
     this.shufflePositions = [
-      // Top Left
-      { x: app.screen.width * 0.18, y: app.screen.height * 0.2 },
-      // Top Right
-      { x: app.screen.width * 0.82, y: app.screen.height * 0.2 },
-      // Bottom Left
-      { x: app.screen.width * 0.18, y: app.screen.height * 0.8 },
-      // Bottom Right
-      { x: app.screen.width * 0.82, y: app.screen.height * 0.8 },
+      // Top Row (Pushed higher to 15% to clear the Header Box)
+      { x: app.screen.width * 0.18, y: app.screen.height * 0.15 }, // Top Left
+      { x: app.screen.width * 0.82, y: app.screen.height * 0.15 }, // Top Right
+
+      // Bottom Row (Pushed lower to 85% to clear the Fact Box)
+      { x: app.screen.width * 0.18, y: app.screen.height * 0.85 }, // Bottom Left
+      { x: app.screen.width * 0.35, y: app.screen.height * 0.85 }, // Top Center (Jimbo's row)
+      { x: app.screen.width * 0.65, y: app.screen.height * 0.85 }, // Bottom Center (Below Fact Box)
+      { x: app.screen.width * 0.82, y: app.screen.height * 0.85 }, // Bottom Right
     ];
 
     this.bgManager = new BackgroundManager(app, BACKGROUNDS);
@@ -107,14 +108,14 @@ export class IdleSceneAnime {
       "The first webcam was created at Cambridge to monitor the water level of a coffee pot.",
     ];
 
-    const names = ["Bob", "Jimbo", "Bongo"];
+    const names = ["Bob", "Jimbo", "Bongo", "Koko", "Kiki"];
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < names.length; i++) {
       const responderBox = new Enclosure({
         header: names[i],
         imagePath: RESPONDERS[i],
         subheader: `Press ${i + 1} for ${names[i]}`,
-        fixedSize: { width: 300, height: 420 },
+        fixedSize: { width: 280, height: 400 },
         headerStyle: { fontSize: 36, fontFamily: "Brush Script MT" },
       });
 
@@ -127,8 +128,8 @@ export class IdleSceneAnime {
         "- Press K to Type\n" +
         "- Press L to View Responder Lore\n" +
         "- Press R to Select Random Responder\n" +
-        "- Press 1, 2, or 3 to Select Your Responder\n",
-      subheaderStyle: { align: "left", fontSize: 20 },
+        "- Press 1-5 to Select Your Responder\n",
+      subheaderStyle: { align: "left", fontSize: 18 },
       fixedSize: { width: 350, height: 300 },
     });
 
@@ -171,11 +172,8 @@ export class IdleSceneAnime {
     );
     this.funFactTypewriter.textObject.anchor.set(0.5);
 
-    let randomFact =
-      this.factsList[Math.floor(Math.random() * this.factsList.length)];
-
     this.funFactSubTypewriter = new TypewriterText(
-      randomFact,
+      "Initializing Fact Generator...",
       {
         fontSize: 24,
         fill: "#ffffff",
@@ -208,7 +206,7 @@ export class IdleSceneAnime {
       this.shuffleEnclosures();
       this.updateFunFact();
       this.bgManager.next();
-    }, 5000);
+    }, 50000);
 
     // this.factInterval = setInterval(() => {
     //   this.updateFunFact();
@@ -253,8 +251,11 @@ export class IdleSceneAnime {
     const fetchNinjas = () => {
       const url =
         "https://api.api-ninjas.com/v1/historicalevents?text=computer";
+
+      // --------- UNCOMMENT FOR NINJAS API (3000 calls rate limit / month) ---------
       // const apiKey = window.fishbowl.config.apiNinjasKey;
 
+      // --------- PLACEHOLDER FOR NINJAS TO SAVE CALLS WHILE TESTING -------------
       const apiKey = "";
       return fetch(url, {
         method: "GET",
