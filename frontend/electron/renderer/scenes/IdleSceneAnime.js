@@ -1,6 +1,7 @@
 import * as PIXI from "pixi.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 import { BackgroundManager, FishSwarm } from "../assets/sprites.js";
+import { getResponder, subscribeResponder } from "../state/store.js";
 
 import {
   AnimeIdleText,
@@ -37,6 +38,8 @@ export class IdleSceneAnime {
     this.swarmUpdate = () => this.swarm.update();
 
     PIXI.Ticker.shared.add(this.swarmUpdate);
+
+    const initialResponder = getResponder();
 
     this.headerBox = new Enclosure({
       header: "AI Fishbowl",
@@ -106,12 +109,14 @@ export class IdleSceneAnime {
     const names = ["Pinto", "Jimbo", "Bongo", "Koko", "Kiki"];
 
     for (let i = 0; i < names.length; i++) {
+      const isSelected = initialResponder === i + 1;
       const responderBox = new Enclosure({
         header: names[i],
         imagePath: RESPONDERS[i],
         subheader: `Press ${i + 1} for ${names[i]}`,
         fixedSize: { width: 280, height: 350 },
         headerStyle: { fontSize: 36, fontFamily: "Brush Script MT" },
+        boxColor: isSelected ? 0x1e90ff : 0x333344,
       });
 
       if (i < 3) {
@@ -126,6 +131,24 @@ export class IdleSceneAnime {
         this.fixedBoxes.push(responderBox);
       }
     }
+
+    this.allResponders = [
+      ...this.shuffleBoxes,
+      this.fixedBoxes[0],
+      this.fixedBoxes[1],
+    ];
+
+    this.unsubscribeResponder = subscribeResponder((selected) => {
+      if (this.container.destroyed || !this.allResponders) return;
+
+      this.allResponders.forEach((box, i) => {
+        const highlightColor = selected === i + 1 ? 0x1e90ff : 0x333344;
+
+        if (typeof box.setBoxColor === "function") {
+          box.setBoxColor(highlightColor);
+        }
+      });
+    });
 
     this.instructionsBox = new Enclosure({
       header: "Controls",
@@ -331,6 +354,10 @@ export class IdleSceneAnime {
   }
 
   destroy() {
+    if (this.unsubscribeResponder) {
+      this.unsubscribeResponder();
+      this.unsubscribeResponder = null;
+    }
     if (this.headerTypewriter) this.headerTypewriter.destroy();
     if (this.shuffleInterval) {
       clearInterval(this.shuffleInterval);
