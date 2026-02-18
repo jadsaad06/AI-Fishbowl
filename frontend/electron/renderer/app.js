@@ -82,7 +82,7 @@ async function connect_agent() {
   while (keepRetrying) {
     try {
       ws = await new Promise((resolve, reject) => {
-        const sock = new WebSocket(`wss://${url}/text_input`);
+        const sock = new WebSocket(`ws://${url}/text_input`); //Modified from wss to ws for local use this CHANGE SHOULD NOT BE ON GITHUB -Henry
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
@@ -97,7 +97,16 @@ async function connect_agent() {
           if (responseTimeout) clearTimeout(responseTimeout);
 
           responseTimeout = setTimeout(() => {
-            setSubtitles(event.data);
+            let personality = "1";
+            let subtitleText = fullAgentResponse;
+
+            const parts = fullAgentResponse.split(":", 2);
+            if (parts.length === 2 && !isNaN(parts[0])) {
+              personality = parts[0];
+              subtitleText = parts[1];
+            }
+
+            setSubtitles(subtitleText);
             window.fishbowl.sendToTTS(fullAgentResponse);
             fullAgentResponse = "";
           }, 500);
