@@ -66,7 +66,74 @@ def Weather_Search(geographic_location : dict) -> dict: # Tool for performing we
     return resp.json() # We perform the API call then we return its response in json.
 
 
+@mcp.tool()
+def leetcode_tags() -> list:
+    """
+    This function will allow you to retrieve all the tags (Algorithms, Methods, and Topics) that can be used for leetcode searches. 
 
+    This function will return a list containing all the strings such as the tags.
+    """
+    resp = requests.get("https://leetcode-api-pied.vercel.app/tags")
+    return resp.json()
+
+
+@mcp.tool()
+def get_stats() -> dict:
+    """
+    This function will give you details about the amount of leetcode problems in database.
+    
+    :return: This will return a dict of the information
+    :rtype: dict
+    """
+    resp = requests.get("https://leetcode-api-pied.vercel.app/stats")
+    return resp.json()
+
+
+@mcp.tool()
+def random_leetcode(difficulty : str = "", tag : str = "") -> dict:
+    """
+    This function will give you a random leetcode problem given the parameters.
+    
+    :param difficulty: The difficulty that the user wants, optional it can either be (Easy, Medium, Hard)
+    :type difficulty: str
+    :param tag: The tag is for the topic of the leetcode problem it's optional and can be one of many different tags.
+    :type tag: str
+    :return: This will return the problem in a dict format
+    :rtype: dict
+    """
+
+    resp = requests.get(f"https://leetcode-api-pied.vercel.app/random?difficulty={difficulty}&tag={tag}")
+    return resp.json()
+
+
+@mcp.tool()
+def get_problem_by_tag(tag_slug : str, difficulty : str = "", limit : int = 5, skip : int = 50) -> dict:
+    """
+    This function will get problems based on the tag slug which is a required field, then you have the optional difficulty field, and limit field 5, you can 
+    alter this as you decide to respond to the user, ensure that your response wouldn't be huge so keep the answer within 1 - 5 of the amount of problems.
+
+
+    ALWAYS RANDOMIZE THE SKIP from 1 - 1000 to keep things randomized to get different pages for the leetcode problems.
+
+    :param tag_slug: the topic of the problem this is required
+    :type tag_slug: str
+    :param difficulty: difficulty that is an optional parameter (Easy, Medium, Hard)
+    :type difficulty: str
+    :param limit: the limit as to how much problems to return
+    :type limit: int
+    :param skip: skip how many results to ensure random problems.
+    :type skip: int
+    """
+
+    resp = requests.get(f"https://leetcode-api-pied.vercel.app/problems/tag/{tag_slug}?difficulty={difficulty}&limit={limit}&skip={skip}")
+    print(resp.json())
+    print(type(resp.json()))
+
+
+@mcp.tool()
+def get_daily_problem():
+    resp = requests.get("https://leetcode-api-pied.vercel.app/daily")
+    return resp.json()
 
 
 if __name__ == "__main__":
