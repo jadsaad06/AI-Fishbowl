@@ -84,7 +84,7 @@ async function connect_agent() {
   while (keepRetrying) {
     try {
       ws = await new Promise((resolve, reject) => {
-        const sock = new WebSocket(`wss://${url}/text_input`);
+        const sock = new WebSocket(`ws://${url}/text_input`);
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
@@ -100,7 +100,15 @@ async function connect_agent() {
 
           responseTimeout = setTimeout(() => {
             setSubtitles(event.data);
-            window.fishbowl.sendToTTS(fullAgentResponse);
+
+            let layer1 = fullAgentResponse.replace(/^\s*\*+\s*/gm, "");
+            let layer2 = layer1.replace(/\s*\n+\s*/g, " ");
+            let layer3 = layer2.replace(/\s{2,}/g, " ").trim();
+            let layer4 = layer3.replace(/\s*\n+\s*/g, ". ");
+
+
+            console.log(layer4);
+            window.fishbowl.sendToTTS(layer4);
             fullAgentResponse = "";
           }, 500);
           //setScene(app, "responding");
