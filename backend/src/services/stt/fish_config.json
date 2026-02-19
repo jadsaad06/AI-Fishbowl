@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "name": "Bob",
+    "wake_phrases": ["hey bob", "hi bob", "okay bob", "ok bob"]
+  },
+  {
+    "id": 2,
+    "name": "Jimbo",
+    "wake_phrases": ["hey jimbo", "hi jimbo", "okay jimbo", "ok jimbo"]
+  },
+  {
+    "id": 3,
+    "name": "Bongo",
+    "wake_phrases": ["hey bongo", "hi bongo", "okay bongo", "ok bongo"]
+  }
+]
