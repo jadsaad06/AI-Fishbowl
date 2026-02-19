@@ -46,20 +46,20 @@ def Long_Lat_Search(address : str) -> dict: # Mcp tool for getting the geographi
     return geographic_location # Return the json
 
 @mcp.tool()
-def Weather_Search(geographic_location : dict) -> dict: # Tool for performing weather api calls given geographic location.
+def Weather_Search(lat : float, long : float, status : str) -> dict: # Tool for performing weather api calls given geographic location.
     """
-    This tool will allow you to invoke a weather search given a geographic location objectl.
+    This tool will allow you to invoke a weather search given a geographic location object, status should be either FOUND or NOT FOUND strictly written that format for the checking in the function.
     
-    :param geographic_location: The Object storing information within it such as lng for longitude, lat for latitude, and the STATUS for whether the tool "Long_Lat_Search" was successful or not
-    :type geographic_location: dict
+    :param geographic_location: The params within this function store such long for longitude, lat for latitude, and the STATUS for whether the tool "Long_Lat_Search" was successful or not
+    :type lat, and long are both floats
     :return: This will return a string holding all the details of the current weather in the specified geographic location
     :rtype: dict
     """
 
-    if geographic_location["STATUS"] == "NOT FOUND": #If there is no geographic location given the json, we then back out
+    if status == "NOT FOUND": #If there is no geographic location given the json, we then back out
         return {"STATUS" : "NO INFORMATION"}
 
-    base_url = f"https://weather.googleapis.com/v1/currentConditions:lookup?key={weather_key}&location.latitude={geographic_location['lat']}&location.longitude={geographic_location['lng']}"
+    base_url = f"https://weather.googleapis.com/v1/currentConditions:lookup?key={weather_key}&location.latitude={lat}&location.longitude={long}"
     # This is the weather api given the key, and the geographic lat, and long.
     resp = s.get(base_url)
 

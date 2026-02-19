@@ -38,7 +38,7 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
 
     app.state.agent_ready = False # Is the Agent obj ready or not
     stop_agent = asyncio.Event() # Create an event object to alert asyncio tasks that an event occured. 
-    app.state.ws_sessions = {}
+    app.state.ws_sessions = {} #Dict object (hash map) to hold multiple websocket connections. {websocket, curr_agent, conversation}
     app.state.agent_Pinto = None
     app.state.agent_Jimbo = None
     app.state.agent_Bongo = None
@@ -64,8 +64,6 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                         app.state.agent_koko = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_koko, tools=[get_context]) # Create a undergraduate advisor agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
                         app.state.agent_kiki = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_kiki, tools=[get_context]) # Create a graduate advisor agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
 
-
-                        app.state.ws_sessions = {} #Dict object (hash map) to hold multiple websocket connections. {websocket, curr_agent, conversation}
                         app.state.agent_ready = True # If we made it to this point where we have an agent object set, then the agent is ready.
 
                         while not stop_agent.is_set(): # While the event object is not set, then we will continuously loop through inside the client session to keep the session alive
