@@ -3,7 +3,7 @@ import websockets
 
 
 async def main():
-    async with websockets.connect("ws://localhost:8000/text_input") as ws:
+    async with websockets.connect("wss://mcp-client-1234567890.us-west1.run.app/text_input") as ws:
         while True:
             hold = await asyncio.to_thread(input, "Hey: ")
             await ws.send(hold)

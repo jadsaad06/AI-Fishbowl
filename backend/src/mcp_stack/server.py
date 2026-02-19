@@ -129,9 +129,14 @@ def get_problem_by_tag(tag_slug : str, difficulty : str = "", limit : int = 5, s
     print(resp.json())
     print(type(resp.json()))
 
+    return resp.json()
+
 
 @mcp.tool()
-def get_daily_problem():
+def get_daily_problem() -> dict:
+    """
+    This function will grab a daily leetcode problem for the day.
+    """
     resp = requests.get("https://leetcode-api-pied.vercel.app/daily")
     return resp.json()
 
