@@ -85,7 +85,11 @@ def load_db(vectorstore):
             full_url = urljoin(website, href) #join the URL base + the href path
             links.add(full_url) #add it to the set of links
 
-    links.add("https://www.pdx.edu/gradschool/graduate-candidate-deadlines")
+    links.update([""
+    "https://www.pdx.edu/gradschool/graduate-candidate-deadlines",
+    "https://www.pdx.edu/engineering/faculty-expertise-areas"
+    ])
+
     links = list(links) #Convert the set to a list of links
 
     print(links)
