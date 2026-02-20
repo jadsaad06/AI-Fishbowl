@@ -26,7 +26,7 @@ def get_request_stream(config, mic_gen):
 
 # ========================  Important  =========================
 def transcribe_streaming_v2(
-    mic_index=27,
+    mic_index=None,
     mic_name=DEFAULT_MIC_NAME,
     vad_enabled=True,
     vad_keepalive=True,

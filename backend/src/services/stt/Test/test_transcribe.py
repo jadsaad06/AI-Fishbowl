@@ -24,7 +24,7 @@ def _check_wake_phrase(transcript, fish_list):
     Returns the matching fish dict, or None if no match.
     Matching is case-insensitive and phrase must appear at the start of the transcript.
     """
-    t = transcript.strip().lower()
+    t = " ".join(transcript.split()).lower()  # normalize all whitespace
     for fish in fish_list:
         for phrase in fish["wake_phrases"]:
             if t.startswith(phrase):
