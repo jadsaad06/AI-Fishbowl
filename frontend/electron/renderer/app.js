@@ -82,7 +82,7 @@ async function connect_agent() {
   while (keepRetrying) {
     try {
       ws = await new Promise((resolve, reject) => {
-        const sock = new WebSocket(`ws://${url}/text_input`); //Modified from wss to ws for local use this CHANGE SHOULD NOT BE ON GITHUB -Henry
+        const sock = new WebSocket(`wss://${url}/text_input`);
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
