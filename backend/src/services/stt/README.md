@@ -2,22 +2,24 @@
 
 ## Overview
 
-This module provides live speech-to-text functionality using Google Cloud Speech-to-Text API v2. It streams audio from your microphone to Google's API and returns real-time transcriptions.
+This module provides live speech-to-text using a local whisper.cpp server. Google Cloud Speech-to-Text is an optional fallback if enabled.
 
 **PIPELINE:**
 ```
-Microphone → PyAudio → MicrophoneStream → Google Cloud STT API → Final Transcripts
+Microphone → PyAudio → MicrophoneStream → Whisper.cpp server (/inference) → Final Transcripts
 ```
 
 ## Files
 
 - `mic_stream.py` - Handles microphone input via PyAudio, chunks audio into 100ms segments, optional VAD
-- `engine.py` - Connects to Google Cloud STT API and streams microphone audio for transcription
+- `engine.py` - Streams microphone audio to the local whisper.cpp server (optional Google fallback)
 - `list_devices.py` - Helper script to identify your microphone's device index
 - `test_mic_stream.py` - Tests microphone input by recording a 5-second WAV file
 - `test_transcribe.py` - Tests live transcription by printing transcripts to console
 
 ## Authentication
+
+**Only needed if you want the Google fallback.**
 
 **Important:** Google Cloud Speech-to-Text (v2, streaming) does **not** support API keys.
 It requires OAuth authentication using a **service account**.
@@ -35,6 +37,10 @@ GOOGLE_CLOUD_PROJECT="your-google-cloud-project-id"
 ```
 
 ## Setup
+
+### 0. Start the local whisper.cpp server
+
+Run your whisper.cpp server so it listens on `http://127.0.0.1:8080` with an `/inference` endpoint. If you use a different host or port, update the `server_url` in `engine.py`.
 
 ### 1. Find Your Microphone Name (or Index)
 
@@ -102,8 +108,10 @@ Tune it by passing `vad_enabled`, `vad_energy_threshold`, `vad_speech_ms`, or `v
 ## Requirements
 
 - Python 3.13 or lower (not 3.14)
-- google-cloud-speech library (added to requirements.txt)
-- A valid Google Cloud service account with Speech-to-Text permissions
+- requests
+- A local whisper.cpp server with an `/inference` endpoint
+- google-cloud-speech library (optional, only for fallback)
+- A valid Google Cloud service account with Speech-to-Text permissions (fallback only)
 
 ## Resources
 
@@ -126,6 +134,10 @@ Cloud Speech Client
 **"Audio device not found" or wrong microphone**
 - Run `list_devices.py` and update `DEFAULT_MIC_NAME` or `mic_index`
 - On Windows, use "Windows WASAPI" devices
+
+**"Connection Refused" to local server**
+- Confirm the whisper.cpp server is running and the `/inference` endpoint is reachable
+- Update the `server_url` in `engine.py` if you are not using `http://127.0.0.1:8080`
 
 **No transcripts appearing**
 - Check your `.env` file has correct credentials

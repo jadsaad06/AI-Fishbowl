@@ -59,6 +59,8 @@ export const RESPONDERS = [
   "assets/images/responder_1.png",
   "assets/images/responder_2.png",
   "assets/images/responder_3.png",
+  "assets/images/responder_advisor.png",
+  "assets/images/responder_gradvisor.png",
 ];
 
 /** Initializes a new PIXI application in the UI */
@@ -105,9 +107,17 @@ async function connect_agent() {
               personality = parts[0];
               subtitleText = parts[1];
             }
+  
+            setSubtitles(event.data);
 
-            setSubtitles(subtitleText);
-            window.fishbowl.sendToTTS(fullAgentResponse);
+            let layer1 = fullAgentResponse.replace(/^\s*\*+\s*/gm, "");
+            let layer2 = layer1.replace(/\s*\n+\s*/g, " ");
+            let layer3 = layer2.replace(/\s{2,}/g, " ").trim();
+            let layer4 = layer3.replace(/\s*\n+\s*/g, ". ");
+
+
+            console.log(layer4);
+            window.fishbowl.sendToTTS(layer4);
             fullAgentResponse = "";
           }, 500);
           //setScene(app, "responding");
@@ -282,7 +292,13 @@ function setupKeyboardInput() {
         setPrompt(getPrompt() + e.key);
       }
     } else {
-      if (e.key === "1" || e.key === "2" || e.key === "3") {
+      if (
+        e.key === "1" ||
+        e.key === "2" ||
+        e.key === "3" ||
+        e.key === "4" ||
+        e.key === "5"
+      ) {
         if (getResponder() === Number(e.key)) {
           return;
         } else {
