@@ -35,17 +35,27 @@ def speak_text(text: str, personality_id: str):
     print("Streaming audio...")
     start_time = time.monotonic() #Starts time before any processing
 
-    if personality_id == "1":
-        style_prompt = f"You are a cute, sensitive little guy. Read the following in a friendly and professional tone: {text}"
+    voice_name = "Umbriel"
 
-    elif personality_id == "2":
-        style_prompt = f"You are a tired, annoyed, and sometimes sarcastic professor. Read the following: {text}"
+    if personality_id == "1": #Pinto
+        voice_name = "Fenrir"
+        style_prompt = f"Speak like a cute, friendly, and sensative little guy: {text}"
 
-    elif personality_id == "3":
-        style_prompt =f"You are odd, with slightly abnormal speech patterns. Read the following: {text}"
+    elif personality_id == "2": #Jimbo
+        voice_name == "Enceladus"
+        style_prompt = f"Speak like a tired, annoyed, and sometimes sarcastic professor: {text}"    
+    
+    elif personality_id == "3": #Bongo
+        voice_name = "Umbriel"
+        style_prompt = f"Speak with odd, slightly abnormal speech patterns: {text}"
 
-    else:
+    elif personality_id == "4": #Kiki
+        voice_name = "Kore"
         style_prompt = f"Read the following in a friendly and professional tone: {text}"
+
+    else: #Koko (Default)
+        voice_name = "Iapetus"
+        style_prompt =f"Read the following in a friendly and professional tone: {text}"
 
     try:
         response = client.models.generate_content_stream(  #Calls Gemini, and returns in streamable chunks
@@ -55,9 +65,7 @@ def speak_text(text: str, personality_id: str):
                 response_modalities = ["AUDIO"],
                 speech_config=types.SpeechConfig(
                     voice_config=types.VoiceConfig(
-                        prebuilt_voice_config = types.PrebuiltVoiceConfig(  #Calls one of Gemini's default voices
-                            voice_name="Umbriel"
-                        )
+                        prebuilt_voice_config = types.PrebuiltVoiceConfig(voice_name=voice_name)  #Calls one of Gemini's default voices
                     )
                 )
             ),
