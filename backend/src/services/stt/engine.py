@@ -4,27 +4,114 @@ The is the documentation I am referencing. Note that it supports the
 transcription of live audio and audio files.
 
 PIPELINE:
-Microphone -> PyAudio -> MicrophoneStream -> get_request_stream() -> Google Cloud STT API -> responses_iterator -> Terminal Output
+Microphone -> PyAudio -> MicrophoneStream -> whisper.cpp server (/inference) -> Final Transcripts (fallback: Google STT)
 """
 
 import os
+import sys
+import io
+import wave
+import requests
+import numpy as np
 from dotenv import load_dotenv
-from google.cloud.speech_v2 import SpeechClient
-from google.cloud.speech_v2.types import cloud_speech as cloud_speech_types
+from google.cloud import speech
+
 from mic_stream import MicrophoneStream
 
 load_dotenv()
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-DEFAULT_MIC_NAME = "External Microphone"
+DEFAULT_MIC_NAME = "Titanium"
 _current_mic = None
 
-def get_request_stream(config, mic_gen):
-    yield config                                                                                # First yield must be the config request
-    for chunk in mic_gen:                                                                       # Then continuously yield audio chunks
-        yield cloud_speech_types.StreamingRecognizeRequest(audio=chunk)                         # Wrap each chunk in a StreamingRecognizeRequest
+class HybridTranscriber:
+    def __init__(self, server_url="http://127.0.0.1:8080"):
+        self.server_url = f"{server_url}/inference"
+        self.google_available = False
+        self.target_rate = 16000  # Whisper Server expects 16k wav usually
 
-# ========================  Important  =========================
+        # 1. Setup Google Cloud Fallback
+        try:
+            self.google_client = speech.SpeechClient()
+            self.google_config = speech.RecognitionConfig(
+                encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+                sample_rate_hertz=self.target_rate,
+                language_code="en-US",
+            )
+            self.google_available = True
+        except Exception as e:
+            print(f"[Engine] Google Cloud failed: {e}", file=sys.stderr)
+
+    def _convert_to_wav(self, pcm_data, sample_rate):
+        """
+        Wraps raw PCM bytes into an in-memory WAV file object.
+        Required because whisper.cpp server expects a file upload.
+        """
+        wav_io = io.BytesIO()
+        with wave.open(wav_io, "wb") as wav_file:
+            wav_file.setnchannels(1)
+            wav_file.setsampwidth(2)  # 16-bit
+            wav_file.setframerate(sample_rate)
+            wav_file.writeframes(pcm_data)
+        wav_io.seek(0)
+        return wav_io
+
+    def transcribe(self, int16_bytes, mic_rate):
+        # 1. Try Local Whisper Server
+        try:
+            # Prepare WAV file in memory
+            # Note: We send the audio at the MIC's native rate.
+            # The whisper.cpp server usually handles resampling, but 16k is safest
+            wav_file = self._convert_to_wav(int16_bytes, mic_rate)
+
+            files = {
+                'file': ('audio.wav', wav_file, 'audio/wav')
+            }
+            data = {
+                'temperature': '0.0',
+                'temperature_inc': '0.2',
+                'response_format': 'json'
+            }
+
+            # Send POST request
+            response = requests.post(self.server_url, files=files, data=data, timeout=5)
+
+            if response.status_code == 200:
+                result = response.json()
+                # The server returns JSON like { "text": "..." }
+                text = result.get("text", "").strip()
+                if text:
+                    # Often whisper.cpp outputs [BLANK_AUDIO] or similar, filter if needed
+                    print(f"[Local Server]: {text}", file=sys.stderr)
+                    return text
+            else:
+                print(f"[Local Server] Error {response.status_code}: {response.text}", file=sys.stderr)
+
+        except requests.exceptions.ConnectionError:
+            print("[Local Server] Connection Refused. Is ./server running?", file=sys.stderr)
+        except Exception as e:
+            print(f"[Local Server] Error: {e}", file=sys.stderr)
+
+        # Fallback to Google
+        if self.google_available:
+            try:
+
+                audio = speech.RecognitionAudio(content=int16_bytes)
+
+                # Update config sample rate to match mic if different
+                if self.google_config.sample_rate_hertz != mic_rate:
+                    self.google_config.sample_rate_hertz = mic_rate
+
+                response = self.google_client.recognize(config=self.google_config, audio=audio)
+                for result in response.results:
+                    print(f"[Google]: {result.alternatives[0].transcript}", file=sys.stderr)
+                    return result.alternatives[0].transcript
+            except Exception as e:
+                print(f"[Engine] Google error: {e}", file=sys.stderr)
+
+        return None
+
+
 def transcribe_streaming_v2(
     mic_index=None,
     mic_name=DEFAULT_MIC_NAME,
@@ -32,69 +119,43 @@ def transcribe_streaming_v2(
     vad_keepalive=True,
     vad_keepalive_ms=1000,
 ):
-# ========================  Update me ^ ========================
-    print("Initializing.\n")
-    client = SpeechClient() # Instantiates a client
-
     global _current_mic
-    
+
+    print("Initializing Hybrid Engine (Server Mode).\n")
+    transcriber = HybridTranscriber(server_url="http://127.0.0.1:8080")
+
     try:
         name_contains = mic_name if mic_index is None else None
+
         with MicrophoneStream(
             index=mic_index,
             name_contains=name_contains,
             vad_enabled=vad_enabled,
             vad_keepalive=vad_keepalive,
             vad_keepalive_ms=vad_keepalive_ms,
+            # removed 'rate' arg to use default mic rate
         ) as mic:
             _current_mic = mic
-            print(
-                f"Using: {mic.device_name} | {mic.rate}Hz, {mic.channels} channel(s)"
-            )
-
-            recognition_config = cloud_speech_types.RecognitionConfig(                          # Configure speech recognition parameters:
-                explicit_decoding_config=cloud_speech_types.ExplicitDecodingConfig(             # - explicit_decoding_config: Manually inputing audio encoding settings
-                    encoding=cloud_speech_types.ExplicitDecodingConfig.AudioEncoding.LINEAR16,  # - This is the bitdepth. This is the recommended setting from Google
-                    sample_rate_hertz=mic.rate,                                                 # - mic info
-                    audio_channel_count=mic.channels,                                           # - more mic info
-                ),
-                language_codes=["en-US"],                                                       # - language_codes: Specifies what language to recognize
-                model="latest_long",                                                            # - model: it complains when I do chirp_3 (the default) so Google told me to use latest_long and it works
-            )
-
-            streaming_config = cloud_speech_types.StreamingRecognitionConfig(
-                config=recognition_config,                                                      # Setting the config
-                streaming_features=cloud_speech_types.StreamingRecognitionFeatures(
-                    interim_results=False                                                       # False, if true it'll give us temporary & real-time transcriptions that are subject to change as more audio is processed
-                )
-            )
-            
-            config_request = cloud_speech_types.StreamingRecognizeRequest(                      # Same as starter code, package everything into a request object
-                recognizer=f"projects/{PROJECT_ID}/locations/global/recognizers/_",             # - recognizer: Path to the Google Cloud recognizer (using default)
-                streaming_config=streaming_config,                                              # - streaming_config: The config we just made
-            )
-            
-            responses_iterator = client.streaming_recognize(                                    # This is where stuff happens, we pass the config + mic generator (the input stream) to Google's API
-                requests=get_request_stream(config_request, mic.generator())                    # get_request_stream() packages our mic chunks into requests
-            )                                                                                   # Google will continuously process audio chunks and send back transcription results
-
+            print(f"Using: {mic.device_name} | {mic.rate}Hz, {mic.channels} channel(s)")
             print(f"Listening. Press Ctrl+C to stop\n", flush=True)
-            
-            # This loop continuously pulls transcription results from Google
-            for response in responses_iterator:                                                 # Loop through each response from Google
-                if not response.results:         
-                    continue                                                                       # Skip empty responses (heartbeat packets)
 
-                for result in response.results:                                                 # Each response can have multiple results
-                    if not result.alternatives:                                                 # Skip if no transcription alternatives
-                        continue 
-                    
-                    if result.is_final:                                                         # Only process final results
-                        transcript = result.alternatives[0].transcript                          # Get the completed transcription
-                        yield transcript                                                        # Return transcript but keep the generator running
+            audio_buffer = bytearray()
+
+            for chunk in mic.generator():
+                if chunk is None:
+                    # Silence detected -> Transcribe
+                    if len(audio_buffer) > 0:
+                        transcript = transcriber.transcribe(bytes(audio_buffer), mic.rate)
+                        if transcript:
+                            yield transcript
+
+                        audio_buffer = bytearray()
+                else:
+                    audio_buffer.extend(chunk)
+
     except KeyboardInterrupt:
         print("\n\n* Stopped listening")
-        raise                                                                                   # Re-raise
+        raise
     except Exception as e:
         print(f"\n\nError: {e}")
         raise
