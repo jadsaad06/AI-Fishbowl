@@ -22,11 +22,14 @@ contextBridge.exposeInMainWorld("fishbowl", {
     ipcRenderer.on("render-subtitles", (_, text) => cb(text)),
 
   sendKeyboardPrompt: (text) => ipcRenderer.send("keyboard-prompt", text),
-  
+
   sendToTTS: (text) => ipcRenderer.send("send-to-tts", text),
 
   onUserPrompt: (cb) =>
     ipcRenderer.on("display-user-prompt", (_event, value) => cb(value)),
 
-  config: {gcpUrl: process.env.GCP_MCP_URL}
+  config: {
+    gcpUrl: process.env.GCP_MCP_URL,
+    apiNinjasKey: process.env.API_NINJAS_KEY,
+  },
 });

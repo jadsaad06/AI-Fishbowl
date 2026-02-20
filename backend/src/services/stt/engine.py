@@ -21,7 +21,7 @@ from mic_stream import MicrophoneStream
 load_dotenv()
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-DEFAULT_MIC_NAME = "LavMicro"
+DEFAULT_MIC_NAME = "Titanium"
 _current_mic = None
 
 class HybridTranscriber:
