@@ -137,11 +137,7 @@ async def ws_text_input(ws : WebSocket):
         "ws" : ws,
         "conversation" : [],
         "curr_agent" : app.state.agent_Pinto
-        current_personality_id = "1"
     }
-
-    
-
 
 
     try:
@@ -154,27 +150,27 @@ async def ws_text_input(ws : WebSocket):
                 case "PERSONALIZATION: 1":
                     curr_session["curr_agent"] = app.state.agent_Pinto
                     curr_session["conversation"] = []
-                    current_personality_id = "1"
+                    personality_id = "1"
                     continue
                 case "PERSONALIZATION: 2":
                     curr_session["curr_agent"] = app.state.agent_Jimbo
                     curr_session["conversation"] = []
-                    current_personality_id = "2"
+                    personality_id = "2"
                     continue
                 case "PERSONALIZATION: 3":
                     curr_session["curr_agent"] = app.state.agent_Bongo
                     curr_session["conversation"] = []
-                    current_personality_id = "3"
+                    personality_id = "3"
                     continue
                 case "PERSONALIZATION: 4":
                     curr_session["curr_agent"] = app.state.agent_koko
                     curr_session["conversation"] = []
-                    current_personality_id = "4"
+                    personality_id = "4"
                     continue
                 case "PERSONALIZATION: 5":
                     curr_session["curr_agent"] = app.state.agent_kiki
                     curr_session["conversation"] = []
-                    current_personality_id = "5"
+                    personality_id = "5"
                     continue
 
             
@@ -201,7 +197,7 @@ async def ws_text_input(ws : WebSocket):
             stripped_response = grab_agent_final_response(response)     
 
 
-            await curr_session["ws"].send_text({current_personality_id}:{stripped_response})
+            await curr_session["ws"].send_text(f"{personality_id}:{stripped_response}")
             
 
 
