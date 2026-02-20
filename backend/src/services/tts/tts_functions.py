@@ -49,7 +49,7 @@ def speak_text(text: str, personality_id: str):
         voice_name = "Umbriel"
         style_prompt = f"Speak with odd, slightly abnormal speech patterns: {text}"
 
-    elif personality_id == "4": #Kiki
+    elif personality_id == "5": #Kiki
         voice_name = "Kore"
         style_prompt = f"Read the following in a friendly and professional tone: {text}"
 
