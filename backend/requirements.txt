@@ -17,3 +17,4 @@ pyaudio
 fastapi[standard]
 google-cloud-speech
 pygame
+requests

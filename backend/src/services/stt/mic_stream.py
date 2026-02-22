@@ -203,6 +203,7 @@ class MicrophoneStream:
                         speaking = False
                         speech_count = 0
                         print("EVENT:MIC_STOPPED", flush=True)
+                        yield None  # added to support local stt setup
                         if pre_buffer is not None:
                             pre_buffer.clear()
             else:
