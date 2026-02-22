@@ -57,6 +57,9 @@ def speak_text(text: str, personality_id: str):
         voice_name = "Iapetus"
         style_prompt =f"Friendly and professional tone: {text}"
 
+    print("Current voice model: ", voice_name)
+    print("Current style prompt: ", style_prompt)
+
     try:
         response = client.models.generate_content_stream(  #Calls Gemini, and returns in streamable chunks
             model = "gemini-2.5-flash-preview-tts",
