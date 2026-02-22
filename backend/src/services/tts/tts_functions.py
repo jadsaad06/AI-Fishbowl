@@ -39,23 +39,23 @@ def speak_text(text: str, personality_id: str):
 
     if personality_id == "1": #Pinto
         voice_name = "Fenrir"
-        style_prompt = f"Speak like a cute, friendly, and sensative little guy: {text}"
+        style_prompt = f"Cute, friendly, and sensative little voice: {text}"
 
     elif personality_id == "2": #Jimbo
-        voice_name == "Enceladus"
-        style_prompt = f"Speak like a tired, annoyed, and sometimes sarcastic professor: {text}"    
+        voice_name = "Enceladus"
+        style_prompt = f"Tired, annoyed, and sarcastic tone: {text}"    
     
     elif personality_id == "3": #Bongo
         voice_name = "Umbriel"
-        style_prompt = f"Speak with odd, slightly abnormal speech patterns: {text}"
+        style_prompt = f"Odd, slightly abnormal speech patterns: {text}"
 
     elif personality_id == "5": #Kiki
         voice_name = "Kore"
-        style_prompt = f"Read the following in a friendly and professional tone: {text}"
+        style_prompt = f"Friendly and professional tone: {text}"
 
     else: #Koko (Default)
         voice_name = "Iapetus"
-        style_prompt =f"Read the following in a friendly and professional tone: {text}"
+        style_prompt =f"Friendly and professional tone: {text}"
 
     try:
         response = client.models.generate_content_stream(  #Calls Gemini, and returns in streamable chunks
