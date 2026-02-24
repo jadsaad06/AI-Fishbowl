@@ -73,6 +73,7 @@ function startServices() {
 
   stt.stdout.on("data", (data) => {
     const out = data.toString();
+    console.log("[STT]: " + out); // Log ALL STT output without this, WAKE:<name> signals are silently consumed since only [Transcript]: lines were previously logged
     if (currentAppState === "keyboard") {
       return;
     }
