@@ -1,8 +1,8 @@
 [
   {
     "id": 1,
-    "name": "Bob",
-    "wake_phrases": ["hey bob", "hi bob", "okay bob", "ok bob"]
+    "name": "Kiki",
+    "wake_phrases": ["hey kiki", "hi kiki", "okay kiki", "ok kiki"]
   },
   {
     "id": 2,
@@ -11,6 +11,16 @@
   },
   {
     "id": 3,
+    "name": "Pinto",
+    "wake_phrases": ["hey pinto", "hi pinto", "okay pinto", "ok pinto"]
+  },
+  {
+    "id": 4,
+    "name": "Koko",
+    "wake_phrases": ["hey koko", "hi koko", "okay koko", "ok koko"]
+  },
+  {
+    "id": 5,
     "name": "Bongo",
     "wake_phrases": ["hey bongo", "hi bongo", "okay bongo", "ok bongo"]
   }
