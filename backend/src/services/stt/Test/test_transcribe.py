@@ -6,6 +6,8 @@ import sys
 import json
 from pathlib import Path
 import threading
+from rapidfuzz import fuzz, process
+from metaphone import doublemetaphone
 
 sys.path.append(str(Path(__file__).parent.parent)) # adds parent dir to the Python path so we can import engine. Lets us import from the directory above where engine.py is
 
@@ -18,18 +20,52 @@ def _load_fish_config():
     with open(_FISH_CONFIG_PATH, "r") as f:
         return json.load(f)
 
-def _check_wake_phrase(transcript, fish_list):
+def _check_wake_phrase(transcript, fish_list, threshold=80):
     """
-    Check if a transcript starts with a wake phrase for any fish.
-    Returns the matching fish dict, or None if no match.
-    Matching is case-insensitive and phrase must appear at the start of the transcript.
+    Logic-oriented check for wake phrases.
+    1. Direct match (Normalized)
+    2. Fuzzy match (Partial ratio to ignore leading/trailing noise)
+    3. Phonetic match (To handle accents/homophones)
     """
-    t = " ".join(transcript.split()).lower()  # normalize all whitespace
+    t_clean = " ".join(transcript.split()).lower()
+    
+    best_match = None
+    highest_score = 0
+
+    if len(t_clean.split()) > 6:
+        return None
+
     for fish in fish_list:
+        fish_phonetic = doublemetaphone(fish["name"].lower())[0]
+        
         for phrase in fish["wake_phrases"]:
-            if t.startswith(phrase):
-                return fish
-    return None
+            score = fuzz.partial_ratio(phrase, t_clean)
+
+            words = t_clean.split()
+            if words:
+                last_word_phonetic = doublemetaphone(words[-1])[0]
+                if last_word_phonetic == fish_phonetic:
+                    score = max(score, 90)
+
+            if score > highest_score and score >= threshold:
+                print("Entered STT phonetic", flush=True)
+                highest_score = score
+                best_match = fish
+
+    return best_match
+   
+# def _check_wake_phrase(transcript, fish_list):
+#     """
+#     Check if a transcript starts with a wake phrase for any fish.
+#     Returns the matching fish dict, or None if no match.
+#     Matching is case-insensitive and phrase must appear at the start of the transcript.
+#     """
+#     t = " ".join(transcript.split()).lower()  # normalize all whitespace
+#     for fish in fish_list:
+#         for phrase in fish["wake_phrases"]:
+#             if t.startswith(phrase):
+#                 return fish
+#     return None
 
 
 def stdin_listener():

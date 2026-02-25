@@ -1,27 +1,63 @@
 [
   {
     "id": 1,
-    "name": "Kiki",
-    "wake_phrases": ["hey kiki", "hi kiki", "okay kiki", "ok kiki"]
+    "name": "kiki",
+    "wake_phrases": [
+      "hey kiki",
+      "hi kiki",
+      "kiki",
+      "key key",
+      "keekee",
+      "kicky"
+    ]
   },
   {
     "id": 2,
-    "name": "Jimbo",
-    "wake_phrases": ["hey jimbo", "hi jimbo", "okay jimbo", "ok jimbo"]
+    "name": "jimbo",
+    "wake_phrases": [
+      "hey jimbo",
+      "hi jimbo",
+      "jimbo",
+      "gym bo",
+      "jim bow",
+      "jumbo"
+    ]
   },
   {
     "id": 3,
-    "name": "Pinto",
-    "wake_phrases": ["hey pinto", "hi pinto", "okay pinto", "ok pinto"]
+    "name": "pinto",
+    "wake_phrases": [
+      "hey pinto",
+      "hi pinto",
+      "pinto",
+      "pento",
+      "bean to",
+      "pin toe"
+    ]
   },
   {
     "id": 4,
-    "name": "Koko",
-    "wake_phrases": ["hey koko", "hi koko", "okay koko", "ok koko"]
+    "name": "koko",
+    "wake_phrases": [
+      "hey koko",
+      "hi koko",
+      "koko",
+      "coco",
+      "co co",
+      "cocoa",
+      "go go"
+    ]
   },
   {
     "id": 5,
-    "name": "Bongo",
-    "wake_phrases": ["hey bongo", "hi bongo", "okay bongo", "ok bongo"]
+    "name": "bongo",
+    "wake_phrases": [
+      "hey bongo",
+      "hi bongo",
+      "bongo",
+      "bon go",
+      "bungo",
+      "pongo"
+    ]
   }
 ]

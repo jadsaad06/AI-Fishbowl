@@ -129,12 +129,13 @@ function startServices() {
 
   stt.stdout.on("data", (data) => {
     const out = data.toString();
-    console.log("[STT]: " + out); // Log ALL STT output without this, WAKE:<name> signals are silently consumed since only [Transcript]: lines were previously logged
     if (currentAppState === "keyboard") {
       return;
     }
+    console.log("STT Captured: " + out);
 
     if (out.includes("WAKE:")) {
+      console.log(out);
       const heyResponder = out.replace("WAKE:", "").trim();
       if (currentAppState === "idle") {
         const responderMap = {
@@ -155,7 +156,7 @@ function startServices() {
       }
     }
 
-    if (out.includes("[Transcript]:")) {
+    if (out.includes("[Transcript]:") && currentAppState === "listening") {
       console.log(out);
       const promptText = out.replace("[Transcript]:", "").trim();
       if (currentAppState === "listening") {

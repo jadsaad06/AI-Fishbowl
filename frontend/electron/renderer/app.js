@@ -327,6 +327,11 @@ function setupKeyboardInput() {
         return;
       }
 
+      if (e.key === "Escape" && currentState === "speech") {
+        window.fishbowl.requestState("idle");
+        return;
+      }
+
       if (e.key.toLowerCase() === "l") {
         if (infoOverlay) infoOverlay.toggle();
         return;
