@@ -15,6 +15,7 @@ let activateInputState = "speech";
 let currentResponder = 1;
 let stt;
 let tts;
+let currentSessionId = 0;
 
 /**
  * Create a new window using this function.
@@ -49,6 +50,11 @@ function updateUIState(newState) {
 
 function transitionState(newState) {
   if (currentAppState === newState) return;
+
+  if (newState === "idle") {
+    currentSessionId++;
+    console.log(`Session Reset. Current ID: ${currentSessionId}`);
+  }
 
   console.log(`State Transition: ${currentAppState} -> ${newState}`);
   if (stt && stt.stdin.writable) {
@@ -205,16 +211,31 @@ function startServices() {
 
     console.log("[TTS]: " + out);
 
+    const sessionIdAtTrigger = currentSessionId;
+
     if (out.includes("TTS_SPEECH_STARTED") && currentAppState === "thinking") {
       setTimeout(() => {
-        transitionState("responding");
+        if (
+          currentSessionId === sessionIdAtTrigger &&
+          currentAppState !== "idle"
+        ) {
+          transitionState("responding");
+        }
       }, 2500);
     }
     if (out.includes("TTS_SPEECH_ENDED")) {
-      //updateUIState("idle");
-
       // Resume the STT engine after a short delay to ensure audio has finished
       setTimeout(() => {
+        if (
+          currentSessionId !== sessionIdAtTrigger ||
+          currentAppState === "idle"
+        ) {
+          console.log(
+            "Cleanup: Suppressing state restoration because session is stale.",
+          );
+          return;
+        }
+
         if (activateInputState === "keyboard") {
           transitionState("keyboard");
         } else {

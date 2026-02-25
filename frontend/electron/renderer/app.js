@@ -147,6 +147,7 @@ let ws = null;
 let keepRetrying = false;
 let fullAgentResponse = "";
 let responseTimeout = null;
+let currentSessionId = 0;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -167,12 +168,20 @@ async function connect_agent() {
         });
 
         sock.addEventListener("message", (event) => {
+          const sessionIdAtArrival = currentSessionId;
           console.log("Message:", event.data);
           fullAgentResponse += event.data;
 
           if (responseTimeout) clearTimeout(responseTimeout);
 
           responseTimeout = setTimeout(() => {
+            if (sessionIdAtArrival !== currentSessionId) {
+              console.log(
+                "Aborting TTS trigger: Session is Stale, ESC invoked.",
+              );
+              fullAgentResponse = "";
+              return;
+            }
             setSubtitles(event.data);
 
             let layer1 = fullAgentResponse.replace(/^\s*\*+\s*/gm, "");
@@ -181,7 +190,9 @@ async function connect_agent() {
             let layer4 = layer3.replace(/\s*\n+\s*/g, ". ");
 
             console.log(layer4);
-            window.fishbowl.sendToTTS(layer4);
+            if (getState() === "thinking") {
+              window.fishbowl.sendToTTS(layer4);
+            }
             fullAgentResponse = "";
           }, 500);
           //setScene(app, "responding");
@@ -329,6 +340,24 @@ function setupKeyboardInput() {
   window.addEventListener("keydown", (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
 
+    if (
+      e.key === "Escape" &&
+      getState() !== "thinking" &&
+      getState() !== "responding"
+    ) {
+      currentSessionId++;
+      console.log("Session Invalidated. New ID:", currentSessionId);
+      setPrompt("");
+      fullAgentResponse = "";
+      if (responseTimeout) {
+        clearTimeout(responseTimeout);
+        responseTimeout = null;
+      }
+
+      window.fishbowl.requestState("idle");
+      return;
+    }
+
     const currentState = getState();
 
     if (currentState === "keyboard") {
@@ -354,11 +383,11 @@ function setupKeyboardInput() {
         return;
       }
 
-      if (e.key === "Escape") {
-        setPrompt("");
-        window.fishbowl.requestState("idle");
-        return;
-      }
+      // if (e.key === "Escape") {
+      //   setPrompt("");
+      //   window.fishbowl.requestState("idle");
+      //   return;
+      // }
 
       if (e.key.length === 1) {
         setPrompt(getPrompt() + e.key);
