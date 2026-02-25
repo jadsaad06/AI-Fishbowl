@@ -11,6 +11,7 @@ app.commandLine.appendSwitch("log-level", "3");
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
 let win;
 let currentAppState = "idle";
+let currentResponder = 1;
 
 /**
  * Create a new window using this function.
@@ -43,6 +44,32 @@ function updateUIState(newState) {
   }
 }
 
+function setResponderIfAllowed(responderId) {
+  console.log("Attempting responder change:", responderId);
+
+  if (currentAppState !== "idle") {
+    console.log("Denied: Not in idle state");
+    return;
+  }
+
+  if (!Number.isInteger(responderId) || responderId < 1 || responderId > 5) {
+    console.log("Denied: Invalid Responder ID");
+    return;
+  }
+
+  if (currentResponder === responderId) {
+    return;
+  }
+
+  currentResponder = responderId;
+  if (win) {
+    win.webContents.send("responder-force-update", responderId);
+  }
+
+  console.log("Responder updated to:", responderId);
+  return true;
+}
+
 /**
  * Electron's Inter-Process Communication Handler.
  * This allows the main process to listen for changes via the frontend (conveyed by the renderer process)
@@ -62,6 +89,10 @@ ipcMain.on("keyboard-prompt", (_, text) => {
   // Forward text to Michel ###########
 });
 
+ipcMain.on("request-responder-change", (_, responderId) => {
+  setResponderIfAllowed(responderId);
+});
+
 function startServices() {
   const stt = spawn("python", [
     "-u",
@@ -76,6 +107,27 @@ function startServices() {
     console.log("[STT]: " + out); // Log ALL STT output without this, WAKE:<name> signals are silently consumed since only [Transcript]: lines were previously logged
     if (currentAppState === "keyboard") {
       return;
+    }
+
+    if (out.includes("WAKE:")) {
+      const heyResponder = out.replace("WAKE:", "").trim();
+      if (currentAppState === "idle") {
+        const responderMap = {
+          pinto: 1,
+          jimbo: 2,
+          bongo: 3,
+          koko: 4,
+          kiki: 5,
+        };
+
+        const id = responderMap[heyResponder.toLowerCase()];
+
+        if (id) {
+          setResponderIfAllowed(id);
+        } else {
+          console.log("Unknown responder:", heyResponder);
+        }
+      }
     }
 
     if (out.includes("[Transcript]:")) {

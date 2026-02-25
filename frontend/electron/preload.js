@@ -28,6 +28,14 @@ contextBridge.exposeInMainWorld("fishbowl", {
   onUserPrompt: (cb) =>
     ipcRenderer.on("display-user-prompt", (_event, value) => cb(value)),
 
+  onResponderChange: (cb) =>
+    ipcRenderer.on("responder-force-update", (_, responderId) =>
+      cb(responderId),
+    ),
+
+  requestResponderChange: (id) =>
+    ipcRenderer.send("request-responder-change", id),
+
   config: {
     gcpUrl: process.env.GCP_MCP_URL,
     apiNinjasKey: process.env.API_NINJAS_KEY,

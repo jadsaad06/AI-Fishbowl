@@ -106,7 +106,6 @@ async function connect_agent() {
             let layer3 = layer2.replace(/\s{2,}/g, " ").trim();
             let layer4 = layer3.replace(/\s*\n+\s*/g, ". ");
 
-
             console.log(layer4);
             window.fishbowl.sendToTTS(layer4);
             fullAgentResponse = "";
@@ -176,6 +175,47 @@ async function init() {
           currentScene.updateSubtitles(text);
         }
       });
+
+      window.fishbowl.onResponderChange((responderId) => {
+        console.log("Main Process Send Speech Setting:", responderId);
+
+        setResponder(responderId);
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send("PERSONALIZATION: " + responderId);
+        }
+      });
+
+      window.fishbowl.onUserPrompt((text) => {
+        if (getState() === "keyboard") {
+          console.log("Suppressed STT: Keyboard active.");
+          return;
+        }
+        const currentState = getState();
+        if (
+          currentState !== "listening" &&
+          currentState !== "idle" &&
+          currentState !== "thinking"
+        )
+          return;
+
+        const responder = getResponder();
+        const formattedText = "You Said: " + text;
+        if (currentScene instanceof ThinkingSceneAnime) {
+          currentScene.updateTranscript(formattedText);
+        }
+
+        // 3. Socket Communication: Send the raw text to the MCP server
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          console.log("STT sent to socket:", formattedText);
+          ws.send(text);
+          if (getState() !== "thinking") {
+            window.fishbowl.setState("thinking");
+          }
+        } else {
+          console.warn("WebSocket not ready. Could not send STT.");
+        }
+      });
     }
 
     /**
@@ -211,37 +251,6 @@ async function init() {
     console.error("Failed to initialize PIXI application:", error);
   }
 }
-
-window.fishbowl.onUserPrompt((text) => {
-  if (getState() === "keyboard") {
-    console.log("Suppressed STT: Keyboard active.");
-    return;
-  }
-  const currentState = getState();
-  if (
-    currentState !== "listening" &&
-    currentState !== "idle" &&
-    currentState !== "thinking"
-  )
-    return;
-
-  const responder = getResponder();
-  const formattedText = "You Said: " + text;
-  if (currentScene instanceof ThinkingSceneAnime) {
-    currentScene.updateTranscript(formattedText);
-  }
-
-  // 3. Socket Communication: Send the raw text to the MCP server
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    console.log("STT sent to socket:", formattedText);
-    ws.send(text);
-    if (getState() !== "thinking") {
-      window.fishbowl.setState("thinking");
-    }
-  } else {
-    console.warn("WebSocket not ready. Could not send STT.");
-  }
-});
 
 function setupKeyboardInput() {
   window.addEventListener("keydown", (e) => {
@@ -284,16 +293,17 @@ function setupKeyboardInput() {
       }
     } else {
       if (
-        e.key === "1" ||
-        e.key === "2" ||
-        e.key === "3" ||
-        e.key === "4" ||
-        e.key === "5"
+        (e.key === "1" ||
+          e.key === "2" ||
+          e.key === "3" ||
+          e.key === "4" ||
+          e.key === "5") &&
+        currentState === "idle"
       ) {
         if (getResponder() === Number(e.key)) {
           return;
         } else {
-          setResponder(Number(e.key));
+          window.fishbowl.requestResponderChange(id);
           console.log("Responder selected:", e.key);
           if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send("PERSONALIZATION: " + e.key);
@@ -309,7 +319,7 @@ function setupKeyboardInput() {
           return;
         } else {
           console.log("Responder selected:", randomID);
-          setResponder(randomID);
+          window.fishbowl.requestResponderChange(randomID);
           if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send("PERSONALIZATION: " + randomID);
           }
