@@ -14,6 +14,7 @@ sys.path.append(str(Path(__file__).parent.parent)) # adds parent dir to the Pyth
 from engine import transcribe_streaming_v2, get_current_mic
 
 _FISH_CONFIG_PATH = Path(__file__).parent.parent / "fish_config.json"
+is_awake = False
 
 def _load_fish_config():
     """Load fish definitions from fish_config.json."""
@@ -70,6 +71,7 @@ def _check_wake_phrase(transcript, fish_list, threshold=80):
 
 def stdin_listener():
     """Listen for PAUSE/RESUME commands from parent process."""
+    global is_awake
     for line in sys.stdin:
         cmd = line.strip().upper()
         mic = get_current_mic()
@@ -78,6 +80,10 @@ def stdin_listener():
                 mic.pause()
             elif cmd == "RESUME":
                 mic.resume()
+            elif cmd == "SESSION_START":
+                is_awake = True
+            elif cmd == "SESSION_END":
+                is_awake = False
 
 if __name__ == "__main__":
     print("--------------- STT Engine Test ---------------")
@@ -94,7 +100,9 @@ if __name__ == "__main__":
         # transcribe_streaming_v2() is a generator that yields final transcripts
         # This loop will run indefinitely, getting each (highest confidence) transcript as it's returned
         for user_input in transcribe_streaming_v2():
-            matched_fish = _check_wake_phrase(user_input, fish_list)
+            matched_fish = None 
+            if not is_awake:
+                matched_fish = _check_wake_phrase(user_input, fish_list)
 
             if matched_fish:
                 # Wake phrase detected — signal the frontend to switch persona

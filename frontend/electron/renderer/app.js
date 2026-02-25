@@ -42,8 +42,9 @@ export const RESPONDER_PROMPTS = {
   1: {
     name: "Pinto",
     prompts: [
-      "Press Escape to go back to the homepage.\n\n",
-      "Examples of stuff I can help you with: \n\n",
+      "Start talking, I'm listening!\n",
+      "OR Press ESC to go to the homepage\n\n",
+      "Examples of stuff I can help you with: \n",
       "Pick a random LeetCode problem for me.",
       "What's the weather in Portland, Oregon?",
       "How do Linked Lists work?",
@@ -53,8 +54,9 @@ export const RESPONDER_PROMPTS = {
   2: {
     name: "Jimbo",
     prompts: [
-      "Press Escape to go back to the homepage.\n\n",
-      "Examples of stuff I can help you with: \n\n",
+      "Start talking, I'm listening!\n",
+      "OR Press ESC to go to the homepage\n\n",
+      "Examples of stuff I can help you with: \n",
       "Why are you so mean?",
       "Why does everyone mess up pointers?",
       "What's the weather in Florida?",
@@ -64,8 +66,9 @@ export const RESPONDER_PROMPTS = {
   3: {
     name: "Bongo",
     prompts: [
-      "Press Escape to go back to the homepage.\n\n",
-      "Examples of stuff I can help you with: \n\n",
+      "Start talking, I'm listening!\n",
+      "OR Press ESC to go to the homepage\n\n",
+      "Examples of stuff I can help you with: \n",
       "Walk me through dynamic programming",
       "What's the weather like in Fairbanks, Alaska?",
       "How does Binary Search work?",
@@ -75,6 +78,9 @@ export const RESPONDER_PROMPTS = {
   4: {
     name: "Koko",
     prompts: [
+      "Start talking, I'm listening!\n",
+      "OR Press ESC to go to the homepage\n\n",
+      "Examples of stuff I can help you with: \n",
       "What low-level programming classes can I take next semester?",
       "How many credits do I need to graduate with a Bachelor's in CS?",
       "What electives pair well with software engineering?",
@@ -84,8 +90,9 @@ export const RESPONDER_PROMPTS = {
   5: {
     name: "Kiki",
     prompts: [
-      "Press Escape to go back to the homepage.\n\n",
-      "Examples of stuff I can help you with: \n\n",
+      "Start talking, I'm listening!\n",
+      "OR Press ESC to go to the homepage\n\n",
+      "Examples of stuff I can help you with: \n",
       "How many credits do I need for a Master's degree in CS?",
       "How many electives are recommended per term?",
       "How many credits is CS510: Deep Learning?",
@@ -266,7 +273,6 @@ async function init() {
         )
           return;
 
-        const responder = getResponder();
         const formattedText = "You Said: " + text;
         if (currentScene instanceof ThinkingSceneAnime) {
           currentScene.updateTranscript(formattedText);

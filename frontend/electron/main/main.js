@@ -13,6 +13,8 @@ let win;
 let currentAppState = "idle";
 let activateInputState = "speech";
 let currentResponder = 1;
+let stt;
+let tts;
 
 /**
  * Create a new window using this function.
@@ -49,6 +51,13 @@ function transitionState(newState) {
   if (currentAppState === newState) return;
 
   console.log(`State Transition: ${currentAppState} -> ${newState}`);
+  if (stt && stt.stdin.writable) {
+    if (newState === "speech") {
+      stt.stdin.write("SESSION_START\n");
+    } else if (newState === "idle") {
+      stt.stdin.write("SESSION_END\n");
+    }
+  }
   currentAppState = newState;
 
   if (win) {
@@ -119,7 +128,7 @@ ipcMain.on("request-responder-change", (_, responderId) => {
 });
 
 function startServices() {
-  const stt = spawn("python", [
+  stt = spawn("python", [
     "-u",
     path.join(
       __dirname,
@@ -156,7 +165,10 @@ function startServices() {
       }
     }
 
-    if (out.includes("[Transcript]:") && currentAppState === "listening") {
+    if (
+      out.includes("[Transcript]:") &&
+      (currentAppState === "listening" || currentAppState === "speech")
+    ) {
       console.log(out);
       const promptText = out.replace("[Transcript]:", "").trim();
       if (currentAppState === "listening") {
@@ -177,7 +189,7 @@ function startServices() {
     }
   });
 
-  const tts = spawn("python", [
+  tts = spawn("python", [
     path.join(__dirname, "../../../backend/src/services/tts/tts_wrapper.py"),
   ]);
 
