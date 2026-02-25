@@ -3,11 +3,10 @@ import websockets
 import asyncio
 import time
 import sys
+import tts_functions
 
 def print_flush(text):
     print(text, flush=True)
-
-import tts_kyutai
 
 def main():
     for line in sys.stdin:
@@ -27,9 +26,9 @@ def main():
             if text_to_speak:
                 print_flush("TTS_SPEECH_STARTED")
                 try:
-                    tts_kyutai.speak_text(text_to_speak, 1)
+                    tts_functions.speak_text(text_to_speak, 1)
                 except Exception as e:
-                    print(f"Error in tts_kyutai: {e}", file=sys.stderr)
+                    print(f"Error in tts_functions: {e}", file=sys.stderr)
                     import traceback
                     traceback.print_exc(file=sys.stderr)
                 print_flush("TTS_SPEECH_ENDED")

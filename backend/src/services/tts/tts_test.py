@@ -1,4 +1,4 @@
-import tts_kyutai
+import tts_functions
 import pathlib
 import asyncio
 
@@ -17,7 +17,7 @@ async def main():
             if raw:
                 text = raw.strip()
                 p.write_text("")
-                tts_kyutai.speak_text(text, personality_id)
+                tts_functions.speak_text(text, personality_id)
             
             await asyncio.sleep(0.5)
 
