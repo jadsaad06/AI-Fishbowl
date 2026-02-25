@@ -7,6 +7,7 @@ VENV="${ROOT}/.venv"
 TTS_ENV="$ROOT/backend/src/services/tts/.env"
 STT_ENV="$ROOT/backend/src/services/stt/.env"
 LLM_ENV="$ROOT/backend/src/services/llm/.env"
+SCREEN_PID=""
 
 
 load_envs() {
@@ -38,6 +39,15 @@ ensure_defaults() {
 	export GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS:-}"
 	export GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT:-}"
 	export KEY="${KEY:-}" # Gemini TTS
+}
+
+cleanup_screen() {
+	local pid="${SCREEN_PID:-}"
+	if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+		kill -INT "$pid" 2>/dev/null || true
+		wait "$pid" 2>/dev/null || true
+	fi
+	SCREEN_PID=""
 }
 
 
@@ -76,6 +86,11 @@ run() {
 		exit 1
 	fi
 	source "$VENV/bin/activate"
+	trap cleanup_screen EXIT
+	trap 'cleanup_screen; exit 130' INT TERM HUP
+
+	python "$ROOT/hardware/src/case-hardware/screen.py" &
+	SCREEN_PID=$!
 	#(cd "$ROOT/backend/src/mcp_stack" && fastapi dev client.py)
 	(cd "$ROOT/frontend/electron" && npm start)
 }

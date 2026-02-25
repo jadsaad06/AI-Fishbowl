@@ -3,6 +3,7 @@
 import time
 import os
 import sys
+import signal
 import Adafruit_SSD1306 as SSD
 
 from PIL import Image
@@ -32,13 +33,23 @@ class OLED:
         self.__image = Image.new('1', (self.__WIDTH, self.__HEIGHT))
         self.__draw = ImageDraw.Draw(self.__image)
         self.__font = ImageFont.load_default()
+        self.__resource_screen_duration = 5.0
+        self.__creator_screen_duration = 4.0
+        self.__creator_screens = [
+            ("Hardware/Backend", "Daniel Schuster"),
+            ("Text-to-Speech", "Henry McDowell"),
+            ("Team Lead", "Jad Saad"),
+            ("Speech-to-Text", "Joseph Bec"),
+            ("LLM/Agent", "Michel Karam"),
+            ("Frontend/UI", "Satvik Mudgal"),
+            ("Backend/Testing", "Sal Ambriz"),
+        ]
 
     def __del__(self):
         self.clear(True)
         if self.__debug:
             print("---OLED-DEL---")
 
-    # 初始化OLED，成功返回:True，失败返回:False
     # Initialize OLED, return True on success, False on failure
     def begin(self):
         try:
@@ -138,7 +149,7 @@ class OLED:
 
     # Read the memory usage and total memory
     def getUsagedRAM(self):
-        cmd = "free | awk 'NR==2{printf \"RAM:%2d%% -> %.1fGB \", 100*($2-$7)/$2, ($2/1048576.0)}'"
+        cmd = "free | awk 'NR==2{printf \"RAM:%2d%%\", 100*($2-$7)/$2}'"
         FreeRam = subprocess.check_output(cmd, shell=True)
         str_FreeRam = str(FreeRam).lstrip('b\'')
         str_FreeRam = str_FreeRam.rstrip('\'')
@@ -184,36 +195,77 @@ class OLED:
             ip = 'x.x.x.x'
         return ip
 
+    def draw_resource_screen(self, cpu_index, cached_lines):
+        str_CPU = self.getCPULoadRate(cpu_index)
+        str_Time = "Time: " + self.getSystemTime()
+
+        if cpu_index == 0:
+            cached_lines = (
+                self.getUsagedRAM(),
+            )
+
+        ram_line = cached_lines[0] if len(cached_lines) > 0 else "RAM:--%"
+
+        self.add_line(str_Time, 1)
+        self.add_line("", 2)
+        self.add_line(str_CPU, 3)
+        self.add_line(ram_line, 4)
+
+        cpu_index = cpu_index + 1
+        if cpu_index >= 5:
+            cpu_index = 0
+
+        return cpu_index, cached_lines
+
+    def draw_creator_screen(self, page_index):
+        page = self.__creator_screens[page_index]
+        role = page[0] if len(page) > 0 else ""
+        creator = page[1] if len(page) > 1 else ""
+
+        self.add_line("Think Tank ,  Created By:", 1)
+        self.add_line("", 2)
+        self.add_line(creator, 3)
+        self.add_line(role, 4)
 
     # Oled mainly runs functions that are called in a while loop and can be hot-pluggable
     def main_program(self):
         try:
             cpu_index = 0
             state = self.begin()
+            cached_resource_lines = ("RAM:--%",)
+            show_creators = False
+            creator_page_index = 0
+            screen_start = time.monotonic()
+
             while state:
                 self.clear()
                 if self.__clear:
                     self.refresh()
                     return True
-                str_CPU = self.getCPULoadRate(cpu_index)
-                str_Time = self.getSystemTime()
-                if cpu_index == 0:
-                    str_FreeRAM = self.getUsagedRAM()
-                    str_Disk = self.getUsagedDisk()
-                    str_IP = "IPA:" + self.getLocalIP()
-                self.add_text(0, 0, str_CPU)
-                self.add_text(50, 0, str_Time)
-                self.add_line(str_FreeRAM, 2)
-                self.add_line(str_Disk, 3)
-                self.add_line(str_IP, 4)
+
+                elapsed = time.monotonic() - screen_start
+                if show_creators and self.__creator_screens:
+                    self.draw_creator_screen(creator_page_index)
+                    if elapsed >= self.__creator_screen_duration:
+                        creator_page_index = creator_page_index + 1
+                        screen_start = time.monotonic()
+                        if creator_page_index >= len(self.__creator_screens):
+                            show_creators = False
+                            creator_page_index = 0
+                            cpu_index = 0
+                else:
+                    cpu_index, cached_resource_lines = self.draw_resource_screen(
+                        cpu_index, cached_resource_lines)
+                    if elapsed >= self.__resource_screen_duration and self.__creator_screens:
+                        show_creators = True
+                        creator_page_index = 0
+                        screen_start = time.monotonic()
+
                 # Display image.
                 self.refresh()
-                cpu_index = cpu_index + 1
-                if cpu_index >= 5:
-                    cpu_index = 0
                 time.sleep(.1)
             return False
-        except:
+        except Exception:
             if self.__debug:
                 print("!!!---OLED refresh error---!!!")
             return False
@@ -228,8 +280,20 @@ def close_rgb_fan():
 
 
 if __name__ == "__main__":
+    oled = None
+    shutdown_requested = False
+    oled_clear = False
+
+    def _handle_shutdown_signal(signum, frame):
+        global shutdown_requested
+        shutdown_requested = True
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGINT, _handle_shutdown_signal)
+    signal.signal(signal.SIGTERM, _handle_shutdown_signal)
+    signal.signal(signal.SIGQUIT, _handle_shutdown_signal)
+
     try:
-        oled_clear = False
         oled_debug = False
         state = False
         if len(sys.argv) > 1:
@@ -251,16 +315,27 @@ if __name__ == "__main__":
         except:
             pass
 
-        while True:
+        while not shutdown_requested:
             state = oled.main_program()
             oled.clear(True)
             if state:
-                del oled
                 print("---OLED CLEARED!---")
-                close_rgb_fan()
                 break
             time.sleep(1)
     except KeyboardInterrupt:
-        del oled
-        close_rgb_fan()
-        print("---Program closed!---")
+        shutdown_requested = True
+    finally:
+        try:
+            if oled is not None:
+                oled.clear(True)
+        except:
+            pass
+        try:
+            if oled is not None:
+                del oled
+        except:
+            pass
+        if oled_clear:
+            close_rgb_fan()
+        if shutdown_requested:
+            print("---Program closed!---")
