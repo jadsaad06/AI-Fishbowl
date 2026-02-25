@@ -38,6 +38,73 @@ export const RESPONDING_BACKGROUNDS = [
   "assets/images/background_6.png",
 ];
 
+export const RESPONDER_PROMPTS = {
+  1: {
+    name: "Pinto",
+    prompts: [
+      "Press Escape to go back to the homepage.\n\n",
+      "Examples of stuff I can help you with: \n\n",
+      "Pick a random LeetCode problem for me.",
+      "What's the weather in Portland, Oregon?",
+      "How do Linked Lists work?",
+      "Tell me your story.",
+    ],
+  },
+  2: {
+    name: "Jimbo",
+    prompts: [
+      "Press Escape to go back to the homepage.\n\n",
+      "Examples of stuff I can help you with: \n\n",
+      "Why are you so mean?",
+      "Why does everyone mess up pointers?",
+      "What's the weather in Florida?",
+      "What's the fastest way to crack a coding interview?",
+    ],
+  },
+  3: {
+    name: "Bongo",
+    prompts: [
+      "Press Escape to go back to the homepage.\n\n",
+      "Examples of stuff I can help you with: \n\n",
+      "Walk me through dynamic programming",
+      "What's the weather like in Fairbanks, Alaska?",
+      "How does Binary Search work?",
+      "Why do you sound so unsure of yourself? Cheer up!",
+    ],
+  },
+  4: {
+    name: "Koko",
+    prompts: [
+      "What low-level programming classes can I take next semester?",
+      "How many credits do I need to graduate with a Bachelor's in CS?",
+      "What electives pair well with software engineering?",
+      "How did you meet Kiki?",
+    ],
+  },
+  5: {
+    name: "Kiki",
+    prompts: [
+      "Press Escape to go back to the homepage.\n\n",
+      "Examples of stuff I can help you with: \n\n",
+      "How many credits do I need for a Master's degree in CS?",
+      "How many electives are recommended per term?",
+      "How many credits is CS510: Deep Learning?",
+      "What are the grad school application requirements?",
+    ],
+  },
+};
+
+export const FALLBACK_PROMPTS = {
+  name: "Your Companion",
+  prompts: [
+    "Press Escape to go back to the homepage.\n\n",
+    "Examples of stuff I can help you with: \n\n",
+    "Ask me anything about Computer Science!",
+    "Need help with an assignment?",
+    "Want to explore a CS concept together?",
+  ],
+};
+
 export const ANIMATED_FISH = [
   "assets/images/fish_blue.png",
   "assets/images/fish_brown.png",
