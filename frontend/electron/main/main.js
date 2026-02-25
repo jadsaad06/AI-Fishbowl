@@ -11,6 +11,7 @@ app.commandLine.appendSwitch("log-level", "3");
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
 let win;
 let currentAppState = "idle";
+let activateInputState = "speech";
 let currentResponder = 1;
 
 /**
@@ -39,6 +40,17 @@ function createWindow() {
 
 function updateUIState(newState) {
   console.log("State Transition: ", newState);
+  if (win) {
+    win.webContents.send("ui-state-changed", newState);
+  }
+}
+
+function transitionState(newState) {
+  if (currentAppState === newState) return;
+
+  console.log(`State Transition: ${currentAppState} -> ${newState}`);
+  currentAppState = newState;
+
   if (win) {
     win.webContents.send("ui-state-changed", newState);
   }
@@ -78,12 +90,25 @@ function setResponderIfAllowed(responderId) {
  * The main process updates the UI state from the "set-ui-state" channel in the backend, and forwards the update
  * back to the renderer process via the "ui-state-changed" channel. The changes are now reflected on the frontend.
  */
-ipcMain.on("set-ui-state", (event, newState) => {
-  console.log("State change requested:", newState);
-  currentAppState = newState;
-  win.webContents.send("ui-state-changed", newState);
-});
+// ipcMain.on("set-ui-state", (event, newState) => {
+//   console.log("State change requested:", newState);
+//   currentAppState = newState;
+//   win.webContents.send("ui-state-changed", newState);
+// });
 
+ipcMain.on("request-state-transition", (_, requestedState) => {
+  console.log("Renderer requested state:", requestedState);
+
+  if (requestedState === "keyboard") {
+    activateInputState = "keyboard";
+  }
+
+  if (requestedState === "speech") {
+    activateInputState = "speech";
+  }
+
+  transitionState(requestedState);
+});
 ipcMain.on("keyboard-prompt", (_, text) => {
   console.log("Keyboard input received:", text);
   // Forward text to Michel ###########
@@ -124,8 +149,8 @@ function startServices() {
 
         if (id) {
           setResponderIfAllowed(id);
-        } else {
-          console.log("Unknown responder:", heyResponder);
+          activateInputState = "speech";
+          transitionState("speech");
         }
       }
     }
@@ -133,8 +158,8 @@ function startServices() {
     if (out.includes("[Transcript]:")) {
       console.log(out);
       const promptText = out.replace("[Transcript]:", "").trim();
-      if (currentAppState === "idle" || currentAppState === "listening") {
-        updateUIState("thinking");
+      if (currentAppState === "listening") {
+        transitionState("thinking");
         if (stt && stt.stdin.writable) {
           stt.stdin.write("pause\n");
         }
@@ -145,8 +170,8 @@ function startServices() {
     }
 
     if (out.includes("EVENT:MIC_STARTED")) {
-      if (currentAppState === "idle") {
-        updateUIState("listening");
+      if (currentAppState === "speech") {
+        transitionState("listening");
       }
     }
   });
@@ -167,21 +192,26 @@ function startServices() {
 
     console.log("[TTS]: " + out);
 
-    if (out.includes("TTS_SPEECH_STARTED")) {
+    if (out.includes("TTS_SPEECH_STARTED") && currentAppState === "thinking") {
       setTimeout(() => {
-        updateUIState("responding");
-      }, 700);
+        transitionState("responding");
+      }, 2500);
     }
     if (out.includes("TTS_SPEECH_ENDED")) {
       //updateUIState("idle");
 
       // Resume the STT engine after a short delay to ensure audio has finished
       setTimeout(() => {
-        updateUIState("idle");
+        if (activateInputState === "keyboard") {
+          transitionState("keyboard");
+        } else {
+          transitionState("speech");
+        }
+
         if (stt && stt.stdin.writable) {
           stt.stdin.write("resume\n");
         }
-      }, 2500); // 500ms delay
+      }, 2500); // 2500ms delay
     }
   });
 }

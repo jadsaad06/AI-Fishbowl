@@ -210,7 +210,7 @@ async function init() {
           console.log("STT sent to socket:", formattedText);
           ws.send(text);
           if (getState() !== "thinking") {
-            window.fishbowl.setState("thinking");
+            window.fishbowl.requestState("thinking");
           }
         } else {
           console.warn("WebSocket not ready. Could not send STT.");
@@ -260,7 +260,6 @@ function setupKeyboardInput() {
 
     if (currentState === "keyboard") {
       if (e.key === "Enter") {
-        const responder = getResponder();
         const prompt = getPrompt().trim();
         if (!prompt) return;
 
@@ -273,7 +272,7 @@ function setupKeyboardInput() {
 
         // ------- SEND PROMPT TO MCP FROM HERE (Michel) -------------
         setPrompt("");
-        window.fishbowl.setState("thinking");
+        window.fishbowl.requestState("thinking");
         return;
       }
 
@@ -284,7 +283,7 @@ function setupKeyboardInput() {
 
       if (e.key === "Escape") {
         setPrompt("");
-        window.fishbowl.setState("idle");
+        window.fishbowl.requestState("idle");
         return;
       }
 
@@ -303,11 +302,8 @@ function setupKeyboardInput() {
         if (getResponder() === Number(e.key)) {
           return;
         } else {
-          window.fishbowl.requestResponderChange(id);
+          window.fishbowl.requestResponderChange(Number(e.key));
           console.log("Responder selected:", e.key);
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send("PERSONALIZATION: " + e.key);
-          }
         }
 
         return;
@@ -320,9 +316,6 @@ function setupKeyboardInput() {
         } else {
           console.log("Responder selected:", randomID);
           window.fishbowl.requestResponderChange(randomID);
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send("PERSONALIZATION: " + randomID);
-          }
         }
 
         return;
@@ -330,7 +323,7 @@ function setupKeyboardInput() {
 
       if (e.key.toLowerCase() === "k" && currentState === "idle") {
         e.preventDefault();
-        window.fishbowl.setState("keyboard");
+        window.fishbowl.requestState("keyboard");
         return;
       }
 
