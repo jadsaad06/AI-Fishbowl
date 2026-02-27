@@ -576,147 +576,109 @@ function fitSprite(sprite, maxWidth, maxHeight) {
   sprite.scale.set(scale);
 }
 
-export class AnimeIdleText {
-  constructor(app) {
-    this.app = app;
+export class IdleTitle {
+  constructor(text, subtext) {
     this.container = new PIXI.Container();
-    this.container.position.set(app.screen.width / 2, app.screen.height / 2);
 
-    this.centerBox = new ResponderEnclosure(null, "", 40, true);
+    this.title = this._createGradientText(
+      text.toUpperCase(),
+      100,
+      "Arial Black",
+    );
+    this.title.anchor.set(0.5);
+    this.title.y = 0;
 
-    const gap = 300;
-    const instructions =
-      "- Press 'k' To Type Prompt\n" +
-      "- Press 'r' To Select Random Responder\n" +
-      "- Press 1/2/3 To Select Your Responder\n" +
-      "- Press 'L' To Open/Close Responder Lore";
-    this.responders = [
-      new ResponderEnclosure(RESPONDERS[0], "Bob"),
-      new ResponderEnclosure(RESPONDERS[1], "Jimbo"),
-      new ResponderEnclosure(RESPONDERS[2], "Bongo"),
-      new ResponderEnclosure(null, instructions, 20),
-    ];
-    this.responders[0].subLabel.text = "Press 1 to select Bob";
-    this.responders[1].subLabel.text = "Press 2 to select Jimbo";
-    this.responders[2].subLabel.text = "Press 3 to select Bongo";
-
-    const initialSelected = getResponder();
-
-    this.responders.forEach((r, i) => {
-      r.container.scale.set(0);
-      if (i < 3) {
-        r.subLabel.visible = true;
-        r.bg.color = initialSelected === i + 1 ? 0x1e90ff : 0x1a1a1a;
-        r.refresh({ width: 280, height: 350 });
-      } else r.refresh();
+    this.subtitle = new PIXI.Text({
+      text: subtext,
+      style: {
+        fontFamily: "Garamond",
+        fontSize: 28,
+        fill: "#e0f7fa",
+        letterSpacing: 4,
+        fontStyle: "italic",
+        align: "center",
+      },
     });
 
-    this.responders[0].container.position.set(-gap - 80, 0);
-    this.responders[1].container.position.set(0, -gap);
-    this.responders[2].container.position.set(gap + 80, 0);
-    this.responders[3].container.position.set(0, gap);
+    this.subtitle.anchor.set(0.5);
+    this.subtitle.y = 80;
 
-    this.container.addChild(this.centerBox.container);
-    this.responders.forEach((r) => this.container.addChild(r.container));
+    this.container.addChild(this.title);
+    this.container.addChild(this.subtitle);
 
-    this.playAnimation();
-    this.unsubscribeResponder = subscribeResponder((selected) => {
-      if (!this.container || this.container.destroyed || !this.responders)
-        return;
-      this.responders.forEach((r, i) => {
-        if (i < 3) {
-          r.bg.color = selected === i + 1 ? 0x1e90ff : 0x1a1a1a;
-          r.refresh({ width: 280, height: 350 });
-        }
-      });
-    });
-    this.repeatInterval = setInterval(() => this.playAnimation(), 60000);
+    this.startAnimations();
   }
 
-  playAnimation() {
-    anime.remove([this.container, this.centerBox.container.scale]);
-    this.responders.forEach((r) => anime.remove(r.container.scale));
+  /**
+   * The following function is pasted straight from Claude
+   * ------ VERIFY --------
+   */
+  _createGradientText(text, fontSize, fontFamily) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
 
-    const hText = "AI Fishbowl";
-    const sText = "Your Aquatic CS Companion";
-    const state = { hChars: 0, sChars: 0 };
+    const font = `bold ${fontSize}px ${fontFamily}`;
+    ctx.font = font;
 
-    this.container.alpha = 0;
-    this.centerBox.label.text = "";
-    this.centerBox.subLabel.text = "";
-    this.centerBox.container.scale.set(0);
+    const metrics = ctx.measureText(text);
+    const padding = 40;
+    canvas.width = metrics.width + padding * 2;
+    canvas.height = fontSize * 1.5 + padding;
 
-    const tl = anime.timeline({ autoplay: true });
+    // Re-apply font after resize (canvas reset clears it)
+    ctx.font = font;
+    ctx.textBaseline = "middle";
 
-    tl.add({
+    // Drop shadow
+    ctx.shadowColor = "#027fb8";
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Vertical gradient: white → aqua
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, "#ffffff");
+    gradient.addColorStop(1, "#00d2ff");
+
+    ctx.fillStyle = gradient;
+    ctx.fillText(text, padding, canvas.height / 2);
+
+    const texture = PIXI.Texture.from(canvas);
+    const sprite = new PIXI.Sprite(texture);
+    sprite.anchor.set(0.5);
+    return sprite;
+  }
+
+  startAnimations() {
+    const baseY = this.container.y;
+    anime({
       targets: this.container,
-      alpha: [0, 1],
-      duration: 600,
-      easing: "linear",
-    })
-      .add({
-        targets: this.centerBox.container.scale,
-        x: [0, 1],
-        y: [0, 1],
-        duration: 800,
-        easing: "easeOutBack",
-      })
-      .add({
-        targets: state,
-        hChars: hText.length,
-        duration: 700,
-        easing: "linear",
-        update: () => {
-          this.centerBox.label.text = hText.slice(0, Math.floor(state.hChars));
-          this.centerBox.refresh();
-        },
-      })
-      .add({
-        targets: state,
-        sChars: sText.length,
-        duration: 900,
-        easing: "linear",
-        update: () => {
-          if (!this.centerBox || this.centerBox.container.destroyed) return;
-          this.centerBox.subLabel.text = sText.slice(
-            0,
-            Math.floor(state.sChars),
-          );
-          this.centerBox.subLabel.y = this.centerBox.label.height / 2 + 25;
-          this.centerBox.refresh();
-        },
-      })
-      .add({
-        targets: this.responders.map((r) => r.container.scale),
-        x: [0, 1],
-        y: [0, 1],
-        delay: anime.stagger(150),
-        duration: 700,
-        easing: "easeOutBack",
-      });
+      y: [baseY, baseY - 15, baseY],
+      duration: 3000,
+      direction: "alternate",
+      loop: true,
+      easing: "easeInOutSine",
+    });
+
+    anime({
+      targets: this.title.style,
+      dropShadowBlur: [8, 28, 8],
+      duration: 2000,
+      direction: "alternate",
+      loop: true,
+      easing: "easeInOutQuad",
+    });
   }
 
-  destroy() {
-    if (this.unsubscribeResponder) {
-      this.unsubscribeResponder();
-      this.unsubscribeResponder = null;
-    }
-
-    if (this.repeatInterval) {
-      clearInterval(this.repeatInterval);
-      this.repeatInterval = null;
-    }
-
+  setPosition(x, y) {
+    this.container.position.set(x, y);
     anime.remove(this.container);
-    if (this.responders) {
-      this.responders.forEach((r) => anime.remove(r.container.scale));
-    }
-    if (this.centerBox) {
-      anime.remove(this.centerBox.container.scale);
-    }
-
-    if (this.container && !this.container.destroyed) {
-      this.container.destroy({ children: true });
-    }
+    anime({
+      targets: this.container,
+      y: [y, y - 15, y],
+      duration: 3000,
+      loop: true,
+      easing: "easeInOutSine",
+    });
   }
 }
