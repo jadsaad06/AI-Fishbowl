@@ -26,6 +26,198 @@ const BIO_DATA = [
   },
 ];
 
+export class ArrowMenu {
+  constructor({ title, items = [], side = "top", app }) {
+    this.app = app;
+    this.side = side;
+    this.isOpen = false;
+    this.container = new PIXI.Container();
+
+    const arrowMap = {
+      top: "Controls",
+      bottom: "Responders",
+      left: "Lore",
+      right: "Available tools",
+    };
+    this.label = new PIXI.Text(`${arrowMap[side]} ${title}`, {
+      fill: "#ffffff",
+      fontSize: 20,
+      fontFamily: "Arial Black",
+    });
+    this.label.anchor.set(0.5);
+
+    this.menuContent = new PIXI.Container();
+    this.menuContent.alpha = 0;
+
+    items.forEach((text, i) => {
+      const item = new PIXI.Text(text.toUpperCase(), {
+        fill: "#00ced1",
+        fontSize: 16,
+        fontFamily: "Arial",
+      });
+
+      item.anchor.set(0.5);
+      item.y = (i + 1) * 35;
+      this.menuContent.addChild(item);
+    });
+
+    this.container.addChild(this.menuContent, this.label);
+    this.setInitialPosition();
+  }
+
+  setInitialPosition() {
+    const margin = 50;
+    const { width, height } = this.app.screen;
+
+    const coords = {
+      top: { x: width / 2, y: margin, offX: 0, offY: 120 },
+      bottom: { x: width / 2, y: height - margin, offX: 0, offY: -120 },
+      left: { x: margin, y: height / 2, offX: 120, offY: 0 },
+      right: { x: width - margin, y: height / 2, offX: -120, offY: 0 },
+    };
+
+    this.basePosition = coords[this.side];
+    this.container.position.set(this.basePosition.x, this.basePosition.y);
+  }
+
+  _animate(show) {
+    this.isOpen = show;
+    const targetX = show
+      ? this.basePosition.x + this.basePosition.offX
+      : this.basePosition.x;
+    const targetY = show
+      ? this.basePosition.y + this.basePosition.offY
+      : this.basePosition.y;
+
+    anime({
+      targets: this.container.position,
+      x: targetX,
+      y: targetY,
+      duration: 600,
+      easing: "easeInOutElastic(1, .8)",
+    });
+
+    anime({
+      targets: this.menuContent,
+      alpha: show ? 0.8 : 0,
+      duration: 300,
+      easing: "linear",
+    });
+  }
+
+  pulldown() {
+    if (this.side === "top") this._animate(!this.isOpen);
+  }
+  pullup() {
+    if (this.side === "bottom") this._animate(!this.isOpen);
+  }
+  pullright() {
+    if (this.side === "left") this._animate(!this.isOpen);
+  }
+  pullleft() {
+    if (this.side === "right") this._animate(!this.isOpen);
+  }
+}
+
+export class GradientText {
+  constructor(options = {}) {
+    const {
+      text = "",
+      fontSize = 48,
+      fontFamily = "Arial",
+      gradientColor1 = "#ffffff",
+      gradientColor2 = "#00ced1",
+      x = 0,
+      y = 0,
+      bold = true,
+      shadowColor = "#027fb8",
+      shadowBlur = 20,
+      padding = 40,
+    } = options;
+
+    this.settings = {
+      text,
+      fontSize,
+      fontFamily,
+      gradientColor1,
+      gradientColor2,
+      bold,
+      shadowColor,
+      shadowBlur,
+      padding,
+    };
+
+    this.sprite = new PIXI.Sprite(PIXI.Texture.EMPTY);
+    this.sprite.anchor.set(0.5);
+    this.setPosition(x, y);
+
+    this.update();
+  }
+
+  _generateCanvas() {
+    const {
+      text,
+      fontSize,
+      fontFamily,
+      gradientColor1,
+      gradientColor2,
+      bold,
+      shadowColor,
+      shadowBlur,
+      padding,
+    } = this.settings;
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    const weight = bold ? "bold" : "normal";
+    const font = `${weight} ${fontSize}px ${fontFamily}`;
+
+    context.font = font;
+    const metrics = context.measureText(text);
+
+    canvas.width = Math.ceil(metrics.width + padding * 2);
+    canvas.height = Math.ceil(fontSize * 1.5 + padding);
+
+    context.font = font;
+    context.textBaseline = "middle";
+
+    context.shadowColor = shadowColor;
+    context.shadowBlur = shadowBlur;
+
+    const textTop = (canvas.height - fontSize) / 2;
+    const textBottom = (canvas.height + fontSize) / 2;
+
+    const gradient = context.createLinearGradient(0, textTop, 0, textBottom);
+    gradient.addColorStop(0, gradientColor1 || "#ffffff");
+    gradient.addColorStop(1, gradientColor2 || "#000000");
+
+    context.fillStyle = gradient;
+    context.fillText(text, padding, canvas.height / 2);
+
+    return canvas;
+  }
+
+  update() {
+    const canvas = this._generateCanvas();
+    const newTexture = PIXI.Texture.from(canvas);
+
+    if (this.sprite.texture && this.sprite.texture !== PIXI.Texture.EMPTY) {
+      this.sprite.texture.destroy(true);
+    }
+
+    this.sprite.texture = newTexture;
+  }
+
+  setPosition(x, y) {
+    this.sprite.position.set(x, y);
+  }
+
+  setText(newText) {
+    this.settings.text = newText;
+    this.update();
+  }
+}
+
 export class PulseText {
   constructor(text = "", style = {}, options = {}) {
     this.options = {
@@ -576,109 +768,109 @@ function fitSprite(sprite, maxWidth, maxHeight) {
   sprite.scale.set(scale);
 }
 
-export class IdleTitle {
-  constructor(text, subtext) {
-    this.container = new PIXI.Container();
+// export class IdleTitle {
+//   constructor(text, subtext) {
+//     this.container = new PIXI.Container();
 
-    this.title = this._createGradientText(
-      text.toUpperCase(),
-      100,
-      "Arial Black",
-    );
-    this.title.anchor.set(0.5);
-    this.title.y = 0;
+//     this.title = this._createGradientText(
+//       text.toUpperCase(),
+//       100,
+//       "Arial Black",
+//     );
+//     this.title.anchor.set(0.5);
+//     this.title.y = 0;
 
-    this.subtitle = new PIXI.Text({
-      text: subtext,
-      style: {
-        fontFamily: "Garamond",
-        fontSize: 28,
-        fill: "#e0f7fa",
-        letterSpacing: 4,
-        fontStyle: "italic",
-        align: "center",
-      },
-    });
+//     this.subtitle = new PIXI.Text({
+//       text: subtext,
+//       style: {
+//         fontFamily: "Garamond",
+//         fontSize: 28,
+//         fill: "#e0f7fa",
+//         letterSpacing: 4,
+//         fontStyle: "italic",
+//         align: "center",
+//       },
+//     });
 
-    this.subtitle.anchor.set(0.5);
-    this.subtitle.y = 80;
+//     this.subtitle.anchor.set(0.5);
+//     this.subtitle.y = 80;
 
-    this.container.addChild(this.title);
-    this.container.addChild(this.subtitle);
+//     this.container.addChild(this.title);
+//     this.container.addChild(this.subtitle);
 
-    this.startAnimations();
-  }
+//     this.startAnimations();
+//   }
 
-  /**
-   * The following function is pasted straight from Claude
-   * ------ VERIFY --------
-   */
-  _createGradientText(text, fontSize, fontFamily) {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
+//   /**
+//    * The following function is pasted straight from Claude
+//    * ------ VERIFY --------
+//    */
+//   _createGradientText(text, fontSize, fontFamily) {
+//     const canvas = document.createElement("canvas");
+//     const ctx = canvas.getContext("2d");
 
-    const font = `bold ${fontSize}px ${fontFamily}`;
-    ctx.font = font;
+//     const font = `bold ${fontSize}px ${fontFamily}`;
+//     ctx.font = font;
 
-    const metrics = ctx.measureText(text);
-    const padding = 40;
-    canvas.width = metrics.width + padding * 2;
-    canvas.height = fontSize * 1.5 + padding;
+//     const metrics = ctx.measureText(text);
+//     const padding = 40;
+//     canvas.width = metrics.width + padding * 2;
+//     canvas.height = fontSize * 1.5 + padding;
 
-    // Re-apply font after resize (canvas reset clears it)
-    ctx.font = font;
-    ctx.textBaseline = "middle";
+//     // Re-apply font after resize (canvas reset clears it)
+//     ctx.font = font;
+//     ctx.textBaseline = "middle";
 
-    // Drop shadow
-    ctx.shadowColor = "#027fb8";
-    ctx.shadowBlur = 20;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
+//     // Drop shadow
+//     ctx.shadowColor = "#027fb8";
+//     ctx.shadowBlur = 20;
+//     ctx.shadowOffsetX = 0;
+//     ctx.shadowOffsetY = 0;
 
-    // Vertical gradient: white → aqua
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, "#ffffff");
-    gradient.addColorStop(1, "#00d2ff");
+//     // Vertical gradient: white → aqua
+//     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+//     gradient.addColorStop(0, "#ffffff");
+//     gradient.addColorStop(1, "#00d2ff");
 
-    ctx.fillStyle = gradient;
-    ctx.fillText(text, padding, canvas.height / 2);
+//     ctx.fillStyle = gradient;
+//     ctx.fillText(text, padding, canvas.height / 2);
 
-    const texture = PIXI.Texture.from(canvas);
-    const sprite = new PIXI.Sprite(texture);
-    sprite.anchor.set(0.5);
-    return sprite;
-  }
+//     const texture = PIXI.Texture.from(canvas);
+//     const sprite = new PIXI.Sprite(texture);
+//     sprite.anchor.set(0.5);
+//     return sprite;
+//   }
 
-  startAnimations() {
-    const baseY = this.container.y;
-    anime({
-      targets: this.container,
-      y: [baseY, baseY - 15, baseY],
-      duration: 3000,
-      direction: "alternate",
-      loop: true,
-      easing: "easeInOutSine",
-    });
+//   startAnimations() {
+//     const baseY = this.container.y;
+//     anime({
+//       targets: this.container,
+//       y: [baseY, baseY - 15, baseY],
+//       duration: 3000,
+//       direction: "alternate",
+//       loop: true,
+//       easing: "easeInOutSine",
+//     });
 
-    anime({
-      targets: this.title.style,
-      dropShadowBlur: [8, 28, 8],
-      duration: 2000,
-      direction: "alternate",
-      loop: true,
-      easing: "easeInOutQuad",
-    });
-  }
+//     anime({
+//       targets: this.title.style,
+//       dropShadowBlur: [8, 28, 8],
+//       duration: 2000,
+//       direction: "alternate",
+//       loop: true,
+//       easing: "easeInOutQuad",
+//     });
+//   }
 
-  setPosition(x, y) {
-    this.container.position.set(x, y);
-    anime.remove(this.container);
-    anime({
-      targets: this.container,
-      y: [y, y - 15, y],
-      duration: 3000,
-      loop: true,
-      easing: "easeInOutSine",
-    });
-  }
-}
+//   setPosition(x, y) {
+//     this.container.position.set(x, y);
+//     anime.remove(this.container);
+//     anime({
+//       targets: this.container,
+//       y: [y, y - 15, y],
+//       duration: 3000,
+//       loop: true,
+//       easing: "easeInOutSine",
+//     });
+//   }
+// }

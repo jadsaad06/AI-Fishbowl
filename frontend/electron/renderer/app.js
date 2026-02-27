@@ -360,6 +360,27 @@ function setupKeyboardInput() {
 
     const currentState = getState();
 
+    if (currentState === "idle") {
+      const activeScene = window.currentActiveScene;
+
+      if (activeScene && activeScene.menus) {
+        switch (e.key) {
+          case "ArrowDown":
+            activeScene.menus.top?.pulldown();
+            break;
+          case "ArrowUp":
+            activeScene.menus.bottom?.pullup();
+            break;
+          case "ArrowRight":
+            activeScene.menus.left?.pullright();
+            break;
+          case "ArrowLeft":
+            activeScene.menus.right?.pullleft();
+            break;
+        }
+      }
+    }
+
     if (currentState === "keyboard") {
       if (e.key === "Enter") {
         const prompt = getPrompt().trim();

@@ -6,7 +6,8 @@ import { getResponder, subscribeResponder } from "../state/store.js";
 import {
   Enclosure,
   TypewriterText,
-  IdleTitle,
+  GradientText,
+  ArrowMenu,
 } from "../assets/sprites_anime.js";
 import { BACKGROUNDS, ANIMATED_FISH, RESPONDERS } from "../app.js";
 
@@ -30,21 +31,57 @@ export class IdleSceneAnime {
     this.swarmUpdate = () => this.swarm.update();
     PIXI.Ticker.shared.add(this.swarmUpdate);
 
-    this.titleHeader = new IdleTitle("Coral Net", "YOUR AQUATIC CS COMPANION");
-    this.titleHeader.setPosition(
-      app.screen.width / 2,
-      app.screen.height * 0.25,
+    this.menus = {
+      top: new ArrowMenu({
+        title: "CONTROLS",
+        items: ["K - Use Keyboard", "Esc - Reset"],
+        side: "top",
+        app: this.app,
+      }),
+      bottom: new ArrowMenu({
+        title: "STATS",
+        items: ["Ping: 24ms", "Session: Active"],
+        side: "bottom",
+        app: this.app,
+      }),
+    };
+
+    Object.values(this.menus).forEach((m) =>
+      this.container.addChild(m.container),
     );
-    this.container.addChild(this.titleHeader.container);
+
+    this.title = new GradientText({
+      text: "CORAL NET",
+      fontSize: 80,
+      fontFamily: "Arial",
+      gradientColor1: "#e0ffff",
+      gradientColor1: "#0b15d8",
+      x: app.screen.width / 2,
+      y: app.screen.height / 2,
+      bold: true,
+      shadowColor: "rgba(0, 0, 0, 0.5)",
+      shadowBlur: 15,
+    });
+    this.container.addChild(this.title.sprite);
 
     this.shuffleInterval = setInterval(() => {
       this.bgManager.next();
     }, 30000);
+
+    window.currentActiveScene = this;
   }
 
   destroy() {
     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
     PIXI.Ticker.shared.remove(this.swarmUpdate);
+
+    window.currentActiveScene = null;
+    this.container.destroy({ children: true });
+
+    if (this.title && this.title.sprite) {
+      this.title.sprite.texture.destroy(true);
+    }
+
     this.container.destroy({ children: true });
   }
 }
