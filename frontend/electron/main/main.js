@@ -202,7 +202,7 @@ function startServices() {
   ipcMain.on("send-to-tts", (event, text) => {
     console.log(text);
     if (tts && tts.stdin.writable) {
-      tts.stdin.write("MCP-AGENT-RESPONSE:" + text + "\n");
+      tts.stdin.write("MCP-AGENT-RESPONSE:" + text + "\n"); //Modified to send personality to TTS -Henry
     }
   });
 

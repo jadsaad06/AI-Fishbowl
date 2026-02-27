@@ -182,7 +182,7 @@ async function connect_agent() {
               fullAgentResponse = "";
               return;
             }
-            setSubtitles(event.data);
+            setSubtitles(fullAgentResponse);
 
             let layer1 = fullAgentResponse.replace(/^\s*\*+\s*/gm, "");
             let layer2 = layer1.replace(/\s*\n+\s*/g, " ");
@@ -199,7 +199,7 @@ async function connect_agent() {
         });
 
         // either error or close => treat as failed/ended connection
-        sock.addEventListener("error", () => reject(new Error("WS error")));
+        // sock.addEventListener("error", () => reject(new Error("WS error")));
         sock.addEventListener("close", () => reject(new Error("WS closed")));
       });
 

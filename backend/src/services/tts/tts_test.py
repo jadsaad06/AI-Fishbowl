@@ -3,8 +3,10 @@ import pathlib
 import asyncio
 
 async def main():
+    print("Input fish ID number:\n1. Pinto \n2. Jimbo \n3. Bongo \n4. Kiki \n5. Koko\n")
+    personality_id = str(input())
     print("Listening for input in incoming.txt... (Ctrl+C to stop)")
-    
+
     while True:
         try:
             p = pathlib.Path("incoming.txt")
@@ -15,7 +17,7 @@ async def main():
             if raw:
                 text = raw.strip()
                 p.write_text("")
-                tts_functions.speak_text(text)
+                tts_functions.speak_text(text, personality_id)
             
             await asyncio.sleep(0.5)
 
