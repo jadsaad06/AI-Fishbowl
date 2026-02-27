@@ -721,13 +721,27 @@ export class InfoOverlay {
   constructor(app) {
     this.app = app;
     this.container = new PIXI.Container();
-    this.container.visible = false;
+    this.container.visible = true;
+    this.isOpen = false;
 
-    const dimmer = new PIXI.Graphics()
-      .fill({ color: 0x000000, alpha: 0.85 })
-      .rect(0, 0, app.screen.width, app.screen.height)
-      .fill();
-    this.container.addChild(dimmer);
+    this.tabLabel = new PIXI.Text("FISH STORIES \n       ▼", {
+      fontFamily: "Arial Black",
+      fontSize: 16,
+      fill: "#00ced1",
+      letterSpacing: 2,
+    });
+    this.tabLabel.anchor.set(0.5);
+    this.tabLabel.rotation = -Math.PI / 2;
+    this.tabLabel.position.set(80, app.screen.height / 2);
+    this.container.addChild(this.tabLabel);
+
+    this.panel = new PIXI.Container();
+    this.container.addChild(this.panel);
+
+    const TAB_WIDTH = 60;
+    this.closedX = -app.screen.width;
+    this.openX = 0;
+    this.panel.x = this.closedX;
 
     const totalCards = BIO_DATA.length;
     const cardContainer = new PIXI.Container();
@@ -742,20 +756,56 @@ export class InfoOverlay {
 
     cardContainer.x = app.screen.width / 2;
     cardContainer.y = app.screen.height / 2;
-    this.container.addChild(cardContainer);
+    this.panel.addChild(cardContainer);
 
-    const closeTxt = new PIXI.Text("Press L to Close", {
-      fontFamily: "Roboto",
-      fontSize: 18,
-      fill: "#888888",
+    const hint = new PIXI.Text("◀ LEFT ARROW TO CLOSE FISH STORIES", {
+      fontFamily: "Arial Black",
+      fontSize: 28,
+      fill: "#15e0f7",
     });
-    closeTxt.anchor.set(0.5);
-    closeTxt.position.set(app.screen.width / 2, app.screen.height - 50);
-    this.container.addChild(closeTxt);
+    this.hint = hint;
+    hint.anchor.set(0.5);
+    hint.position.set(app.screen.width / 2, app.screen.height - 220);
+    this.hint.alpha = 0;
+    this.panel.addChild(this.hint);
+  }
+
+  rollout() {
+    if (this.isOpen) return;
+    this.isOpen = true;
+    this.hint.alpha = 1;
+    this.tabLabel.alpha = 0;
+
+    anime({
+      targets: this.panel,
+      x: this.openX,
+      duration: 700,
+      easing: "easeInOutExpo",
+    });
+  }
+
+  rollin() {
+    if (!this.isOpen) return;
+    this.isOpen = false;
+
+    anime({
+      targets: this.panel,
+      x: this.closedX,
+      duration: 600,
+      easing: "easeInOutExpo",
+      complete: () => {
+        anime({
+          targets: this.tabLabel,
+          alpha: 1,
+          duration: 300,
+          easing: "linear",
+        });
+      },
+    });
   }
 
   toggle() {
-    this.container.visible = !this.container.visible;
+    this.isOpen ? this.rollin() : this.rollout();
   }
 }
 

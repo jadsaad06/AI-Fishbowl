@@ -363,7 +363,9 @@ function setupKeyboardInput() {
     if (currentState === "idle") {
       const activeScene = window.currentActiveScene;
 
-      if (activeScene && activeScene.menus) {
+      if (activeScene && activeScene.infoOverlay) {
+        const overlay = activeScene.infoOverlay;
+
         switch (e.key) {
           case "ArrowDown":
             activeScene.menus.top?.pulldown();
@@ -372,10 +374,10 @@ function setupKeyboardInput() {
             activeScene.menus.bottom?.pullup();
             break;
           case "ArrowRight":
-            activeScene.menus.left?.pullright();
+            if (!overlay.isOpen) overlay.rollout();
             break;
           case "ArrowLeft":
-            activeScene.menus.right?.pullleft();
+            if (overlay.isOpen) overlay.rollin();
             break;
         }
       }
@@ -403,12 +405,6 @@ function setupKeyboardInput() {
         setPrompt(getPrompt().slice(0, -1));
         return;
       }
-
-      // if (e.key === "Escape") {
-      //   setPrompt("");
-      //   window.fishbowl.requestState("idle");
-      //   return;
-      // }
 
       if (e.key.length === 1) {
         setPrompt(getPrompt() + e.key);
@@ -454,18 +450,6 @@ function setupKeyboardInput() {
         window.fishbowl.requestState("idle");
         return;
       }
-
-      if (e.key.toLowerCase() === "l") {
-        if (infoOverlay) infoOverlay.toggle();
-        return;
-      }
-
-      if (
-        infoOverlay &&
-        infoOverlay.container.visible &&
-        e.key.toLowerCase() !== "l"
-      )
-        return;
     }
   });
 }
