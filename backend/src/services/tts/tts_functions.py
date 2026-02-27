@@ -15,7 +15,7 @@ def _load_model():
     if tts_model is None: #Only loads if not already loaded
         print("Loading Kyutai Pocket TTS model...", flush=True)
 
-        device = "cuda" if torch.cuda.is_available() else "cpu" #checks if torch is available in cuba, otherwise uses cpu
+        device = "cuda" if torch.cuda.is_available() else "cpu" #checks if torch is available in cuda, otherwise uses cpu
         print(f"Using device: {device}")
 
         tts_model = TTSModel.load_model()
