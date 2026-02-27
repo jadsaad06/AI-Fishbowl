@@ -222,7 +222,7 @@ class OLED:
         role = page[0] if len(page) > 0 else ""
         creator = page[1] if len(page) > 1 else ""
 
-        self.add_line("Think Tank ,  Created By:", 1)
+        self.add_line("AI  Fishbowl ,  Created By:", 1)
         self.add_line("", 2)
         self.add_line(creator, 3)
         self.add_line(role, 4)
@@ -308,9 +308,6 @@ if __name__ == "__main__":
             if not oled_clear:
                 start = 1    
                 bus.write_byte_data(0x0E, 0x08, start)
-                time.sleep(.05)
-                effect = 3  
-                bus.write_byte_data(0x0E, 0x04, effect)
                 time.sleep(.05)
         except:
             pass

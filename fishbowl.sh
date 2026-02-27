@@ -50,6 +50,14 @@ cleanup_screen() {
 	SCREEN_PID=""
 }
 
+cleanup_led() {
+	python "$ROOT/hardware/src/case-hardware/led-off.py"
+}
+
+cleanup_all() {
+	cleanup_screen
+	cleanup_led
+}
 
 setup() {
 	load_envs
@@ -79,6 +87,7 @@ setup() {
 
 
 run() {
+	# set up environment
 	load_envs
 	ensure_defaults
 	if [ ! -d "$VENV" ]; then
@@ -86,12 +95,17 @@ run() {
 		exit 1
 	fi
 	source "$VENV/bin/activate"
-	trap cleanup_screen EXIT
-	trap 'cleanup_screen; exit 130' INT TERM HUP
 
+	# traps for actions on program exit
+	trap cleanup_all EXIT
+	trap 'cleanup_all; exit 130' INT
+	trap 'cleanup_all; exit 143' TERM
+	trap 'cleanup_all; exit 129' HUP
+
+	# run case hardware scripts, start program
+	python "$ROOT/hardware/src/case-hardware/led-color.py"
 	python "$ROOT/hardware/src/case-hardware/screen.py" &
 	SCREEN_PID=$!
-	#(cd "$ROOT/backend/src/mcp_stack" && fastapi dev client.py)
 	(cd "$ROOT/frontend/electron" && npm start)
 }
 
