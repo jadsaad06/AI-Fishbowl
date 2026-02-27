@@ -99,7 +99,16 @@ async function connect_agent() {
           if (responseTimeout) clearTimeout(responseTimeout);
 
           responseTimeout = setTimeout(() => {
-            setSubtitles(event.data);
+            let personality = "1";
+            let subtitleText = fullAgentResponse;
+
+            const parts = fullAgentResponse.split(":", 2);
+            if (parts.length === 2 && !isNaN(parts[0])) {
+              personality = parts[0];
+              subtitleText = parts[1];
+            }
+  
+            setSubtitles(subtitleText);
 
             let layer1 = fullAgentResponse.replace(/^\s*\*+\s*/gm, "");
             let layer2 = layer1.replace(/\s*\n+\s*/g, " ");
@@ -115,7 +124,7 @@ async function connect_agent() {
         });
 
         // either error or close => treat as failed/ended connection
-        sock.addEventListener("error", () => reject(new Error("WS error")));
+        // sock.addEventListener("error", () => reject(new Error("WS error")));
         sock.addEventListener("close", () => reject(new Error("WS closed")));
       });
 
@@ -297,6 +306,10 @@ function setupKeyboardInput() {
           console.log("Responder selected:", e.key);
           if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send("PERSONALIZATION: " + e.key);
+          }
+
+          if (window.electronAPI && window.electronAPI.setResponder) { //Added to send personality to frontend to be passed on to TTS -Henry
+            ws.electronAPI.setResponder(Number(e.key));
           }
         }
 
