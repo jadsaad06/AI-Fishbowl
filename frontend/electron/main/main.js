@@ -123,9 +123,7 @@ function startServices() {
     console.log("[TTS]: " + out);
 
     if (out.includes("TTS_SPEECH_STARTED")) {
-      setTimeout(() => {
-        updateUIState("responding");
-      }, 700);
+      updateUIState("responding");
     }
     if (out.includes("TTS_SPEECH_ENDED")) {
       //updateUIState("idle");
