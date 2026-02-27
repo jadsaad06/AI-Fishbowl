@@ -11,7 +11,11 @@ app.commandLine.appendSwitch("log-level", "3");
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
 let win;
 let currentAppState = "idle";
-let currentResponder = 1; //Added for use by TTS -Henry
+let activateInputState = "speech";
+let currentResponder = 1;
+let stt;
+let tts;
+let currentSessionId = 0;
 
 /**
  * Create a new window using this function.
@@ -44,6 +48,55 @@ function updateUIState(newState) {
   }
 }
 
+function transitionState(newState) {
+  if (currentAppState === newState) return;
+
+  if (newState === "idle") {
+    currentSessionId++;
+    console.log(`Session Reset. Current ID: ${currentSessionId}`);
+  }
+
+  console.log(`State Transition: ${currentAppState} -> ${newState}`);
+  if (stt && stt.stdin.writable) {
+    if (newState === "speech") {
+      stt.stdin.write("SESSION_START\n");
+    } else if (newState === "idle") {
+      stt.stdin.write("SESSION_END\n");
+    }
+  }
+  currentAppState = newState;
+
+  if (win) {
+    win.webContents.send("ui-state-changed", newState);
+  }
+}
+
+function setResponderIfAllowed(responderId) {
+  console.log("Attempting responder change:", responderId);
+
+  if (currentAppState !== "idle") {
+    console.log("Denied: Not in idle state");
+    return;
+  }
+
+  if (!Number.isInteger(responderId) || responderId < 1 || responderId > 5) {
+    console.log("Denied: Invalid Responder ID");
+    return;
+  }
+
+  if (currentResponder === responderId) {
+    return;
+  }
+
+  currentResponder = responderId;
+  if (win) {
+    win.webContents.send("responder-force-update", responderId);
+  }
+
+  console.log("Responder updated to:", responderId);
+  return true;
+}
+
 /**
  * Electron's Inter-Process Communication Handler.
  * This allows the main process to listen for changes via the frontend (conveyed by the renderer process)
@@ -52,25 +105,36 @@ function updateUIState(newState) {
  * The main process updates the UI state from the "set-ui-state" channel in the backend, and forwards the update
  * back to the renderer process via the "ui-state-changed" channel. The changes are now reflected on the frontend.
  */
-ipcMain.on("set-ui-state", (event, newState) => {
-  console.log("State change requested:", newState);
-  currentAppState = newState;
-  win.webContents.send("ui-state-changed", newState);
-});
+// ipcMain.on("set-ui-state", (event, newState) => {
+//   console.log("State change requested:", newState);
+//   currentAppState = newState;
+//   win.webContents.send("ui-state-changed", newState);
+// });
 
+ipcMain.on("request-state-transition", (_, requestedState) => {
+  console.log("Renderer requested state:", requestedState);
+
+  if (requestedState === "keyboard") {
+    activateInputState = "keyboard";
+  }
+
+  if (requestedState === "speech") {
+    activateInputState = "speech";
+  }
+
+  transitionState(requestedState);
+});
 ipcMain.on("keyboard-prompt", (_, text) => {
   console.log("Keyboard input received:", text);
   // Forward text to Michel ###########
 });
 
-ipcMain.on("set-responder", (_, id) => {
-  console.log("Personality set to:", id);
-  currentResponder = id;
-  // Added by to be read by TTS -Henry
+ipcMain.on("request-responder-change", (_, responderId) => {
+  setResponderIfAllowed(responderId);
 });
 
 function startServices() {
-  const stt = spawn("python", [
+  stt = spawn("python", [
     "-u",
     path.join(
       __dirname,
@@ -80,16 +144,41 @@ function startServices() {
 
   stt.stdout.on("data", (data) => {
     const out = data.toString();
-    console.log("[STT]: " + out); // Log ALL STT output without this, WAKE:<name> signals are silently consumed since only [Transcript]: lines were previously logged
     if (currentAppState === "keyboard") {
       return;
     }
+    console.log("STT Captured: " + out);
 
-    if (out.includes("[Transcript]:")) {
+    if (out.includes("WAKE:")) {
+      console.log(out);
+      const heyResponder = out.replace("WAKE:", "").trim();
+      if (currentAppState === "idle") {
+        const responderMap = {
+          pinto: 1,
+          jimbo: 2,
+          bongo: 3,
+          koko: 4,
+          kiki: 5,
+        };
+
+        const id = responderMap[heyResponder.toLowerCase()];
+
+        if (id) {
+          setResponderIfAllowed(id);
+          activateInputState = "speech";
+          transitionState("speech");
+        }
+      }
+    }
+
+    if (
+      out.includes("[Transcript]:") &&
+      (currentAppState === "listening" || currentAppState === "speech")
+    ) {
       console.log(out);
       const promptText = out.replace("[Transcript]:", "").trim();
-      if (currentAppState === "idle" || currentAppState === "listening") {
-        updateUIState("thinking");
+      if (currentAppState === "listening") {
+        transitionState("thinking");
         if (stt && stt.stdin.writable) {
           stt.stdin.write("pause\n");
         }
@@ -100,13 +189,13 @@ function startServices() {
     }
 
     if (out.includes("EVENT:MIC_STARTED")) {
-      if (currentAppState === "idle") {
-        updateUIState("listening");
+      if (currentAppState === "speech") {
+        transitionState("listening");
       }
     }
   });
 
-  const tts = spawn("python", [
+  tts = spawn("python", [
     path.join(__dirname, "../../../backend/src/services/tts/tts_wrapper.py"),
   ]);
 
@@ -122,19 +211,39 @@ function startServices() {
 
     console.log("[TTS]: " + out);
 
-    if (out.includes("TTS_SPEECH_STARTED")) {
-      updateUIState("responding");
+    const sessionIdAtTrigger = currentSessionId;
+
+    if (out.includes("TTS_SPEECH_STARTED") && currentAppState === "thinking") {
+      if (
+        currentSessionId === sessionIdAtTrigger &&
+        currentAppState !== "idle"
+      ) {
+        transitionState("responding");
+      }
     }
     if (out.includes("TTS_SPEECH_ENDED")) {
-      //updateUIState("idle");
-
       // Resume the STT engine after a short delay to ensure audio has finished
       setTimeout(() => {
-        updateUIState("idle");
+        if (
+          currentSessionId !== sessionIdAtTrigger ||
+          currentAppState === "idle"
+        ) {
+          console.log(
+            "Cleanup: Suppressing state restoration because session is stale.",
+          );
+          return;
+        }
+
+        if (activateInputState === "keyboard") {
+          transitionState("keyboard");
+        } else {
+          transitionState("speech");
+        }
+
         if (stt && stt.stdin.writable) {
           stt.stdin.write("resume\n");
         }
-      }, 2500); // 500ms delay
+      }, 2500); // 2500ms delay
     }
   });
 }
