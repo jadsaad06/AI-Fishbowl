@@ -5,16 +5,24 @@ import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 
 const BIO_DATA = [
   {
-    name: "Bob",
-    bio: "- The cutest seahorse found on the Pacific Coast\n- Empathetic, Charismatic, and Considerate are qualities that Bob prides himself with\n- PS: He is a little sensitive",
+    name: "Pinto",
+    bio: "- A cute, friendly, chill guy.\n- Born and brought up off the coast of Astoria, Oregon.\n- Holds the Pacific Coral Cuteness title for 4 years running.\n- Loves to help out, but can be a little too relaxed at times.\n- Claims that the beans were named after him, but no one is sure if that one's true.",
   },
   {
     name: "Jimbo",
-    bio: "- A little rough around the edges, but such is life on the Atlantic Coast\n- Extremely helpful, however, he can be a little crude and expects you to leave your ego at the door",
+    bio: "- A little rough around the edges, but such is life on the Atlantic Coast.\n- Banished by the East Coast Fish Union for being a bit too competitive.\n- Moved to Oregon to start fresh in 2010, but he's grumpier than back then.\n- DOES NOT LIKE FLORIDA\n- Still very sharp though.",
   },
   {
     name: "Bongo",
-    bio: "- No one knows where he's from, other responders call him an alien\n- Very proud of his multi-color outfit",
+    bio: "- He's been depressed for a while now, Pinto says it's because he's on social media too much.\n- Born off the coast of Japan, he drifted aimlessly across the Pacific.\n- Extremely intelligent, but extremely shy.\n- Be nice to him!",
+  },
+  {
+    name: "Koko",
+    bio: "- Your aquatic CS advisor\n- Grew up in the Willamette River and has a special bond with Kiki\n- Has a vast knowledge of CS concepts and is always ready to help you navigate through your coding journey\n- Is professional, but values a friendly and approachable demeanor",
+  },
+  {
+    name: "Kiki",
+    bio: "- Your aquatic CS Grad School Advisor\n- Born and raised in the Columbia River, but has traveled across the Willamette with Koko\n- Is familiar with PSU Grad School policies since she has been in the area for a while\n- Values precision, clarity, and prides herself on knowledge collection",
   },
 ];
 
@@ -179,6 +187,173 @@ export class TypewriterText {
   }
 }
 
+export class Enclosure {
+  constructor({
+    x = 0,
+    y = 0,
+    header = null,
+    subheader = null,
+    footer = null,
+    imagePath = null,
+    imageMaxWidth = 200,
+    imageMaxHeight = 200,
+    padding = 30,
+    boxColor = 0x1a1a1a,
+    boxAlpha = 0.9,
+    fixedSize = null,
+    headerStyle = {},
+    subheaderStyle = {},
+    footerStyle = {},
+    verticalGap = 30,
+    yOffset = 0,
+  } = {}) {
+    this.container = new PIXI.Container();
+
+    this.container.position.set(x, y);
+
+    this.verticalGap = verticalGap;
+    this.yOffset = yOffset;
+
+    this.box = new ModernBox(padding, boxColor, boxAlpha);
+    this.container.addChild(this.box.graphics);
+
+    const baseStyle = {
+      fontFamily: "Roboto",
+      fill: "#ffffff",
+      align: "center",
+    };
+
+    if (header) {
+      this.header = new PIXI.Text(header, {
+        ...baseStyle,
+        fontSize: 42,
+        fontWeight: "bold",
+        ...headerStyle,
+      });
+      this.header.anchor.set(0.5);
+      this.container.addChild(this.header);
+    }
+
+    if (imagePath) {
+      this.image = PIXI.Sprite.from(imagePath);
+      this.image.anchor.set(0.5);
+
+      const scale = Math.min(
+        imageMaxWidth / this.image.texture.width,
+        imageMaxHeight / this.image.texture.height,
+      );
+      this.image.scale.set(scale);
+      this.container.addChild(this.image);
+    }
+
+    if (subheader) {
+      this.subheader = new PIXI.Text(subheader, {
+        ...baseStyle,
+        fontSize: 24,
+        fill: "#bdefff",
+        wordWrap: true,
+        wordWrapWidth: fixedSize ? fixedSize.width - padding * 2 : 400,
+        ...subheaderStyle,
+      });
+      this.subheader.anchor.set(0.5);
+      this.container.addChild(this.subheader);
+    }
+
+    if (footer) {
+      this.footer = new PIXI.Text(footer, {
+        ...baseStyle,
+        fontSize: 18,
+        fill: "#888888",
+        ...footerStyle,
+      });
+      this.footer.anchor.set(0.5);
+      this.container.addChild(this.footer);
+    }
+
+    this.fixedSize = fixedSize;
+    this.layout();
+  }
+
+  layout() {
+    const gap = this.verticalGap;
+
+    const elements = [
+      this.header,
+      this.image,
+      this.subheader,
+      this.footer,
+    ].filter(Boolean);
+
+    let currentY = 0;
+
+    elements.forEach((element, index) => {
+      const target = element;
+      const halfHeight = target.height / 2;
+
+      if (index === 0) {
+        currentY = halfHeight;
+      } else {
+        const prevHalfHeight = elements[index - 1].height / 2;
+        currentY += prevHalfHeight + gap + halfHeight;
+      }
+      element.y = currentY;
+    });
+
+    const totalHeight =
+      elements.length > 0
+        ? currentY + elements[elements.length - 1].height / 2
+        : 0;
+
+    elements.forEach((element) => {
+      element.y -= totalHeight / 2 - this.yOffset;
+    });
+
+    this.box.reshape(elements, this.fixedSize);
+  }
+
+  setPosition(x, y) {
+    this.container.position.set(x, y);
+  }
+
+  moveBy(dx, dy) {
+    this.container.position.x += dx;
+    this.container.position.y += dy;
+  }
+
+  setHeader(text) {
+    if (!this.header) return;
+    this.header.text = text;
+    this.layout();
+  }
+
+  setSubheader(text) {
+    if (!this.subheader) return;
+    this.subheader.text = text;
+    this.layout();
+  }
+
+  setFooter(text) {
+    if (!this.footer) return;
+    this.footer.text = text;
+    this.layout();
+  }
+
+  setBoxColor(color) {
+    this.box.color = color;
+    this.layout();
+  }
+
+  refresh() {
+    this.layout();
+  }
+
+  destroy() {
+    if (this.container && !this.container.destroyed) {
+      this.container.destroy({ children: true });
+    }
+  }
+}
+
 export class ModernBox {
   constructor(padding = 30, color = 0x1a1a1a, alpha = 0.9) {
     this.graphics = new PIXI.Graphics();
@@ -317,32 +492,35 @@ class ResponderCard {
 
     const sprite = PIXI.Sprite.from(RESPONDERS[index]);
     sprite.anchor.set(0.5);
-    sprite.y = -120;
-    const scale = 150 / sprite.texture.width;
+    sprite.y = -height * 0.25;
+
+    const targetWidth = index === 2 ? 80 : 180;
+    const scale = targetWidth / sprite.texture.width;
     sprite.scale.set(scale);
     this.container.addChild(sprite);
 
     const nameLabel = new PIXI.Text(BIO_DATA[index].name, {
-      fontFamily: "Times New Roman",
+      fontFamily: "Brush Script MT",
       fontSize: 36,
       fontWeight: "bold",
       fill: "#1e90ff",
     });
     nameLabel.anchor.set(0.5);
+    nameLabel.y = -height * 0.03;
     this.container.addChild(nameLabel);
 
     const bioLabel = new PIXI.Text(BIO_DATA[index].bio, {
       fontFamily: "Roboto",
-      fontSize: 20,
+      fontSize: 16,
       fill: "#ffffff",
-      align: "center",
-      lineHeight: 28,
+      align: "left",
+      lineHeight: 22,
       wordWrap: true,
-      wordWrapWidth: width - 50,
+      wordWrapWidth: width - 40,
     });
 
     bioLabel.anchor.set(0.5, 0);
-    bioLabel.y = 100;
+    bioLabel.y = 20;
     this.container.addChild(bioLabel);
   }
 }
@@ -359,12 +537,14 @@ export class InfoOverlay {
       .fill();
     this.container.addChild(dimmer);
 
+    const totalCards = BIO_DATA.length;
     const cardContainer = new PIXI.Container();
-    const spacing = 450;
+    const spacing = 320;
+    const startX = -((totalCards - 1) * spacing) / 2;
 
     BIO_DATA.forEach((_, i) => {
-      const card = new ResponderCard(i);
-      card.container.x = (i - 1) * spacing;
+      const card = new ResponderCard(i, 300, 500);
+      card.container.x = startX + i * spacing;
       cardContainer.addChild(card.container);
     });
 

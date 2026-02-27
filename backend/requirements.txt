@@ -17,3 +17,9 @@ pyaudio
 fastapi[standard]
 google-cloud-speech
 pygame
+requests
+rapidfuzz
+metaphone
+numpy
+torch
+pocket-tts

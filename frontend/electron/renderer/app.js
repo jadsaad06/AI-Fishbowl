@@ -38,6 +38,80 @@ export const RESPONDING_BACKGROUNDS = [
   "assets/images/background_6.png",
 ];
 
+export const RESPONDER_PROMPTS = {
+  1: {
+    name: "Pinto",
+    prompts: [
+      "Start talking, I'm listening!\n",
+      "OR Press ESC to go to the homepage\n\n",
+      "Examples of stuff I can help you with: \n",
+      "Pick a random LeetCode problem for me.",
+      "What's the weather in Portland, Oregon?",
+      "How do Linked Lists work?",
+      "Tell me your story.",
+    ],
+  },
+  2: {
+    name: "Jimbo",
+    prompts: [
+      "Start talking, I'm listening!\n",
+      "OR Press ESC to go to the homepage\n\n",
+      "Examples of stuff I can help you with: \n",
+      "Why are you so mean?",
+      "Why does everyone mess up pointers?",
+      "What's the weather in Florida?",
+      "What's the fastest way to crack a coding interview?",
+    ],
+  },
+  3: {
+    name: "Bongo",
+    prompts: [
+      "Start talking, I'm listening!\n",
+      "OR Press ESC to go to the homepage\n\n",
+      "Examples of stuff I can help you with: \n",
+      "Walk me through dynamic programming",
+      "What's the weather like in Fairbanks, Alaska?",
+      "How does Binary Search work?",
+      "Why do you sound so unsure of yourself? Cheer up!",
+    ],
+  },
+  4: {
+    name: "Koko",
+    prompts: [
+      "Start talking, I'm listening!\n",
+      "OR Press ESC to go to the homepage\n\n",
+      "Examples of stuff I can help you with: \n",
+      "What low-level programming classes can I take next semester?",
+      "How many credits do I need to graduate with a Bachelor's in CS?",
+      "What electives pair well with software engineering?",
+      "How did you meet Kiki?",
+    ],
+  },
+  5: {
+    name: "Kiki",
+    prompts: [
+      "Start talking, I'm listening!\n",
+      "OR Press ESC to go to the homepage\n\n",
+      "Examples of stuff I can help you with: \n",
+      "How many credits do I need for a Master's degree in CS?",
+      "How many electives are recommended per term?",
+      "How many credits is CS510: Deep Learning?",
+      "What are the grad school application requirements?",
+    ],
+  },
+};
+
+export const FALLBACK_PROMPTS = {
+  name: "Your Companion",
+  prompts: [
+    "Press Escape to go back to the homepage.\n\n",
+    "Examples of stuff I can help you with: \n\n",
+    "Ask me anything about Computer Science!",
+    "Need help with an assignment?",
+    "Want to explore a CS concept together?",
+  ],
+};
+
 export const ANIMATED_FISH = [
   "assets/images/fish_blue.png",
   "assets/images/fish_brown.png",
@@ -59,6 +133,8 @@ export const RESPONDERS = [
   "assets/images/responder_1.png",
   "assets/images/responder_2.png",
   "assets/images/responder_3.png",
+  "assets/images/responder_advisor.png",
+  "assets/images/responder_gradvisor.png",
 ];
 
 /** Initializes a new PIXI application in the UI */
@@ -71,6 +147,7 @@ let ws = null;
 let keepRetrying = false;
 let fullAgentResponse = "";
 let responseTimeout = null;
+let currentSessionId = 0;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -91,21 +168,38 @@ async function connect_agent() {
         });
 
         sock.addEventListener("message", (event) => {
+          const sessionIdAtArrival = currentSessionId;
           console.log("Message:", event.data);
           fullAgentResponse += event.data;
 
           if (responseTimeout) clearTimeout(responseTimeout);
 
           responseTimeout = setTimeout(() => {
-            setSubtitles(event.data);
-            window.fishbowl.sendToTTS(fullAgentResponse);
+            if (sessionIdAtArrival !== currentSessionId) {
+              console.log(
+                "Aborting TTS trigger: Session is Stale, ESC invoked.",
+              );
+              fullAgentResponse = "";
+              return;
+            }
+            setSubtitles(fullAgentResponse);
+
+            let layer1 = fullAgentResponse.replace(/^\s*\*+\s*/gm, "");
+            let layer2 = layer1.replace(/\s*\n+\s*/g, " ");
+            let layer3 = layer2.replace(/\s{2,}/g, " ").trim();
+            let layer4 = layer3.replace(/\s*\n+\s*/g, ". ");
+
+            console.log(layer4);
+            if (getState() === "thinking") {
+              window.fishbowl.sendToTTS(layer4);
+            }
             fullAgentResponse = "";
           }, 500);
           //setScene(app, "responding");
         });
 
         // either error or close => treat as failed/ended connection
-        sock.addEventListener("error", () => reject(new Error("WS error")));
+        // sock.addEventListener("error", () => reject(new Error("WS error")));
         sock.addEventListener("close", () => reject(new Error("WS closed")));
       });
 
@@ -166,6 +260,46 @@ async function init() {
           currentScene.updateSubtitles(text);
         }
       });
+
+      window.fishbowl.onResponderChange((responderId) => {
+        console.log("Main Process Send Speech Setting:", responderId);
+
+        setResponder(responderId);
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send("PERSONALIZATION: " + responderId);
+        }
+      });
+
+      window.fishbowl.onUserPrompt((text) => {
+        if (getState() === "keyboard") {
+          console.log("Suppressed STT: Keyboard active.");
+          return;
+        }
+        const currentState = getState();
+        if (
+          currentState !== "listening" &&
+          currentState !== "idle" &&
+          currentState !== "thinking"
+        )
+          return;
+
+        const formattedText = "You Said: " + text;
+        if (currentScene instanceof ThinkingSceneAnime) {
+          currentScene.updateTranscript(formattedText);
+        }
+
+        // 3. Socket Communication: Send the raw text to the MCP server
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          console.log("STT sent to socket:", formattedText);
+          ws.send(text);
+          if (getState() !== "thinking") {
+            window.fishbowl.requestState("thinking");
+          }
+        } else {
+          console.warn("WebSocket not ready. Could not send STT.");
+        }
+      });
     }
 
     /**
@@ -202,46 +336,32 @@ async function init() {
   }
 }
 
-window.fishbowl.onUserPrompt((text) => {
-  if (getState() === "keyboard") {
-    console.log("Suppressed STT: Keyboard active.");
-    return;
-  }
-  const currentState = getState();
-  if (
-    currentState !== "listening" &&
-    currentState !== "idle" &&
-    currentState !== "thinking"
-  )
-    return;
-
-  const responder = getResponder();
-  const formattedText = "You Said: " + text;
-  if (currentScene instanceof ThinkingSceneAnime) {
-    currentScene.updateTranscript(formattedText);
-  }
-
-  // 3. Socket Communication: Send the raw text to the MCP server
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    console.log("STT sent to socket:", formattedText);
-    ws.send(text);
-    if (getState() !== "thinking") {
-      window.fishbowl.setState("thinking");
-    }
-  } else {
-    console.warn("WebSocket not ready. Could not send STT.");
-  }
-});
-
 function setupKeyboardInput() {
   window.addEventListener("keydown", (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+    if (
+      e.key === "Escape" &&
+      getState() !== "thinking" &&
+      getState() !== "responding"
+    ) {
+      currentSessionId++;
+      console.log("Session Invalidated. New ID:", currentSessionId);
+      setPrompt("");
+      fullAgentResponse = "";
+      if (responseTimeout) {
+        clearTimeout(responseTimeout);
+        responseTimeout = null;
+      }
+
+      window.fishbowl.requestState("idle");
+      return;
+    }
 
     const currentState = getState();
 
     if (currentState === "keyboard") {
       if (e.key === "Enter") {
-        const responder = getResponder();
         const prompt = getPrompt().trim();
         if (!prompt) return;
 
@@ -254,7 +374,7 @@ function setupKeyboardInput() {
 
         // ------- SEND PROMPT TO MCP FROM HERE (Michel) -------------
         setPrompt("");
-        window.fishbowl.setState("thinking");
+        window.fishbowl.requestState("thinking");
         return;
       }
 
@@ -263,25 +383,29 @@ function setupKeyboardInput() {
         return;
       }
 
-      if (e.key === "Escape") {
-        setPrompt("");
-        window.fishbowl.setState("idle");
-        return;
-      }
+      // if (e.key === "Escape") {
+      //   setPrompt("");
+      //   window.fishbowl.requestState("idle");
+      //   return;
+      // }
 
       if (e.key.length === 1) {
         setPrompt(getPrompt() + e.key);
       }
     } else {
-      if (e.key === "1" || e.key === "2" || e.key === "3") {
+      if (
+        (e.key === "1" ||
+          e.key === "2" ||
+          e.key === "3" ||
+          e.key === "4" ||
+          e.key === "5") &&
+        currentState === "idle"
+      ) {
         if (getResponder() === Number(e.key)) {
           return;
         } else {
-          setResponder(Number(e.key));
+          window.fishbowl.requestResponderChange(Number(e.key));
           console.log("Responder selected:", e.key);
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send("PERSONALIZATION: " + e.key);
-          }
         }
 
         return;
@@ -293,10 +417,7 @@ function setupKeyboardInput() {
           return;
         } else {
           console.log("Responder selected:", randomID);
-          setResponder(randomID);
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send("PERSONALIZATION: " + randomID);
-          }
+          window.fishbowl.requestResponderChange(randomID);
         }
 
         return;
@@ -304,7 +425,12 @@ function setupKeyboardInput() {
 
       if (e.key.toLowerCase() === "k" && currentState === "idle") {
         e.preventDefault();
-        window.fishbowl.setState("keyboard");
+        window.fishbowl.requestState("keyboard");
+        return;
+      }
+
+      if (e.key === "Escape" && currentState === "speech") {
+        window.fishbowl.requestState("idle");
         return;
       }
 

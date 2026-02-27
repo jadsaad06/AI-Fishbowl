@@ -4,10 +4,15 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV="${ROOT}/.venv"
 
+WHISPER_ROOT="$HOME/whisper.cpp"
+WHISPER_BIN="$WHISPER_ROOT/build/bin/whisper-server"
+WHISPER_MODEL="$WHISPER_ROOT/models/ggml-base.en.bin"
+
 TTS_ENV="$ROOT/backend/src/services/tts/.env"
 STT_ENV="$ROOT/backend/src/services/stt/.env"
 LLM_ENV="$ROOT/backend/src/services/llm/.env"
 SCREEN_PID=""
+SERVER_PID=""
 
 
 load_envs() {
@@ -54,8 +59,20 @@ cleanup_led() {
 	python "$ROOT/hardware/src/case-hardware/led-off.py"
 }
 
+cleanup_server() {
+	local pid="${SERVER_PID:-}"
+	if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+		echo ""
+		echo "*****Stopping Whisper Server (PID: $pid)."
+		kill -TERM "$pid" 2>/dev/null || true
+		wait "$pid" 2>/dev/null || true
+	fi
+	SERVER_PID=""
+}
+
 cleanup_all() {
 	cleanup_screen
+	cleanup_server
 	cleanup_led
 }
 
@@ -102,11 +119,54 @@ run() {
 	trap 'cleanup_all; exit 143' TERM
 	trap 'cleanup_all; exit 129' HUP
 
+	# --- WHISPER SERVER LOGIC ---
+	SERVER_PID=""
+	echo "*****Attempting to start local Whisper STT server."
+	if [ -f "$WHISPER_BIN" ] && [ -f "$WHISPER_MODEL" ]; then
+		echo "*****Found Whisper binary/model. Starting local STT server."
+
+		# Log output to file for debugging
+		local log_file="$ROOT/whisper_server.log"
+		"$WHISPER_BIN" \
+			-m "$WHISPER_MODEL" \
+			--host 127.0.0.1 --port 8080 > "$log_file" 2>&1 &
+		SERVER_PID=$!
+
+		# Health check: verify process stays alive briefly.
+		local tries=0
+		local max_tries=10
+		local started=false
+		while [ "$tries" -lt "$max_tries" ]; do
+			if kill -0 "$SERVER_PID" 2>/dev/null; then
+				if [ "$tries" -ge 2 ]; then
+					started=true
+					break
+				fi
+			else
+				break
+			fi
+			sleep 1
+			tries=$((tries + 1))
+		done
+
+		if [ "$started" = true ]; then
+			echo "*****Whisper Server active (PID: $SERVER_PID)."
+		else
+			echo "*****Warning: Whisper Server failed to start. See $log_file for details."
+			echo "*****Skipping local server. App will use Google Cloud STT."
+			cleanup_server
+		fi
+	else
+		echo "*****Whisper binary/model not found."
+		echo "*****Skipping local server. App will use Google Cloud STT."
+	fi
+
 	# run case hardware scripts, start program
 	python "$ROOT/hardware/src/case-hardware/led-color.py"
 	python "$ROOT/hardware/src/case-hardware/screen.py" &
 	SCREEN_PID=$!
 	(cd "$ROOT/frontend/electron" && npm start)
+
 }
 
 
@@ -115,3 +175,4 @@ setup) setup ;;
 run) run ;;
 *) echo "Usage: $0 {setup|run}" ;;
 esac
+
