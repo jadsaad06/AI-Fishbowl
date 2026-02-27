@@ -1,88 +1,125 @@
-import os
-import google.genai as genai
-from google.genai import types
-from google.genai.errors import ClientError
-from dotenv import load_dotenv
-import pyaudio
 import time
+import os
+import numpy as np
+import pyaudio
+from pocket_tts import TTSModel
+import torch
 
-load_dotenv()
+PREBUFFER_CHUNKS = 1
 
-RATE = 24000
-CHANNELS = 1
-FORMAT = pyaudio.paInt16
-FRAME_LENGTH = 2048  #This buffer could be lowered for faster speed, but too low produces audio fuzz
+tts_model = None
+default_voice_state = None
 
-MAX_TIME = 90 #max speaking time in seconds (this includes tts processing time)
 
-api_key = os.getenv("KEY")   #Gets API key from .env file
-if not api_key:
-    raise RuntimeError("KEY not found")
-
-client = genai.Client(api_key=api_key)
-
-p = pyaudio.PyAudio()
-
-stream = p.open(
-    format=FORMAT,
-    channels=CHANNELS,
-    rate=RATE,
-    output=True,
-    frames_per_buffer=FRAME_LENGTH,
-)
-
-def speak_text(text: str):
-    print("Streaming audio...")
-    start_time = time.monotonic() #Starts time before any processing
-
-    style_prompt = f"Read the following in a friendly and professional tone: {text}"
-    try:
-        response = client.models.generate_content_stream(  #Calls Gemini, and returns in streamable chunks
-            model = "gemini-2.5-flash-preview-tts",
-            contents=style_prompt,
-            config=types.GenerateContentConfig(
-                response_modalities = ["AUDIO"],
-                speech_config=types.SpeechConfig(
-                    voice_config=types.VoiceConfig(
-                        prebuilt_voice_config = types.PrebuiltVoiceConfig(  #Calls one of Gemini's default voices
-                            voice_name="Umbriel"
-                        )
-                    )
-                )
-            ),
+def _resolve_runtime_device() -> torch.device:
+    requested_device = os.getenv("TTS_DEVICE", "cuda").strip().lower()
+    if requested_device not in {"cuda", "cpu"}:
+        print(
+            f"Unsupported TTS_DEVICE='{requested_device}'. Falling back to 'cuda'.",
+            flush=True,
         )
-    except ClientError as e:  #Checks if Gemini accepted text
-        if e.code == 400:
-            print(f"Gemini TTS rejected the input text: {text!r}")
-            return None
+        requested_device = "cuda"
+
+    if requested_device == "cuda" and not torch.cuda.is_available():
+        print("CUDA requested but unavailable. Falling back to CPU.", flush=True)
+        requested_device = "cpu"
+
+    return torch.device(requested_device)
+
+
+def _move_model_state_to_device(model_state: dict, device: torch.device) -> dict:
+    for _, module_state in model_state.items():
+        if not isinstance(module_state, dict):
+            continue
+
+        for key, value in module_state.items():
+            if isinstance(value, torch.Tensor):
+                module_state[key] = value.to(device)
+    return model_state
+
+
+def _load_model():
+    # Load the TTS model and voice state globally.
+    global tts_model, default_voice_state
+
+    if tts_model is None:  # Only loads if not already loaded.
+        print("Loading Kyutai Pocket TTS model...", flush=True)
+        print(f"Torch CUDA available: {torch.cuda.is_available()}", flush=True)
+
+        device = _resolve_runtime_device()
+        if device.type == "cuda":
+            print(f"Using CUDA device: {torch.cuda.get_device_name(0)}", flush=True)
         else:
-            raise
+            print("Using CPU for TTS inference.", flush=True)
 
-    for chunk in response: #For each audio chunk recieved from Gemini
-        for part in getattr(chunk, "parts", []):
-            if hasattr(part, "inline_data") and part.inline_data:
-                #stream.write(part.inline_data.data)
-                audio_bytes = part.inline_data.data
+        tts_model = TTSModel.load_model().to(device)
+        tts_model.eval()
+        print(f"TTS model runtime device: {tts_model.device}", flush=True)
 
-                #Audio is further divided into our desired frame length
-                #so that we can check time, regardless of Gemini's chunk size
-                for i in range(0, len(audio_bytes), FRAME_LENGTH):
+        print("Getting voice state for 'alba'", flush=True)
+        default_voice_state = tts_model.get_state_for_audio_prompt("alba")  # Preset voice for Kyutai.
+        default_voice_state = _move_model_state_to_device(default_voice_state, device)
 
-                    if time.monotonic() - start_time >= MAX_TIME:
-                        print("Exceeded time limit")
-                        stream.stop_stream()  #Clears audio stream for next input
-                        stream.start_stream()
-                        return
-                    
-                    frame = audio_bytes[i:i+FRAME_LENGTH]
-                    stream.write(frame)
+        print("Voice state loaded.", flush=True)
 
-    print("Done Speaking")
 
-if __name__ == "__main__":
-    text = input("Enter text: ")
+def _play_audio_stream(sample_rate: int):
+    p = pyaudio.PyAudio()
+    stream = p.open(
+        format=pyaudio.paInt16,
+        channels=1,
+        rate=sample_rate,
+        output=True,
+    )
+    return stream, p
 
-    if text:
-        speak_text(text)
 
-    print("Test complete!")
+def _write_audio_chunk(stream, audio: np.ndarray):
+    # Convert float32 [-1, 1] to int16 [-32768, 32767]
+    audio_int16 = (audio * 32767).astype(np.int16)
+    stream.write(audio_int16.tobytes())
+
+
+def speak_text(text: str, personality_id: str = None):
+    del personality_id
+    if not text or not text.strip():
+        return
+
+    _load_model()
+
+    start_time = time.monotonic()
+
+    print("Streaming TTS")
+
+    # copy_state=True keeps each text chunk independent and avoids premature cutoff on long utterances.
+    chunks = tts_model.generate_audio_stream(default_voice_state, text, copy_state=True)
+    buffer = []
+
+    # Buffer only a small number of chunks to smooth playback startup.
+    for _ in range(PREBUFFER_CHUNKS):
+        try:
+            buffer.append(next(chunks))
+        except StopIteration:
+            break
+
+    stream, p = _play_audio_stream(tts_model.sample_rate)
+
+    chunk_count = 0
+
+    try:
+        for chunk in buffer:
+            audio = chunk.detach().cpu().numpy()
+            _write_audio_chunk(stream, audio)
+            chunk_count += 1
+
+        for chunk in chunks:
+            audio = chunk.detach().cpu().numpy()
+            _write_audio_chunk(stream, audio)
+            chunk_count += 1
+    finally:
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+
+    generation_done = time.monotonic()
+    print(f"TTS streaming completed in {generation_done - start_time:.2f}s ({chunk_count} chunks)")

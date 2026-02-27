@@ -7,6 +7,7 @@ import { IdleSceneAnime } from "./IdleSceneAnime.js";
 import { ListeningSceneAnime } from "./ListeningSceneAnime.js";
 import { ThinkingSceneAnime } from "./ThinkingSceneAnime.js";
 import { RespondingSceneAnime } from "./RespondingSceneAnime.js";
+import { SpeechSceneAnime } from "./SpeechSceneAnime.js";
 //import { ListeningScene } from "./ListeningScene.js";
 // import { ThinkingScene } from "./ThinkingScene.js";
 // import { RespondingScene } from "./RespondingScene.js";
@@ -33,6 +34,9 @@ export function setScene(app, state) {
   switch (state) {
     case "idle":
       currentScene = new IdleSceneAnime(app);
+      break;
+    case "speech":
+      currentScene = new SpeechSceneAnime(app);
       break;
     case "keyboard":
       currentScene = new KeyboardScene(app);
