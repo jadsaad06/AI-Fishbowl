@@ -735,10 +735,20 @@ export class InfoOverlay {
     this.tabLabel.position.set(80, app.screen.height / 2);
     this.container.addChild(this.tabLabel);
 
+    this.bounceInterval = setInterval(() => {
+      if (!this.isOpen && this.tabLabel.alpha > 0.5) {
+        anime({
+          targets: this.tabLabel,
+          x: [80, 100, 80, 100, 80],
+          duration: 800,
+          easing: "easeInOutCubic",
+        });
+      }
+    }, 3000);
+
     this.panel = new PIXI.Container();
     this.container.addChild(this.panel);
 
-    const TAB_WIDTH = 60;
     this.closedX = -app.screen.width;
     this.openX = 0;
     this.panel.x = this.closedX;
@@ -802,6 +812,12 @@ export class InfoOverlay {
         });
       },
     });
+  }
+
+  destroy() {
+    if (this.bounceInterval) {
+      clearInterval(this.bounceInterval);
+    }
   }
 
   toggle() {

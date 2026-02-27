@@ -59,6 +59,7 @@ export class IdleSceneAnime {
 
   destroy() {
     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
+    if (this.infoOverlay) this.infoOverlay.destroy();
     PIXI.Ticker.shared.remove(this.swarmUpdate);
 
     window.currentActiveScene = null;
