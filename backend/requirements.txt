@@ -20,3 +20,6 @@ pygame
 requests
 rapidfuzz
 metaphone
+numpy
+torch
+pocket-tts

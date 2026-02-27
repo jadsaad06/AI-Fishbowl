@@ -202,7 +202,7 @@ function startServices() {
   ipcMain.on("send-to-tts", (event, text) => {
     console.log(text);
     if (tts && tts.stdin.writable) {
-      tts.stdin.write("MCP-AGENT-RESPONSE:" + text + "\n");
+      tts.stdin.write("MCP-AGENT-RESPONSE:" + text + "\n"); //Modified to send personality to TTS -Henry
     }
   });
 
@@ -214,14 +214,12 @@ function startServices() {
     const sessionIdAtTrigger = currentSessionId;
 
     if (out.includes("TTS_SPEECH_STARTED") && currentAppState === "thinking") {
-      setTimeout(() => {
-        if (
-          currentSessionId === sessionIdAtTrigger &&
-          currentAppState !== "idle"
-        ) {
-          transitionState("responding");
-        }
-      }, 2500);
+      if (
+        currentSessionId === sessionIdAtTrigger &&
+        currentAppState !== "idle"
+      ) {
+        transitionState("responding");
+      }
     }
     if (out.includes("TTS_SPEECH_ENDED")) {
       // Resume the STT engine after a short delay to ensure audio has finished
