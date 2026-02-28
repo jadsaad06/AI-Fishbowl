@@ -9,7 +9,7 @@ import {
   TypewriterText,
   ModernBox,
 } from "../assets/sprites_anime.js";
-import { LISTENING_BACKGROUND, ENHANCED_FISH } from "../app.js";
+import { RESPONDING_BACKGROUNDS, ENHANCED_FISH } from "../app.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 
 export class ListeningSceneAnime {
@@ -17,7 +17,7 @@ export class ListeningSceneAnime {
     this.app = app;
     this.container = new PIXI.Container();
 
-    this.bgManager = new BackgroundManager(app, LISTENING_BACKGROUND);
+    this.bgManager = new BackgroundManager(app, RESPONDING_BACKGROUNDS);
     this.container.addChild(this.bgManager.container);
 
     this.swarm = new FishSwarm(

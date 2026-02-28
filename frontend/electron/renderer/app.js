@@ -145,16 +145,10 @@ export const CONTROLS = [
   },
 ];
 
-export const THINKING_BACKGROUNDS = [
-  "assets/images/background_3.png",
-  "assets/images/deep_sea_bg.jpg",
-];
-
 export const RESPONDING_BACKGROUNDS = [
-  "assets/images/background_1.png",
-  "assets/images/deep_sea_bg.jpg",
-  "assets/images/background_3.png",
-  "assets/images/background_6.png",
+  "assets/images/idle_hd_2.jpg",
+  "assets/images/idle_hd.jpg",
+  "assets/images/responding_hd.jpg",
 ];
 
 export const RESPONDER_PROMPTS = {
@@ -293,27 +287,25 @@ async function connect_agent() {
 
           if (responseTimeout) clearTimeout(responseTimeout);
 
-          responseTimeout = setTimeout(() => {
-            if (sessionIdAtArrival !== currentSessionId) {
-              console.log(
-                "Aborting TTS trigger: Session is Stale, ESC invoked.",
-              );
-              fullAgentResponse = "";
-              return;
-            }
-            setSubtitles(fullAgentResponse);
-
-            let layer1 = fullAgentResponse.replace(/^\s*\*+\s*/gm, "");
-            let layer2 = layer1.replace(/\s*\n+\s*/g, " ");
-            let layer3 = layer2.replace(/\s{2,}/g, " ").trim();
-            let layer4 = layer3.replace(/\s*\n+\s*/g, ". ");
-
-            console.log(layer4);
-            if (getState() === "thinking") {
-              window.fishbowl.sendToTTS(layer4);
-            }
+          //responseTimeout = setTimeout(() => {
+          if (sessionIdAtArrival !== currentSessionId) {
+            console.log("Aborting TTS trigger: Session is Stale, ESC invoked.");
             fullAgentResponse = "";
-          }, 500);
+            return;
+          }
+          setSubtitles(fullAgentResponse.substring(2));
+
+          let layer1 = fullAgentResponse.replace(/^\s*\*+\s*/gm, "");
+          let layer2 = layer1.replace(/\s*\n+\s*/g, " ");
+          let layer3 = layer2.replace(/\s{2,}/g, " ").trim();
+          let layer4 = layer3.replace(/\s*\n+\s*/g, ". ");
+
+          console.log(layer4);
+          if (getState() === "thinking") {
+            window.fishbowl.sendToTTS(layer4);
+          }
+          fullAgentResponse = "";
+          //}, 500);
           //setScene(app, "responding");
         });
 
@@ -351,8 +343,6 @@ async function init() {
     await PIXI.Assets.load("assets/images/ocean_diver.png");
     await PIXI.Assets.load("assets/images/listening_fish_cropped.png");
     await PIXI.Assets.load("assets/images/thinking_fish.png");
-    await PIXI.Assets.load(LISTENING_BACKGROUND);
-    await PIXI.Assets.load(THINKING_BACKGROUNDS);
     await PIXI.Assets.load(RESPONDING_BACKGROUNDS);
 
     /** Displays the application document */
@@ -513,10 +503,6 @@ function setupKeyboardInput() {
       switch (e.key) {
         case "ArrowUp":
           optionsOverlay.rollout();
-          break;
-
-        case "ArrowDown":
-          menus.top?.pulldown();
           break;
 
         case "ArrowRight":
