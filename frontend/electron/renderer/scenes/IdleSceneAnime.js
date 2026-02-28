@@ -4,16 +4,11 @@ import { BackgroundManager, FishSwarm } from "../assets/sprites.js";
 import { getResponder, subscribeResponder } from "../state/store.js";
 
 import {
-  Enclosure,
   TypewriterText,
   GradientText,
-  ArrowMenu,
   InfoOverlay,
-  OptionsOverlay,
   GlassBox,
   FunFactBox,
-  ControlsOverlay,
-  BoxGenerator,
   SlidingOverlay,
 } from "../assets/sprites_anime.js";
 import {

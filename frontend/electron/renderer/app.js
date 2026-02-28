@@ -14,7 +14,6 @@ import {
   getResponder,
 } from "./state/store.js";
 import { setScene, currentScene } from "./scenes/index.js";
-import { InfoOverlay, OptionsOverlay } from "./assets/sprites_anime.js";
 import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
 import { ListeningSceneAnime } from "./scenes/ListeningSceneAnime.js";
 import { RespondingSceneAnime } from "./scenes/RespondingSceneAnime.js";
