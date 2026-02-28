@@ -12,6 +12,7 @@ import {
   OptionsOverlay,
   GlassBox,
   FunFactBox,
+  ControlsOverlay,
 } from "../assets/sprites_anime.js";
 import { BACKGROUNDS, ANIMATED_FISH, RESPONDERS } from "../app.js";
 
@@ -70,7 +71,7 @@ export class IdleSceneAnime {
 
     this.funFactBox.updateFunFact();
     this.funFactInterval = setInterval(() => {
-      this.funFactBox.updateFunFact;
+      this.funFactBox.updateFunFact();
     }, 10000);
 
     this.infoOverlay = new InfoOverlay(app);
@@ -78,6 +79,9 @@ export class IdleSceneAnime {
 
     this.optionsOverlay = new OptionsOverlay(app);
     this.container.addChild(this.optionsOverlay.container);
+
+    this.controlsOverlay = new ControlsOverlay(app);
+    this.container.addChild(this.controlsOverlay.container);
 
     this.shuffleInterval = setInterval(() => {
       this.bgManager.next();
@@ -98,10 +102,6 @@ export class IdleSceneAnime {
     PIXI.Ticker.shared.remove(this.swarmUpdate);
 
     window.currentActiveScene = null;
-
-    if (this.title && this.title.sprite) {
-      this.title.sprite.texture.destroy(true);
-    }
 
     this.container.destroy({ children: true });
   }

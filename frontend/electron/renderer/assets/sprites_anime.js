@@ -954,7 +954,7 @@ export class InfoOverlay {
 
     const solidBg = new PIXI.Graphics()
       .rect(0, 0, app.screen.width, app.screen.height)
-      .fill({ color: 0x000000, alpha: 1 });
+      .fill({ color: 0x000000, alpha: 0.9 });
     this.panel.addChild(solidBg);
 
     this.closedX = -app.screen.width;
@@ -991,8 +991,6 @@ export class InfoOverlay {
   rollout() {
     if (this.isOpen) return;
     this.isOpen = true;
-    this.hint.alpha = 1;
-    this.tabLabel.alpha = 0;
 
     anime({
       targets: this.panel,
@@ -1026,6 +1024,13 @@ export class InfoOverlay {
     if (this.bounceInterval) {
       clearInterval(this.bounceInterval);
     }
+
+    anime.remove(this.container);
+    anime.remove(this.panel);
+    anime.remove(this.tabLabel);
+    anime.remove(this.hint);
+
+    this.container.destroy({ children: true });
   }
 
   toggle() {
@@ -1073,7 +1078,7 @@ export class OptionsOverlay {
 
     const solidBg = new PIXI.Graphics()
       .rect(0, 0, app.screen.width, app.screen.height)
-      .fill({ color: 0x000000, alpha: 1 });
+      .fill({ color: 0x000000, alpha: 0.9 });
     this.panel.addChild(solidBg);
 
     this.cardContainer = new PIXI.Container();
@@ -1211,6 +1216,170 @@ export class OptionsOverlay {
     if (this.bounceInterval) {
       clearInterval(this.bounceInterval);
     }
+
+    anime.remove(this.container);
+    anime.remove(this.panel);
+    anime.remove(this.tabLabel);
+    anime.remove(this.closeHint);
+
+    if (this.cards) {
+      this.cards.forEach((card) => {
+        anime.remove(card);
+        anime.remove(card.scale);
+      });
+    }
+
+    this.container.destroy({ children: true });
+  }
+}
+
+export class ControlsOverlay {
+  constructor(app) {
+    this.app = app;
+    this.container = new PIXI.Container();
+    this.isOpen = false;
+
+    this.tabLabel = new PIXI.Text("C\nO\nN\nT\nR\nO\nL\nS\n\n◀◀", {
+      fontFamily: "Arial Black",
+      fontSize: 16,
+      fill: "#00ced1",
+      letterSpacing: 2,
+    });
+    this.tabLabel.anchor.set(0.5);
+    this.tabLabel.position.set(app.screen.width - 80, app.screen.height / 2);
+    this.container.addChild(this.tabLabel);
+
+    this.bounceInterval = setInterval(() => {
+      if (!this.isOpen && this.tabLabel.alpha > 0.5) {
+        anime({
+          targets: this.tabLabel,
+          x: [
+            app.screen.width - 80,
+            app.screen.width - 100,
+            app.screen.width - 80,
+            app.screen.width - 100,
+            app.screen.width - 80,
+          ],
+          duration: 800,
+          easing: "easeInOutCubic",
+        });
+      }
+    }, 3000);
+
+    this.panel = new PIXI.Container();
+    this.closedX = app.screen.width;
+    this.openX = 0;
+    this.panel.x = this.closedX;
+    this.container.addChild(this.panel);
+
+    const solidBg = new PIXI.Graphics()
+      .rect(0, 0, app.screen.width, app.screen.height)
+      .fill({ color: 0x000000, alpha: 0.9 });
+    this.panel.addChild(solidBg);
+
+    const sections = [
+      {
+        title: "VOICE COMMANDS",
+        text: 'Speak "Hey [Name]" to wake a responder.\nUse natural language to ask questions.',
+      },
+      {
+        title: "KEYBOARD CONTROLS",
+        text: "1-5: Select Responder\nK: Open Type Terminal\nArrow Keys: Navigate Menus",
+      },
+      {
+        title: "SYSTEM STATUS",
+        text: "Coral Net v3.0\nConnection: Stable\nActive Responders: 5",
+      },
+    ];
+
+    const sectionContainer = new PIXI.Container();
+    const spacing = 450;
+    const startX = -((sections.length - 1) * spacing) / 2;
+
+    sections.forEach((data, i) => {
+      const group = new PIXI.Container();
+
+      const bg = new GlassBox(30);
+      group.addChild(bg.graphics);
+
+      const header = new PIXI.Text(data.title, {
+        fontFamily: "Courier New",
+        fontSize: 28,
+        fill: "#87dced",
+        fontWeight: "bold",
+      });
+      header.anchor.set(0.5);
+      header.y = -180;
+
+      const body = new PIXI.Text(data.text, {
+        fontFamily: "Arial",
+        fontSize: 18,
+        fill: "#ffffff",
+        wordWrap: true,
+        wordWrapWidth: 320,
+        align: "center",
+      });
+      body.anchor.set(0.5);
+      body.y = 40;
+
+      group.addChild(header, body);
+      bg.reshape(null, { width: 400, height: 500 });
+
+      group.x = startX + i * spacing;
+      sectionContainer.addChild(group);
+    });
+
+    sectionContainer.position.set(app.screen.width / 2, app.screen.height / 2);
+    this.panel.addChild(sectionContainer);
+
+    this.closeHint = new PIXI.Text("RIGHT ARROW TO CLOSE ▶", {
+      fontFamily: "Arial Black",
+      fontSize: 22,
+      fill: "#15e0f7",
+    });
+    this.closeHint.anchor.set(0.5);
+    this.closeHint.position.set(app.screen.width / 2, app.screen.height - 100);
+    this.panel.addChild(this.closeHint);
+  }
+
+  rollout() {
+    if (this.isOpen) return;
+    this.isOpen = true;
+    this.tabLabel.alpha = 0;
+
+    anime({
+      targets: this.panel,
+      x: this.openX,
+      duration: 800,
+      easing: "easeOutExpo",
+    });
+  }
+
+  rollin() {
+    if (!this.isOpen) return;
+    this.isOpen = false;
+    anime({
+      targets: this.panel,
+      x: this.closedX,
+      duration: 600,
+      easing: "easeInExpo",
+      complete: () => {
+        this.tabLabel.alpha = 1;
+      },
+    });
+  }
+
+  destroy() {
+    if (this.bounceInterval) {
+      clearInterval(this.bounceInterval);
+    }
+
+    anime.remove(this.container);
+    anime.remove(this.panel);
+    anime.remove(this.tabLabel);
+    anime.remove(this.hint);
+
+    this.container.destroy({ children: true });
   }
 }
 

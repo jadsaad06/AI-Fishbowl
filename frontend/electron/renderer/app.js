@@ -361,46 +361,54 @@ function setupKeyboardInput() {
       const activeScene = window.currentActiveScene;
       if (!activeScene) return;
 
-      if (activeScene.optionsOverlay) {
-        const options = activeScene.optionsOverlay;
+      const { optionsOverlay, infoOverlay, controlsOverlay } = activeScene;
 
-        if (options.isOpen) {
-          switch (e.key) {
-            case "ArrowDown":
-              options.rollin();
-              return;
-            case "ArrowRight":
-              options.next();
-              return;
-            case "ArrowLeft":
-              options.prev();
-              return;
-          }
-        } else {
-          if (e.key === "ArrowUp") {
-            options.rollout();
-            return;
-          }
-        }
-      }
-
-      if (activeScene && activeScene.infoOverlay) {
-        const overlay = activeScene.infoOverlay;
-
+      if (optionsOverlay?.isOpen) {
         switch (e.key) {
           case "ArrowDown":
-            activeScene.menus.top?.pulldown();
-            break;
-          case "ArrowUp":
-            activeScene.menus.bottom?.pullup();
-            break;
+            optionsOverlay.rollin();
+            return;
           case "ArrowRight":
-            if (!overlay.isOpen) overlay.rollout();
-            break;
+            optionsOverlay.next();
+            return;
           case "ArrowLeft":
-            if (overlay.isOpen) overlay.rollin();
-            break;
+            optionsOverlay.prev();
+            return;
         }
+        return;
+      }
+
+      if (infoOverlay?.isOpen) {
+        if (e.key === "ArrowLeft") {
+          infoOverlay.rollin();
+          return;
+        }
+        return;
+      }
+
+      if (controlsOverlay?.isOpen) {
+        if (e.key === "ArrowRight") {
+          controlsOverlay.rollin();
+          return;
+        }
+        return;
+      }
+      switch (e.key) {
+        case "ArrowUp":
+          optionsOverlay.rollout();
+          break;
+
+        case "ArrowDown":
+          menus.top?.pulldown();
+          break;
+
+        case "ArrowRight":
+          infoOverlay?.rollout();
+          break;
+
+        case "ArrowLeft":
+          controlsOverlay?.rollout();
+          break;
       }
     }
 
