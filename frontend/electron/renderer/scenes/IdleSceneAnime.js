@@ -9,6 +9,9 @@ import {
   GradientText,
   ArrowMenu,
   InfoOverlay,
+  OptionsOverlay,
+  GlassBox,
+  FunFactBox,
 } from "../assets/sprites_anime.js";
 import { BACKGROUNDS, ANIMATED_FISH, RESPONDERS } from "../app.js";
 
@@ -36,19 +39,45 @@ export class IdleSceneAnime {
       text: "CORAL NET",
       fontSize: 80,
       fontFamily: "Arial",
-      gradientColor1: "#e0ffff",
-      gradientColor2: "#0b15d8",
+      gradientColor1: "#efef05",
+      gradientColor2: "#db9271",
       x: app.screen.width / 2,
       y: app.screen.height / 2,
       bold: true,
-      shadowColor: "rgba(0, 0, 0, 0.5)",
-      shadowBlur: 15,
+      shadowColor: "rgba(239, 255, 11, 0.5)",
+      shadowBlur: 10,
     });
+
+    this.titleBox = new GlassBox(20);
+    this.titleBox.graphics.position.set(
+      this.title.sprite.x,
+      this.title.sprite.y,
+    );
+    this.container.addChild(this.titleBox.graphics);
     this.container.addChild(this.title.sprite);
+    this.titleBox.reshape(this.title.sprite);
+
+    this.funFactBox = new FunFactBox(app, [
+      "The first computer bug was an actual bug — a moth found in a relay.",
+      "Ada Lovelace is considered the first programmer.",
+      "The first 1GB hard drive weighed 550 lbs and cost $40,000.",
+    ]);
+    this.funFactBox.setPosition(
+      app.screen.width / 2,
+      (app.screen.height / 2) * 0.25,
+    );
+    this.container.addChild(this.funFactBox.container);
+
+    this.funFactBox.updateFunFact();
+    this.funFactInterval = setInterval(() => {
+      this.funFactBox.updateFunFact;
+    }, 10000);
 
     this.infoOverlay = new InfoOverlay(app);
-
     this.container.addChild(this.infoOverlay.container);
+
+    this.optionsOverlay = new OptionsOverlay(app);
+    this.container.addChild(this.optionsOverlay.container);
 
     this.shuffleInterval = setInterval(() => {
       this.bgManager.next();
@@ -60,6 +89,12 @@ export class IdleSceneAnime {
   destroy() {
     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
     if (this.infoOverlay) this.infoOverlay.destroy();
+    if (this.optionsOverlay) this.optionsOverlay.destroy();
+    if (this.titleBox && this.titleBox.graphics) {
+      this.titleBox.graphics.destroy();
+    }
+    if (this.funFactInterval) clearInterval(this.funFactInterval);
+    this.funFactBox.destroy();
     PIXI.Ticker.shared.remove(this.swarmUpdate);
 
     window.currentActiveScene = null;

@@ -547,7 +547,7 @@ export class Enclosure {
 }
 
 export class ModernBox {
-  constructor(padding = 30, color = 0x1a1a1a, alpha = 0.9) {
+  constructor(padding = 30, color = 0x5ebd9d, alpha = 0.9) {
     this.graphics = new PIXI.Graphics();
     this.padding = padding;
     this.color = color;
@@ -614,15 +614,212 @@ export class ModernBox {
   }
 }
 
-export class ResponderEnclosure {
-  constructor(imagePath, name, padding = 20, isHeader = false) {
+export class GlassBox extends ModernBox {
+  constructor(padding = 30) {
+    super(padding, 0xffffff, 0.1);
+  }
+
+  reshape(targets, fixedSize = null) {
+    super.reshape(targets, fixedSize);
+    if (this.graphics.context) {
+      this.drawGlassEffects(targets, fixedSize);
+    }
+  }
+
+  drawGlassEffects(targets, fixedSize) {
+    let width, height;
+    if (fixedSize) {
+      width = fixedSize.width;
+      height = fixedSize.height;
+    } else {
+      const target = Array.isArray(targets) ? targets[0] : targets;
+      width = target.width + this.padding * 2;
+      height = target.height + this.padding * 2;
+    }
+
+    const minX = -width / 2;
+    const minY = -height / 2;
+
+    this.graphics.clear();
+
+    this.graphics.fill({ color: 0xffffff, alpha: 0.1 });
+    this.graphics.roundRect(minX, minY, width, height, 20);
+    this.graphics.fill();
+
+    this.graphics.fill({ color: 0xffffff, alpha: 0.2 });
+    this.graphics.roundRect(minX + 5, minY + 5, width - 10, height - 10, 15);
+    this.graphics.fill();
+
+    this.graphics.stroke({
+      width: 2.5,
+      color: 0x87dced,
+      alpha: 0.8,
+      alignment: 0,
+    });
+    this.graphics.roundRect(minX, minY, width, height, 20);
+    this.graphics.stroke();
+
+    this.graphics.poly([
+      minX + 25,
+      minY + 2,
+      minX + width - 25,
+      minY + 2,
+      minX + width - 15,
+      minY + 8,
+      minX + 15,
+      minY + 8,
+    ]);
+    this.graphics.fill({ color: 0xffffff, alpha: 0.3 });
+  }
+}
+
+export class FunFactBox {
+  constructor(app, factsList = []) {
+    this.app = app;
+    this.factsList = factsList;
+
     this.container = new PIXI.Container();
-    this.bg = new ModernBox(padding);
+
+    this.header = new GradientText({
+      text: "Fun Fact",
+      fontSize: 28,
+      fontFamily: "Arial Black",
+      gradientColor1: "#79eaea",
+      gradientColor2: "#02aaad",
+      x: 0,
+      y: -60,
+      bold: true,
+      shadowColor: "#04618b",
+      shadowBlur: 12,
+    });
+
+    this.typewriter = new TypewriterText(
+      "",
+      {
+        fill: "#ffffff",
+        fontSize: 22,
+        fontFamily: "Roboto",
+        wordWrap: true,
+        wordWrapWidth: 700,
+        align: "center",
+      },
+      { durationPerChar: 35 },
+    );
+    this.typewriter.container.position.set(0, 20);
+
+    this.box = new GlassBox(24);
+    this.box.graphics.position.set(0, 0);
+
+    this.container.addChild(this.box.graphics);
+    this.container.addChild(this.header.sprite);
+    this.container.addChild(this.typewriter.container);
+
+    this._reshapeBox();
+  }
+
+  _reshapeBox() {
+    this.box.reshape(this.typewriter.textObject, {
+      width: 800,
+      height: 200,
+    });
+  }
+
+  applyFact(text) {
+    this.typewriter.setText(text);
+    this.typewriter.play();
+    this._reshapeBox();
+  }
+
+  updateFunFact() {
+    const applyFact = (text) => this.applyFact(this._decodeHTML(text));
+
+    const fallbackLocal = () => {
+      if (!this.factsList.length) return;
+      const randomIndex = Math.floor(Math.random() * this.factsList.length);
+      applyFact(this.factsList[randomIndex]);
+    };
+
+    const fetchNinjas = () => {
+      const url =
+        "https://api.api-ninjas.com/v1/historicalevents?text=computer";
+      //const apiKey = window.fishbowl?.config?.apiNinjasKey ?? "";
+      const apiKey = "";
+      return fetch(url, {
+        method: "GET",
+        headers: { "X-Api-Key": apiKey, "Content-Type": "application/json" },
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Ninjas limit reached");
+          return res.json();
+        })
+        .then((data) => {
+          if (!data?.length) throw new Error("No Ninjas data");
+          const item = data[Math.floor(Math.random() * data.length)];
+          applyFact(`${item.year}: ${item.event}`);
+        });
+    };
+
+    const fetchWiki = () => {
+      const today = new Date();
+      const url = `https://en.wikipedia.org/api/rest_v1/feed/onthisday/selected/${today.getMonth() + 1}/${today.getDate()}`;
+      return fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.selected?.length) throw new Error("No Wiki data");
+          const event =
+            data.selected[Math.floor(Math.random() * data.selected.length)];
+          applyFact(`${event.year}: ${event.text}`);
+        });
+    };
+
+    const fetchTrivia = () => {
+      return fetch(
+        "https://opentdb.com/api.php?amount=1&category=18&type=boolean",
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          if (!data.results?.length) throw new Error("No Trivia data");
+          applyFact(data.results[0].question);
+        });
+    };
+
+    fetchNinjas()
+      .catch(() => fetchWiki())
+      .catch(() => fetchTrivia())
+      .catch(() => fallbackLocal());
+  }
+
+  _decodeHTML(html) {
+    const txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+  }
+
+  setPosition(x, y) {
+    this.container.position.set(x, y);
+  }
+
+  destroy() {
+    this.typewriter.destroy();
+    this.container.destroy({ children: true });
+  }
+}
+
+export class ResponderEnclosure {
+  constructor(
+    imagePath,
+    name,
+    padding = 20,
+    isHeader = false,
+    color = 0xd9b8b8,
+  ) {
+    this.container = new PIXI.Container();
+    this.bg = new ModernBox(padding, color);
     this.container.addChild(this.bg.graphics);
 
     const baseStyle = {
       fontFamily: "Roboto",
-      fill: "#ffffff",
+      fill: "#151414",
       align: "center",
     };
 
@@ -652,7 +849,7 @@ export class ResponderEnclosure {
     this.subLabel = new PIXI.Text("", {
       ...baseStyle,
       fontSize: 24,
-      fill: "#bdefff",
+      fill: "#9387c9",
     });
     this.subLabel.anchor.set(0.5);
     this.subLabel.y = 80;
@@ -724,14 +921,20 @@ export class InfoOverlay {
     this.container.visible = true;
     this.isOpen = false;
 
-    this.tabLabel = new PIXI.Text("FISH STORIES \n       ▼", {
+    // this.tabLabel = new PIXI.Text("FISH STORIES \n       ▼", {
+    //   fontFamily: "Arial Black",
+    //   fontSize: 16,
+    //   fill: "#00ced1",
+    //   letterSpacing: 2,
+    // });
+    this.tabLabel = new PIXI.Text("F\nI\nS\nH\n\nS\nT\nO\nR\nI\nE\nS\n\n▶▶", {
       fontFamily: "Arial Black",
       fontSize: 16,
       fill: "#00ced1",
       letterSpacing: 2,
     });
     this.tabLabel.anchor.set(0.5);
-    this.tabLabel.rotation = -Math.PI / 2;
+    //this.tabLabel.rotation = -Math.PI / 2;
     this.tabLabel.position.set(80, app.screen.height / 2);
     this.container.addChild(this.tabLabel);
 
@@ -748,6 +951,11 @@ export class InfoOverlay {
 
     this.panel = new PIXI.Container();
     this.container.addChild(this.panel);
+
+    const solidBg = new PIXI.Graphics()
+      .rect(0, 0, app.screen.width, app.screen.height)
+      .fill({ color: 0x000000, alpha: 1 });
+    this.panel.addChild(solidBg);
 
     this.closedX = -app.screen.width;
     this.openX = 0;
@@ -825,6 +1033,187 @@ export class InfoOverlay {
   }
 }
 
+export class OptionsOverlay {
+  constructor(app) {
+    this.app = app;
+    this.container = new PIXI.Container();
+    this.isOpen = false;
+    this.currentIndex = 0;
+
+    this.tabLabel = new PIXI.Text("RESPONDERS & CONTROLS\n         ▲", {
+      fontFamily: "Arial Black",
+      fontSize: 16,
+      fill: "#00ced1",
+      align: "center",
+    });
+    this.tabLabel.anchor.set(0.5);
+    this.tabLabel.position.set(app.screen.width / 2, app.screen.height - 100);
+    this.container.addChild(this.tabLabel);
+
+    this.bounceInterval = setInterval(() => {
+      if (!this.isOpen) {
+        anime({
+          targets: this.tabLabel,
+          y: [
+            app.screen.height - 80,
+            app.screen.height - 100,
+            app.screen.height - 80,
+            app.screen.height - 100,
+            app.screen.height - 80,
+          ],
+          duration: 800,
+          easing: "easeInOutCubic",
+        });
+      }
+    }, 3000);
+
+    this.panel = new PIXI.Container();
+    this.panel.y = app.screen.height;
+    this.container.addChild(this.panel);
+
+    const solidBg = new PIXI.Graphics()
+      .rect(0, 0, app.screen.width, app.screen.height)
+      .fill({ color: 0x000000, alpha: 1 });
+    this.panel.addChild(solidBg);
+
+    this.cardContainer = new PIXI.Container();
+    this.cardContainer.sortableChildren = true;
+    this.cardContainer.position.set(
+      app.screen.width / 2,
+      app.screen.height / 2 - 100,
+    );
+    this.panel.addChild(this.cardContainer);
+
+    this.cards = RESPONDERS.map((path, i) => {
+      const fishData = BIO_DATA[i] || { name: `Fish ${i + 1}` };
+      const enclosure = new ResponderEnclosure(
+        path,
+        fishData.name,
+        100,
+        0x5ebd9d,
+      );
+
+      const instructions = `To speak: "Hey ${fishData.name}"\nTo type: Press ${i + 1} then 'K'`;
+      const instText = new PIXI.Text(instructions, {
+        fontFamily: "Garamond",
+        fontSize: 18,
+        fill: "#ff0000",
+        align: "center",
+      });
+      instText.anchor.set(0.5);
+      instText.y = 200;
+
+      enclosure.container.addChild(instText);
+
+      this.cardContainer.addChild(enclosure.container);
+      return enclosure.container;
+    });
+
+    this.updateCarousel(true);
+
+    this.closeHint = new PIXI.Text("▼ DOWN ARROW TO CLOSE | ◀ ▶ TO NAVIGATE", {
+      fontFamily: "Arial Black",
+      fontSize: 22,
+      fill: "#15e0f7",
+    });
+    this.closeHint.anchor.set(0.5);
+    this.closeHint.position.set(app.screen.width / 2, app.screen.height - 200);
+    this.panel.addChild(this.closeHint);
+  }
+
+  updateCarousel(immediate = false) {
+    this.cards.forEach((card, i) => {
+      const diff = i - this.currentIndex;
+      const isCenter = diff === 0;
+
+      const peekWidth = 10;
+      let targetX = 0;
+
+      if (diff > 0) {
+        targetX = 160 + diff * peekWidth;
+      } else if (diff < 0) {
+        targetX = -160 + diff * peekWidth;
+      }
+
+      const targetScale = isCenter ? 1 : 0.95;
+      const targetAlpha = isCenter ? 1 : 0.2;
+      const targetZ = 10 - Math.abs(diff);
+
+      if (immediate) {
+        card.x = targetX;
+        card.scale.set(targetScale);
+        card.alpha = targetAlpha;
+        card.zIndex = targetZ;
+      } else {
+        anime({
+          targets: card,
+          x: targetX,
+          alpha: targetAlpha,
+          duration: 500,
+          easing: "easeOutExpo",
+        });
+
+        anime({
+          targets: card.scale,
+          x: targetScale,
+          y: targetScale,
+          duration: 500,
+          easing: "easeOutExpo",
+        });
+        card.zIndex = targetZ;
+      }
+    });
+
+    this.cardContainer.sortChildren();
+  }
+
+  next() {
+    if (this.currentIndex < this.cards.length - 1) {
+      this.currentIndex++;
+      this.updateCarousel();
+    }
+  }
+
+  prev() {
+    if (this.currentIndex > 0) {
+      this.currentIndex--;
+      this.updateCarousel();
+    }
+  }
+
+  rollout() {
+    if (this.isOpen) return;
+    this.isOpen = true;
+    this.tabLabel.alpha = 0;
+    anime({
+      targets: this.panel,
+      y: 0,
+      duration: 800,
+      easing: "easeOutExpo",
+    });
+  }
+
+  rollin() {
+    if (!this.isOpen) return;
+    this.isOpen = false;
+    anime({
+      targets: this.panel,
+      y: this.app.screen.height,
+      duration: 600,
+      easing: "easeInExpo",
+      complete: () => {
+        this.tabLabel.alpha = 1;
+      },
+    });
+  }
+
+  destroy() {
+    if (this.bounceInterval) {
+      clearInterval(this.bounceInterval);
+    }
+  }
+}
+
 function fitSprite(sprite, maxWidth, maxHeight) {
   const scale = Math.min(
     maxWidth / sprite.texture.width,
@@ -833,110 +1222,3 @@ function fitSprite(sprite, maxWidth, maxHeight) {
 
   sprite.scale.set(scale);
 }
-
-// export class IdleTitle {
-//   constructor(text, subtext) {
-//     this.container = new PIXI.Container();
-
-//     this.title = this._createGradientText(
-//       text.toUpperCase(),
-//       100,
-//       "Arial Black",
-//     );
-//     this.title.anchor.set(0.5);
-//     this.title.y = 0;
-
-//     this.subtitle = new PIXI.Text({
-//       text: subtext,
-//       style: {
-//         fontFamily: "Garamond",
-//         fontSize: 28,
-//         fill: "#e0f7fa",
-//         letterSpacing: 4,
-//         fontStyle: "italic",
-//         align: "center",
-//       },
-//     });
-
-//     this.subtitle.anchor.set(0.5);
-//     this.subtitle.y = 80;
-
-//     this.container.addChild(this.title);
-//     this.container.addChild(this.subtitle);
-
-//     this.startAnimations();
-//   }
-
-//   /**
-//    * The following function is pasted straight from Claude
-//    * ------ VERIFY --------
-//    */
-//   _createGradientText(text, fontSize, fontFamily) {
-//     const canvas = document.createElement("canvas");
-//     const ctx = canvas.getContext("2d");
-
-//     const font = `bold ${fontSize}px ${fontFamily}`;
-//     ctx.font = font;
-
-//     const metrics = ctx.measureText(text);
-//     const padding = 40;
-//     canvas.width = metrics.width + padding * 2;
-//     canvas.height = fontSize * 1.5 + padding;
-
-//     // Re-apply font after resize (canvas reset clears it)
-//     ctx.font = font;
-//     ctx.textBaseline = "middle";
-
-//     // Drop shadow
-//     ctx.shadowColor = "#027fb8";
-//     ctx.shadowBlur = 20;
-//     ctx.shadowOffsetX = 0;
-//     ctx.shadowOffsetY = 0;
-
-//     // Vertical gradient: white → aqua
-//     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-//     gradient.addColorStop(0, "#ffffff");
-//     gradient.addColorStop(1, "#00d2ff");
-
-//     ctx.fillStyle = gradient;
-//     ctx.fillText(text, padding, canvas.height / 2);
-
-//     const texture = PIXI.Texture.from(canvas);
-//     const sprite = new PIXI.Sprite(texture);
-//     sprite.anchor.set(0.5);
-//     return sprite;
-//   }
-
-//   startAnimations() {
-//     const baseY = this.container.y;
-//     anime({
-//       targets: this.container,
-//       y: [baseY, baseY - 15, baseY],
-//       duration: 3000,
-//       direction: "alternate",
-//       loop: true,
-//       easing: "easeInOutSine",
-//     });
-
-//     anime({
-//       targets: this.title.style,
-//       dropShadowBlur: [8, 28, 8],
-//       duration: 2000,
-//       direction: "alternate",
-//       loop: true,
-//       easing: "easeInOutQuad",
-//     });
-//   }
-
-//   setPosition(x, y) {
-//     this.container.position.set(x, y);
-//     anime.remove(this.container);
-//     anime({
-//       targets: this.container,
-//       y: [y, y - 15, y],
-//       duration: 3000,
-//       loop: true,
-//       easing: "easeInOutSine",
-//     });
-//   }
-// }

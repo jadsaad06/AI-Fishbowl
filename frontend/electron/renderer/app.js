@@ -14,15 +14,12 @@ import {
   getResponder,
 } from "./state/store.js";
 import { setScene, currentScene } from "./scenes/index.js";
-import { InfoOverlay } from "./assets/sprites_anime.js";
+import { InfoOverlay, OptionsOverlay } from "./assets/sprites_anime.js";
 import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
 import { ListeningSceneAnime } from "./scenes/ListeningSceneAnime.js";
 import { RespondingSceneAnime } from "./scenes/RespondingSceneAnime.js";
 
-export const BACKGROUNDS = [
-  "assets/images/idle_bg_main.png",
-  "assets/images/idle_bg_main_2.png",
-];
+export const BACKGROUNDS = ["assets/images/deep_sea_bg.jpg"];
 
 export const LISTENING_BACKGROUND = ["assets/images/light_background_1.png"];
 
@@ -362,6 +359,30 @@ function setupKeyboardInput() {
 
     if (currentState === "idle") {
       const activeScene = window.currentActiveScene;
+      if (!activeScene) return;
+
+      if (activeScene.optionsOverlay) {
+        const options = activeScene.optionsOverlay;
+
+        if (options.isOpen) {
+          switch (e.key) {
+            case "ArrowDown":
+              options.rollin();
+              return;
+            case "ArrowRight":
+              options.next();
+              return;
+            case "ArrowLeft":
+              options.prev();
+              return;
+          }
+        } else {
+          if (e.key === "ArrowUp") {
+            options.rollout();
+            return;
+          }
+        }
+      }
 
       if (activeScene && activeScene.infoOverlay) {
         const overlay = activeScene.infoOverlay;
