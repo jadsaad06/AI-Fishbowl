@@ -550,7 +550,7 @@ export class SlidingOverlay {
       closeHint = "",
       bgColor = "#000000",
       bgAlpha = 0.95,
-      animationDuration = 1500,
+      animationDuration = 1200,
     },
   ) {
     this.app = app;
@@ -669,6 +669,7 @@ export class SlidingOverlay {
   rollout() {
     if (this.isOpen) return;
     this.isOpen = true;
+    this.container.zIndex = 100;
 
     this.animatePanel(this.openPos);
   }
@@ -676,6 +677,7 @@ export class SlidingOverlay {
   rollin() {
     if (!this.isOpen) return;
     this.isOpen = false;
+    this.container.zIndex = 1;
 
     this.animatePanel(this.closedPos);
   }
@@ -807,7 +809,7 @@ export class InfoOverlay extends SlidingOverlay {
   populate() {
     this.cardContainer = new PIXI.Container();
     this.cardContainer.sortableChildren = true;
-    const spacing = 365;
+    const spacing = 380;
 
     const startX = -((this.data.length - 1) * spacing) / 2;
 

@@ -25,6 +25,7 @@ export class IdleSceneAnime {
   constructor(app) {
     this.app = app;
     this.container = new PIXI.Container();
+    this.container.sortableChildren = true;
 
     this.bgManager = new BackgroundManager(app, BACKGROUNDS);
     this.container.addChild(this.bgManager.container);
