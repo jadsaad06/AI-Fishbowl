@@ -602,20 +602,37 @@ export class SlidingOverlay {
   }
 
   initTabAnimation() {
-    this.bounceInterval = setInterval(() => {
-      if (!this.isOpen && this.tabLabel.alpha > 0.5) {
-        const isHorizontal = this.side === "left" || this.side === "right";
-        const axis = isHorizontal ? "x" : "y";
-        const startPos = isHorizontal ? this.tabLabel.x : this.tabLabel.y;
+    if (this.bounceInterval) clearInterval(this.bounceInterval);
 
-        anime({
-          targets: this.tabLabel,
-          [axis]: [startPos, startPos + 20, startPos],
-          duration: 800,
-          easing: "easeInOutCubic",
-        });
-      }
-    }, 3000);
+    const config = {
+      left: { axis: "x", distance: 30 }, // Move Right (+20) then back
+      right: { axis: "x", distance: -30 }, // Move Left (-20) then back
+      bottom: { axis: "y", distance: -30 }, // Move Up (-20) then back
+      top: { axis: "y", distance: 30 }, // Move Down (+20) then back
+    }[this.side];
+
+    const axis = config.axis;
+    const startPos = this.tabLabel[axis];
+
+    this.tabAnimation = anime({
+      targets: this.tabLabel,
+      [axis]: [
+        { value: startPos + config.distance, duration: 400 },
+        { value: startPos, duration: 400 },
+        { value: startPos + config.distance, duration: 400 },
+        { value: startPos, duration: 400 },
+      ],
+      easing: "easeInOutCubic",
+      loop: true,
+      delay: 2000,
+      autoplay: true,
+      update: () => {
+        if (this.isOpen) {
+          this.tabAnimation.pause();
+          this.tabLabel[axis] = startPos;
+        }
+      },
+    });
   }
 
   setupPositions() {
@@ -728,6 +745,7 @@ export class ResponderEnclosure {
     const baseStyle = {
       fill: "#ffea00",
       align: "center",
+      fontSize: 20,
       wordWrap: true,
       wordWrapWidth: fixedSize ? fixedSize.width - padding * 2 : 280,
     };
@@ -822,7 +840,7 @@ export class InfoOverlay extends SlidingOverlay {
           width: 360,
           height: 580,
         },
-        { c1: "#f53500", c2: "#a8540a" },
+        { c1: "#ec4d20", c2: "#ef8325" },
         {
           header: { fontSize: 24, fontFamily: "Verdana" },
           subLabel: { fontSize: 18, fontFamily: "Garamond" },
