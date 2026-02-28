@@ -18,7 +18,7 @@ import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
 import { ListeningSceneAnime } from "./scenes/ListeningSceneAnime.js";
 import { RespondingSceneAnime } from "./scenes/RespondingSceneAnime.js";
 
-export const BACKGROUNDS = ["assets/images/deep_sea_bg.jpg"];
+export const BACKGROUNDS = ["assets/images/idle_hd_2.jpg"];
 
 export const LISTENING_BACKGROUND = ["assets/images/light_background_1.png"];
 
@@ -27,26 +27,31 @@ export const RESPONDER_LORE = [
     name: "Pinto",
     bio: "- A cute, friendly, chill guy.\n- Born and brought up off the coast of Astoria, Oregon.\n- Holds the Pacific Coral Cuteness title for 4 years running.\n- Loves to help out, but can be a little too relaxed at times.\n- Claims that the beans were named after him, but no one is sure if that one's true.",
     path: "assets/images/responder_1.png",
+    id: 1,
   },
   {
     name: "Jimbo",
     bio: "- A little rough around the edges, but such is life on the Atlantic Coast.\n- Banished by the East Coast Fish Union for being a bit too competitive.\n- Moved to Oregon to start fresh in 2010, but he's grumpier than back then.\n- DOES NOT LIKE FLORIDA\n- Still very sharp though.",
     path: "assets/images/responder_2.png",
+    id: 2,
   },
   {
     name: "Bongo",
     bio: "- He's been depressed for a while now, Pinto says it's because he's on social media too much.\n- Born off the coast of Japan, he drifted aimlessly across the Pacific.\n- Extremely intelligent, but extremely shy.\n- Be nice to him!",
     path: "assets/images/responder_3.png",
+    id: 3,
   },
   {
     name: "Koko",
     bio: "- Your aquatic CS advisor\n- Grew up in the Willamette River and has a special bond with Kiki\n- Has a vast knowledge of CS concepts and is always ready to help you navigate through your coding journey\n- Is professional, but values a friendly and approachable demeanor",
     path: "assets/images/responder_advisor.png",
+    id: 4,
   },
   {
     name: "Kiki",
     bio: "- Your aquatic CS Grad School Advisor\n- Born and raised in the Columbia River, but has traveled across the Willamette with Koko\n- Is familiar with PSU Grad School policies since she has been in the area for a while\n- Values precision, clarity, and prides herself on knowledge collection",
     path: "assets/images/responder_gradvisor.png",
+    id: 5,
   },
 ];
 
@@ -54,51 +59,46 @@ export const RESPONDER_OPTIONS = [
   {
     name: "Pinto",
     bio:
-      "----------------------------------------------------------------\n\n" +
+      "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 1\n\n" +
       "- GREETING: 'Hey Pinto', 'Hi Pinto', 'Okay Pinto', 'Hello Pinto'\n\n" +
-      "- TOOLS: LeetCode, Dad Jokes, Google Maps \n\n" +
-      "----------------------------------------------------------------\n\n",
+      "- TOOLS: LeetCode, Dad Jokes, Google Maps \n\n",
     path: "assets/images/responder_1.png",
   },
   {
     name: "Jimbo",
     bio:
-      "----------------------------------------------------------------\n\n" +
+      "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 2\n\n" +
       "- GREETING: 'Hey Jimbo', 'Hi Jimbo', 'Okay Jimbo', 'Hello Jimbo'\n\n" +
-      "- TOOLS: Weather, Google Maps \n\n" +
-      "----------------------------------------------------------------\n\n",
+      "- TOOLS: Weather, Google Maps \n\n",
     path: "assets/images/responder_2.png",
   },
   {
     name: "Bongo",
     bio:
-      "----------------------------------------------------------------\n\n" +
+      "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 3\n\n" +
       "- GREETING: 'Hey Bongo', 'Hi Bongo', 'Okay Bongo', 'Hello Bongo'\n\n" +
-      "- TOOLS: LeetCode, Dad Jokes, Weather \n\n" +
-      "----------------------------------------------------------------\n\n",
+      "- TOOLS: LeetCode, Dad Jokes, Weather \n\n",
     path: "assets/images/responder_3.png",
   },
   {
     name: "Koko",
     bio:
-      "----------------------------------------------------------------\n\n" +
+      "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 4\n\n" +
       "- GREETING: 'Hey Koko', 'Hi Koko', 'Okay Koko', 'Hello Koko'\n\n" +
-      "- TOOLS: All Undergraduate Advising \n\n" +
-      "----------------------------------------------------------------\n\n",
+      "- TOOLS: All Undergraduate Advising \n\n",
     path: "assets/images/responder_advisor.png",
   },
   {
     name: "Kiki",
     bio:
-      "----------------------------------------------------------------\n\n" +
+      "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 5\n\n" +
       "- GREETING: 'Hey Kiki', 'Hi Kiki', 'Okay Kiki', 'Hello Kiki'\n\n" +
-      "- TOOLS: All Graduate Advising \n\n" +
-      "----------------------------------------------------------------\n\n",
+      "- TOOLS: All Graduate Advising \n\n",
     path: "assets/images/responder_gradvisor.png",
   },
 ];
@@ -124,7 +124,7 @@ export const CONTROLS = [
       "- BUT, don't worry, you can ask them anything.\n\n",
   },
   {
-    name: "TO SELECT RANDOM FISH",
+    name: "RANDOM FISH",
     bio:
       "- View Fish Stories With ▶ And Pick Your Favorite\n\n" +
       "- View Available Tools, And The Fish Number For Your Fish With ▲\n\n" +

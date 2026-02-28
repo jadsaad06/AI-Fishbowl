@@ -14,8 +14,8 @@ export class GradientText {
       x = 0,
       y = 0,
       bold = true,
-      shadowColor = "#027fb8",
-      shadowBlur = 20,
+      shadowColor = "#979392",
+      shadowBlur = 10,
       padding = 40,
     } = options;
 
@@ -338,29 +338,48 @@ export class GlassBox extends ModernBox {
 
   reshape(targets, fixedSize = null) {
     super.reshape(targets, fixedSize);
-    if (this.graphics.context) {
+    if (this.graphics.context && !this.graphics.destroyed) {
       this.drawGlassEffects(targets, fixedSize);
     }
   }
 
   drawGlassEffects(targets, fixedSize) {
-    let width, height;
+    let width, height, minX, minY;
+
     if (fixedSize) {
       width = fixedSize.width;
       height = fixedSize.height;
+      minX = -width / 2;
+      minY = -height / 2;
     } else {
-      const target = Array.isArray(targets) ? targets[0] : targets;
-      width = target.width + this.padding * 2;
-      height = target.height + this.padding * 2;
+      const targetArray = Array.isArray(targets) ? targets : [targets];
+      let tminX = Infinity,
+        tminY = Infinity;
+      let tmaxX = -Infinity,
+        tmaxY = -Infinity;
+
+      targetArray.forEach((t) => {
+        if (!t || t.destroyed) return;
+        const w = t.width;
+        const h = t.height;
+        const ax = t.anchor ? t.anchor.x : 0;
+        const ay = t.anchor ? t.anchor.y : 0;
+        const x = t.x - ax * w;
+        const y = t.y - ay * h;
+        tminX = Math.min(tminX, x);
+        tminY = Math.min(tminY, y);
+        tmaxX = Math.max(tmaxX, x + w);
+        tmaxY = Math.max(tmaxY, y + h);
+      });
+
+      width = tmaxX - tminX + this.padding * 2;
+      height = tmaxY - tminY + this.padding * 2;
+      minX = tminX - this.padding;
+      minY = tminY - this.padding;
     }
 
-    const minX = -width / 2;
-    const minY = -height / 2;
-
-    this.graphics.clear();
-
     this.graphics.fill({ color: 0xffffff, alpha: 0.1 });
-    this.graphics.roundRect(minX, minY, width, height, 20);
+    this.graphics.roundRect(minX + 4, minY + 4, width - 8, height - 8, 15);
     this.graphics.fill();
 
     this.graphics.fill({ color: 0xffffff, alpha: 0.2 });
@@ -369,7 +388,7 @@ export class GlassBox extends ModernBox {
 
     this.graphics.stroke({
       width: 2.5,
-      color: 0x87dced,
+      color: 0xf53500,
       alpha: 0.8,
       alignment: 0,
     });
@@ -398,26 +417,26 @@ export class FunFactBox {
     this.container = new PIXI.Container();
 
     this.header = new GradientText({
-      text: "Fun Fact",
-      fontSize: 28,
-      fontFamily: "Arial Black",
-      gradientColor1: "#79eaea",
-      gradientColor2: "#02aaad",
+      text: "Random Fact Generator",
+      fontSize: 56,
+      fontFamily: "Brush Script MT",
+      gradientColor1: "#f53500",
+      gradientColor2: "#a8540a",
       x: 0,
-      y: -60,
+      y: -160,
       bold: true,
-      shadowColor: "#04618b",
+      shadowColor: "#eb9f8a",
       shadowBlur: 12,
     });
 
     this.typewriter = new TypewriterText(
       "",
       {
-        fill: "#ffffff",
-        fontSize: 22,
-        fontFamily: "Roboto",
+        fill: "#ffea00",
+        fontSize: 28,
+        fontFamily: "Georgia",
         wordWrap: true,
-        wordWrapWidth: 700,
+        wordWrapWidth: 600,
         align: "center",
       },
       { durationPerChar: 35 },
@@ -436,8 +455,8 @@ export class FunFactBox {
 
   _reshapeBox() {
     this.box.reshape(this.typewriter.textObject, {
-      width: 800,
-      height: 200,
+      width: 650,
+      height: 450,
     });
   }
 
@@ -530,8 +549,8 @@ export class SlidingOverlay {
       tabText = "MENU",
       closeHint = "",
       bgColor = "#000000",
-      bgAlpha = 0.9,
-      animationDuration = 700,
+      bgAlpha = 0.95,
+      animationDuration = 1500,
     },
   ) {
     this.app = app;
@@ -543,11 +562,12 @@ export class SlidingOverlay {
 
     // -------- TAB LABEL (Will sit at the edge of the screen) --------
     this.tabLabel = new PIXI.Text(tabText, {
-      fontFamily: "Arial Black",
-      fontSize: 16,
-      fill: "#00ced1",
+      fontFamily: "Trebuchet MS",
+      fontSize: 20,
+      fill: "#ffea00",
       letterSpacing: 2,
       align: "center",
+      fontWeight: "bold",
     });
 
     this.tabLabel.anchor.set(0.5);
@@ -564,15 +584,15 @@ export class SlidingOverlay {
 
     if (closeHint) {
       this.closeText = new PIXI.Text(closeHint, {
-        fontFamily: "Arial Black",
+        fontFamily: "Brush Script MT",
         fontSize: 28,
-        fill: "#15e0f7",
+        fill: "#ffea00",
       });
 
       this.closeText.anchor.set(0.5);
       this.closeText.position.set(
         app.screen.width / 2,
-        app.screen.height - 220,
+        app.screen.height * 0.15,
       );
       this.panel.addChild(this.closeText);
     }
@@ -674,57 +694,82 @@ export class SlidingOverlay {
 }
 
 export class ResponderEnclosure {
-  constructor(data, padding = 20, color = 0xd9b8b8, fixedSize = null) {
+  constructor(
+    data,
+    padding = 20,
+    color = 0xd9b8b8,
+    fixedSize = null,
+    gradientColors = { c1: "#efef05", c2: "#db9271" },
+    styles = {},
+  ) {
+    const defaultStyles = {
+      header: {
+        fontSize: fixedSize ? 28 : 36,
+        fontFamily: "Tahoma",
+      },
+      subLabel: {
+        fontSize: data.path ? 14 : 18,
+        fontFamily: data.path ? "Garamond" : "Verdana",
+      },
+    };
+
+    this.config = {
+      header: { ...defaultStyles.header, ...styles.header },
+      subLabel: { ...defaultStyles.subLabel, ...styles.subLabel },
+    };
+
     this.container = new PIXI.Container();
-    this.bg = new ModernBox(padding, color);
+    this.bg = new GlassBox(padding);
     this.container.addChild(this.bg.graphics);
     this.fixedSize = fixedSize;
 
     const baseStyle = {
-      fontFamily: "Garamond",
-      fill: "#151414",
+      fill: "#ffea00",
       align: "center",
       wordWrap: true,
       wordWrapWidth: fixedSize ? fixedSize.width - padding * 2 : 280,
     };
 
-    this.label = new PIXI.Text(data.name.toUpperCase(), {
-      ...baseStyle,
-      fontSize: 28,
-      fontWeight: "bold",
+    this.labelObj = new GradientText({
+      text: data.name.toUpperCase(),
+      fontSize: this.config.header.fontSize,
+      fontFamily: this.config.header.fontFamily,
+      gradientColor1: gradientColors.c1,
+      gradientColor2: gradientColors.c2,
+      bold: true,
     });
+
+    this.label = this.labelObj.sprite;
     this.label.anchor.set(0.5);
-    this.label.y = fixedSize ? -fixedSize.height / 2 + padding + 20 : -220;
     this.container.addChild(this.label);
+
+    const startY = fixedSize
+      ? -fixedSize.height / 2 + padding + this.label.height / 2
+      : 0;
+    this.label.y = startY;
+
+    let nextY = this.label.y + this.label.height / 2 + 20;
 
     if (data.path) {
       this.sprite = PIXI.Sprite.from(data.path);
       this.sprite.anchor.set(0.5);
-      fitSprite(this.sprite, 180, 180);
-      this.sprite.y = fixedSize ? -50 : -80;
-      this.container.addChild(this.sprite);
 
-      if (data.bio) {
-        this.subLabel = new PIXI.Text(data.bio, {
-          ...baseStyle,
-          fontSize: 14,
-          align: "left",
-        });
-        this.subLabel.anchor.set(0.5, 0);
-        this.subLabel.y = 60;
-        this.container.addChild(this.subLabel);
-      }
+      fitSprite(this.sprite, 180, 180);
+
+      this.sprite.y = nextY + this.sprite.height / 2;
+      this.container.addChild(this.sprite);
+      nextY = this.sprite.y + this.sprite.height / 2 + 20;
     }
 
-    if (!data.path && data.bio) {
+    if (data.bio) {
       this.subLabel = new PIXI.Text(data.bio, {
         ...baseStyle,
-        fontFamily: "Verdana",
-        fontSize: 16,
-        align: "left",
+        fontFamily: this.config.subLabel.fontFamily,
+        fontSize: this.config.subLabel.fontSize,
+        align: "center",
       });
-      this.subLabel.anchor.set(0.5, 0);
-      this.subLabel.y = fixedSize ? -100 : -100;
+      this.subLabel.anchor.set(0.5, 0); // Top-center anchor
+      this.subLabel.y = nextY;
       this.container.addChild(this.subLabel);
     }
 
@@ -767,10 +812,20 @@ export class InfoOverlay extends SlidingOverlay {
     const startX = -((this.data.length - 1) * spacing) / 2;
 
     this.cards = this.data.map((data, i) => {
-      const card = new ResponderEnclosure(data, 40, 0xffffff, {
-        width: 350,
-        height: 500,
-      });
+      const card = new ResponderEnclosure(
+        data,
+        40,
+        0xffffff,
+        {
+          width: 360,
+          height: 580,
+        },
+        { c1: "#f53500", c2: "#a8540a" },
+        {
+          header: { fontSize: 24, fontFamily: "Verdana" },
+          subLabel: { fontSize: 18, fontFamily: "Garamond" },
+        },
+      );
 
       if (this.type === "linear") {
         card.container.x = startX + i * spacing;

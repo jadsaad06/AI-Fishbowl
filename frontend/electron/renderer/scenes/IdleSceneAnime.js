@@ -10,6 +10,7 @@ import {
   GlassBox,
   FunFactBox,
   SlidingOverlay,
+  ResponderEnclosure,
 } from "../assets/sprites_anime.js";
 import {
   BACKGROUNDS,
@@ -40,27 +41,28 @@ export class IdleSceneAnime {
     this.swarmUpdate = () => this.swarm.update();
     PIXI.Ticker.shared.add(this.swarmUpdate);
 
-    this.title = new GradientText({
-      text: "CORAL NET",
-      fontSize: 80,
-      fontFamily: "Arial",
-      gradientColor1: "#efef05",
-      gradientColor2: "#db9271",
-      x: app.screen.width / 2,
-      y: app.screen.height / 2,
-      bold: true,
-      shadowColor: "rgba(239, 255, 11, 0.5)",
-      shadowBlur: 10,
-    });
+    const titleData = {
+      name: "CORAL NET",
+    };
 
-    this.titleBox = new GlassBox(20);
-    this.titleBox.graphics.position.set(
-      this.title.sprite.x,
-      this.title.sprite.y,
+    this.titleEnclosure = new ResponderEnclosure(
+      titleData,
+      40,
+      0xffffff,
+      {
+        width: 600,
+        height: 200,
+      },
+      { c1: "#f53500", c2: "#a8540a" },
+      {
+        header: { fontSize: 52, fontFamily: "Verdana" },
+      },
     );
-    this.container.addChild(this.titleBox.graphics);
-    this.container.addChild(this.title.sprite);
-    this.titleBox.reshape(this.title.sprite);
+    this.titleEnclosure.container.position.set(
+      app.screen.width / 2,
+      app.screen.height * 0.2,
+    );
+    this.container.addChild(this.titleEnclosure.container);
 
     this.funFactBox = new FunFactBox(app, [
       "The first computer bug was an actual bug — a moth found in a relay.",
@@ -68,8 +70,8 @@ export class IdleSceneAnime {
       "The first 1GB hard drive weighed 550 lbs and cost $40,000.",
     ]);
     this.funFactBox.setPosition(
-      app.screen.width / 2,
-      (app.screen.height / 2) * 0.25,
+      (app.screen.width / 2) * 0.8,
+      app.screen.height * 0.6,
     );
     this.container.addChild(this.funFactBox.container);
 
@@ -81,28 +83,77 @@ export class IdleSceneAnime {
     this.infoOverlay = new InfoOverlay(app, RESPONDER_LORE, {
       side: "left",
       tabText: "F\nI\nS\nH\n\nS\nT\nO\nR\nI\nE\nS\n\n▶▶",
-      closeHint: "◀ LEFT ARROW TO CLOSE FISH STORIES",
+      closeHint: "◀ Left Arrow To Close",
     });
-    this.container.addChild(this.infoOverlay.container);
 
     this.optionsOverlay = new InfoOverlay(this.app, RESPONDER_OPTIONS, {
       side: "bottom",
       tabText: "RESPONDERS & CONTROLS\n▲",
-      closeHint: "▼ DOWN ARROW TO CLOSE | ◀ ▶ TO NAVIGATE",
+      closeHint: "▼ Down Arrow To Close | ◀ ▶ To Navigate",
       type: "carousel",
     });
-    this.container.addChild(this.optionsOverlay.container);
 
     this.controlsOverlay = new InfoOverlay(app, CONTROLS, {
       side: "right",
-      tabText: "◀◀\n\nC\nO\nN\nT\nR\nO\nL\nS",
-      closeHint: "RIGHT ARROW TO CLOSE CONTROLS ▶",
+      tabText: "C\nO\nN\nT\nR\nO\nL\nS\n\n◀◀",
+      closeHint: "Right Arrow To Close ▶",
     });
-    this.container.addChild(this.controlsOverlay.container);
 
     this.shuffleInterval = setInterval(() => {
       this.bgManager.next();
     }, 30000);
+
+    this.responderDisplayContainer = new PIXI.Container();
+    this.container.addChild(this.responderDisplayContainer);
+    this.container.addChild(this.infoOverlay.container);
+    this.container.addChild(this.optionsOverlay.container);
+    this.container.addChild(this.controlsOverlay.container);
+
+    this.updateActiveResponder = (responderId) => {
+      this.responderDisplayContainer
+        .removeChildren()
+        .forEach((child) => child.destroy({ children: true }));
+
+      if (responderId === null || responderId === undefined) return;
+
+      const data =
+        RESPONDER_LORE.find((f) => f.id == responderId) ||
+        RESPONDER_LORE[responderId - 1];
+
+      if (!data) return;
+      const displayData = {
+        name: "Your Fish",
+        path: data.path,
+        bio:
+          `To Talk: Say 'Hey ${data.name}'\n` +
+          `To Type: Press ${data.id} and Press K\n` +
+          `To Select Other: Press ▲ to view options\n` +
+          `To view stories: Press ◀ to view stories\n` +
+          `To view controls: Press ▶ to view controls`,
+      };
+
+      const activeFishCard = new ResponderEnclosure(
+        displayData,
+        20,
+        0xffffff,
+        { width: 320, height: 450 },
+        { c1: "#f53500", c2: "#a8540a" },
+      );
+
+      activeFishCard.container.position.set(
+        this.app.screen.width * 0.7,
+        this.app.screen.height * 0.6,
+      );
+
+      this.responderDisplayContainer.addChild(activeFishCard.container);
+    };
+
+    this.unsubscribeResponder = subscribeResponder((id) =>
+      this.updateActiveResponder(id),
+    );
+
+    const initialId = getResponder();
+    if (initialId) this.updateActiveResponder(initialId);
 
     window.currentActiveScene = this;
   }
@@ -110,6 +161,10 @@ export class IdleSceneAnime {
   destroy() {
     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
     if (this.funFactInterval) clearInterval(this.funFactInterval);
+    if (this.unsubscribeResponder) this.unsubscribeResponder();
+    if (this.responderDisplayContainer) {
+      this.responderDisplayContainer.destroy({ children: true });
+    }
 
     if (this.infoOverlay) this.infoOverlay.destroy();
     if (this.optionsOverlay) this.optionsOverlay.destroy();
