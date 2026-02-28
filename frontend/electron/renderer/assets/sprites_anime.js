@@ -626,12 +626,12 @@ export class SlidingOverlay {
       loop: true,
       delay: 2000,
       autoplay: true,
-      update: () => {
-        if (this.isOpen) {
-          this.tabAnimation.pause();
-          this.tabLabel[axis] = startPos;
-        }
-      },
+      // update: () => {
+      //   if (this.isOpen) {
+      //     this.tabAnimation.pause();
+      //     this.tabLabel[axis] = startPos;
+      //   }
+      // },
     });
   }
 
