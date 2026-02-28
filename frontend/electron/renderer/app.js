@@ -317,16 +317,10 @@ async function init() {
         currentScene.destroy();
       }
       setScene(app, state);
-
-      if (infoOverlay && infoOverlay.container) {
-        app.stage.addChild(infoOverlay.container);
-      }
     });
 
     /** Default landing page initialization */
     setScene(app, "idle");
-    infoOverlay = new InfoOverlay(app);
-    app.stage.addChild(infoOverlay.container);
     setupKeyboardInput();
   } catch (error) {
     console.error("Failed to initialize PIXI application:", error);
@@ -393,6 +387,7 @@ function setupKeyboardInput() {
         }
         return;
       }
+
       switch (e.key) {
         case "ArrowUp":
           optionsOverlay.rollout();
