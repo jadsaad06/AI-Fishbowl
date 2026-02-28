@@ -22,6 +22,7 @@ import {
   RESPONDERS,
   RESPONDER_LORE,
   CONTROLS,
+  RESPONDER_OPTIONS,
 } from "../app.js";
 
 export class IdleSceneAnime {
@@ -89,6 +90,14 @@ export class IdleSceneAnime {
     });
     this.container.addChild(this.infoOverlay.container);
 
+    this.optionsOverlay = new InfoOverlay(this.app, RESPONDER_OPTIONS, {
+      side: "bottom",
+      tabText: "RESPONDERS & CONTROLS\n▲",
+      closeHint: "▼ DOWN ARROW TO CLOSE | ◀ ▶ TO NAVIGATE",
+      type: "carousel",
+    });
+    this.container.addChild(this.optionsOverlay.container);
+
     this.controlsOverlay = new InfoOverlay(app, CONTROLS, {
       side: "right",
       tabText: "◀◀\n\nC\nO\nN\nT\nR\nO\nL\nS",
@@ -106,6 +115,10 @@ export class IdleSceneAnime {
   destroy() {
     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
     if (this.funFactInterval) clearInterval(this.funFactInterval);
+
+    if (this.infoOverlay) this.infoOverlay.destroy();
+    if (this.optionsOverlay) this.optionsOverlay.destroy();
+    if (this.controlsOverlay) this.controlsOverlay.destroy();
 
     this.funFactBox.destroy();
 

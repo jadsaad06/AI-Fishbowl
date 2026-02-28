@@ -1163,42 +1163,112 @@ export class ResponderEnclosure {
 
 export class InfoOverlay extends SlidingOverlay {
   constructor(app, data, config) {
-    super(app, {
-      side: config.side || "left",
-      tabText: config.tabText || "",
-      closeHint: config.closeHint || "",
-      bgColor: config.bgColor || 0x000000,
-      bgAlpha: config.bgAlpha || 0.9,
-    });
+    super(app, config);
 
     this.data = data;
+    this.type = config.type || "linear";
+    this.currentIndex = 0;
+    this.cards = [];
+
     this.populate();
+
+    if (this.type === "carousel") {
+      this.updateCarousel(true);
+    }
   }
 
   populate() {
-    const cardContainer = new PIXI.Container();
+    this.cardContainer = new PIXI.Container();
+    this.cardContainer.sortableChildren = true;
     const spacing = 365;
 
     const startX = -((this.data.length - 1) * spacing) / 2;
 
-    this.data.forEach((data, i) => {
+    this.cards = this.data.map((data, i) => {
       const card = new ResponderEnclosure(data, 40, 0xffffff, {
         width: 350,
         height: 500,
       });
 
-      card.container.x = startX + i * spacing;
-      cardContainer.addChild(card.container);
+      if (this.type === "linear") {
+        card.container.x = startX + i * spacing;
+      }
+      this.cardContainer.addChild(card.container);
+      return card.container;
     });
 
-    cardContainer.x = this.app.screen.width / 2;
-    cardContainer.y = this.app.screen.height / 2;
+    this.cardContainer.x = this.app.screen.width / 2;
+    this.cardContainer.y = this.app.screen.height / 2;
 
-    this.panel.addChild(cardContainer);
+    this.panel.addChild(this.cardContainer);
 
     if (this.closeText) {
       this.panel.addChild(this.closeText);
     }
+  }
+
+  updateCarousel(immediate = false) {
+    if (this.type !== "carousel") return;
+
+    const peekWidth = 350;
+
+    this.cards.forEach((card, i) => {
+      const diff = i - this.currentIndex;
+      const isCenter = diff === 0;
+
+      const targetX = diff * peekWidth;
+      const targetScale = isCenter ? 1 : 0.75;
+      const targetAlpha = isCenter ? 1 : 0.2;
+      const targetZ = 10 - Math.abs(diff);
+
+      card.zIndex = targetZ;
+
+      if (immediate) {
+        card.x = targetX;
+        card.scale.set(targetScale);
+        card.alpha = targetAlpha;
+      } else {
+        anime.remove(card);
+        anime.remove(card.scale);
+        anime({
+          targets: card,
+          x: targetX,
+          alpha: targetAlpha,
+          duration: 600,
+          easing: "easeOutExpo",
+        });
+        anime({
+          targets: card.scale,
+          x: targetScale,
+          y: targetScale,
+          duration: 600,
+          easing: "easeOutExpo",
+        });
+      }
+    });
+
+    this.cardContainer.sortChildren();
+  }
+
+  next() {
+    if (this.type === "carousel" && this.currentIndex < this.cards.length - 1) {
+      this.currentIndex++;
+      this.updateCarousel();
+    }
+  }
+
+  prev() {
+    if (this.type === "carousel" && this.currentIndex > 0) {
+      this.currentIndex--;
+      this.updateCarousel();
+    }
+  }
+
+  destroy() {
+    if (this.cards) {
+      this.cards.forEach((card) => anime.remove([card, card.scale]));
+    }
+    super.destroy();
   }
 }
 
@@ -1327,92 +1397,7 @@ export class InfoOverlay extends SlidingOverlay {
 // }
 
 export class OptionsOverlay {
-  constructor(app) {
-    this.app = app;
-    this.container = new PIXI.Container();
-    this.isOpen = false;
-    this.currentIndex = 0;
-
-    this.tabLabel = new PIXI.Text("RESPONDERS & CONTROLS\n         ▲", {
-      fontFamily: "Arial Black",
-      fontSize: 16,
-      fill: "#00ced1",
-      align: "center",
-    });
-    this.tabLabel.anchor.set(0.5);
-    this.tabLabel.position.set(app.screen.width / 2, app.screen.height - 100);
-    this.container.addChild(this.tabLabel);
-
-    this.bounceInterval = setInterval(() => {
-      if (!this.isOpen) {
-        anime({
-          targets: this.tabLabel,
-          y: [
-            app.screen.height - 80,
-            app.screen.height - 100,
-            app.screen.height - 80,
-            app.screen.height - 100,
-            app.screen.height - 80,
-          ],
-          duration: 800,
-          easing: "easeInOutCubic",
-        });
-      }
-    }, 3000);
-
-    this.panel = new PIXI.Container();
-    this.panel.y = app.screen.height;
-    this.container.addChild(this.panel);
-
-    const solidBg = new PIXI.Graphics()
-      .rect(0, 0, app.screen.width, app.screen.height)
-      .fill({ color: 0x000000, alpha: 0.9 });
-    this.panel.addChild(solidBg);
-
-    this.cardContainer = new PIXI.Container();
-    this.cardContainer.sortableChildren = true;
-    this.cardContainer.position.set(
-      app.screen.width / 2,
-      app.screen.height / 2 - 100,
-    );
-    this.panel.addChild(this.cardContainer);
-
-    this.cards = RESPONDERS.map((path, i) => {
-      const fishData = BIO_DATA[i] || { name: `Fish ${i + 1}` };
-      const enclosure = new ResponderEnclosure(
-        path,
-        fishData.name,
-        100,
-        0x5ebd9d,
-      );
-
-      const instructions = `To speak: "Hey ${fishData.name}"\nTo type: Press ${i + 1} then 'K'`;
-      const instText = new PIXI.Text(instructions, {
-        fontFamily: "Garamond",
-        fontSize: 18,
-        fill: "#ff0000",
-        align: "center",
-      });
-      instText.anchor.set(0.5);
-      instText.y = 200;
-
-      enclosure.container.addChild(instText);
-
-      this.cardContainer.addChild(enclosure.container);
-      return enclosure.container;
-    });
-
-    this.updateCarousel(true);
-
-    this.closeHint = new PIXI.Text("▼ DOWN ARROW TO CLOSE | ◀ ▶ TO NAVIGATE", {
-      fontFamily: "Arial Black",
-      fontSize: 22,
-      fill: "#15e0f7",
-    });
-    this.closeHint.anchor.set(0.5);
-    this.closeHint.position.set(app.screen.width / 2, app.screen.height - 200);
-    this.panel.addChild(this.closeHint);
-  }
+  constructor(app) {}
 
   updateCarousel(immediate = false) {
     this.cards.forEach((card, i) => {

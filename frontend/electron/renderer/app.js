@@ -51,6 +51,59 @@ export const RESPONDER_LORE = [
   },
 ];
 
+export const RESPONDER_OPTIONS = [
+  {
+    name: "Pinto",
+    bio:
+      "----------------------------------------------------------------\n\n" +
+      "- FISH NUMBER: 1\n\n" +
+      "- GREETING: 'Hey Pinto', 'Hi Pinto', 'Okay Pinto', 'Hello Pinto'\n\n" +
+      "- TOOLS: LeetCode, Dad Jokes, Google Maps \n\n" +
+      "----------------------------------------------------------------\n\n",
+    path: "assets/images/responder_1.png",
+  },
+  {
+    name: "Jimbo",
+    bio:
+      "----------------------------------------------------------------\n\n" +
+      "- FISH NUMBER: 2\n\n" +
+      "- GREETING: 'Hey Jimbo', 'Hi Jimbo', 'Okay Jimbo', 'Hello Jimbo'\n\n" +
+      "- TOOLS: Weather, Google Maps \n\n" +
+      "----------------------------------------------------------------\n\n",
+    path: "assets/images/responder_2.png",
+  },
+  {
+    name: "Bongo",
+    bio:
+      "----------------------------------------------------------------\n\n" +
+      "- FISH NUMBER: 3\n\n" +
+      "- GREETING: 'Hey Bongo', 'Hi Bongo', 'Okay Bongo', 'Hello Bongo'\n\n" +
+      "- TOOLS: LeetCode, Dad Jokes, Weather \n\n" +
+      "----------------------------------------------------------------\n\n",
+    path: "assets/images/responder_3.png",
+  },
+  {
+    name: "Koko",
+    bio:
+      "----------------------------------------------------------------\n\n" +
+      "- FISH NUMBER: 4\n\n" +
+      "- GREETING: 'Hey Koko', 'Hi Koko', 'Okay Koko', 'Hello Koko'\n\n" +
+      "- TOOLS: All Undergraduate Advising \n\n" +
+      "----------------------------------------------------------------\n\n",
+    path: "assets/images/responder_advisor.png",
+  },
+  {
+    name: "Kiki",
+    bio:
+      "----------------------------------------------------------------\n\n" +
+      "- FISH NUMBER: 5\n\n" +
+      "- GREETING: 'Hey Kiki', 'Hi Kiki', 'Okay Kiki', 'Hello Kiki'\n\n" +
+      "- TOOLS: All Graduate Advising \n\n" +
+      "----------------------------------------------------------------\n\n",
+    path: "assets/images/responder_gradvisor.png",
+  },
+];
+
 export const CONTROLS = [
   {
     name: "TO SPEAK",
