@@ -1,30 +1,30 @@
 import * as PIXI from "pixi.js";
-import { RESPONDERS } from "../app.js";
+import { RESPONDERS, RESPONDER_LORE } from "../app.js";
 import { subscribeResponder, getResponder } from "../state/store.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 
-const BIO_DATA = [
-  {
-    name: "Pinto",
-    bio: "- A cute, friendly, chill guy.\n- Born and brought up off the coast of Astoria, Oregon.\n- Holds the Pacific Coral Cuteness title for 4 years running.\n- Loves to help out, but can be a little too relaxed at times.\n- Claims that the beans were named after him, but no one is sure if that one's true.",
-  },
-  {
-    name: "Jimbo",
-    bio: "- A little rough around the edges, but such is life on the Atlantic Coast.\n- Banished by the East Coast Fish Union for being a bit too competitive.\n- Moved to Oregon to start fresh in 2010, but he's grumpier than back then.\n- DOES NOT LIKE FLORIDA\n- Still very sharp though.",
-  },
-  {
-    name: "Bongo",
-    bio: "- He's been depressed for a while now, Pinto says it's because he's on social media too much.\n- Born off the coast of Japan, he drifted aimlessly across the Pacific.\n- Extremely intelligent, but extremely shy.\n- Be nice to him!",
-  },
-  {
-    name: "Koko",
-    bio: "- Your aquatic CS advisor\n- Grew up in the Willamette River and has a special bond with Kiki\n- Has a vast knowledge of CS concepts and is always ready to help you navigate through your coding journey\n- Is professional, but values a friendly and approachable demeanor",
-  },
-  {
-    name: "Kiki",
-    bio: "- Your aquatic CS Grad School Advisor\n- Born and raised in the Columbia River, but has traveled across the Willamette with Koko\n- Is familiar with PSU Grad School policies since she has been in the area for a while\n- Values precision, clarity, and prides herself on knowledge collection",
-  },
-];
+// export const BIO_DATA = [
+//   {
+//     name: "Pinto",
+//     bio: "- A cute, friendly, chill guy.\n- Born and brought up off the coast of Astoria, Oregon.\n- Holds the Pacific Coral Cuteness title for 4 years running.\n- Loves to help out, but can be a little too relaxed at times.\n- Claims that the beans were named after him, but no one is sure if that one's true.",
+//   },
+//   {
+//     name: "Jimbo",
+//     bio: "- A little rough around the edges, but such is life on the Atlantic Coast.\n- Banished by the East Coast Fish Union for being a bit too competitive.\n- Moved to Oregon to start fresh in 2010, but he's grumpier than back then.\n- DOES NOT LIKE FLORIDA\n- Still very sharp though.",
+//   },
+//   {
+//     name: "Bongo",
+//     bio: "- He's been depressed for a while now, Pinto says it's because he's on social media too much.\n- Born off the coast of Japan, he drifted aimlessly across the Pacific.\n- Extremely intelligent, but extremely shy.\n- Be nice to him!",
+//   },
+//   {
+//     name: "Koko",
+//     bio: "- Your aquatic CS advisor\n- Grew up in the Willamette River and has a special bond with Kiki\n- Has a vast knowledge of CS concepts and is always ready to help you navigate through your coding journey\n- Is professional, but values a friendly and approachable demeanor",
+//   },
+//   {
+//     name: "Kiki",
+//     bio: "- Your aquatic CS Grad School Advisor\n- Born and raised in the Columbia River, but has traveled across the Willamette with Koko\n- Is familiar with PSU Grad School policies since she has been in the area for a while\n- Values precision, clarity, and prides herself on knowledge collection",
+//   },
+// ];
 
 export class ArrowMenu {
   constructor({ title, items = [], side = "top", app }) {
@@ -555,9 +555,8 @@ export class ModernBox {
   }
 
   reshape(targets, fixedSize = null) {
-    if (!this.graphics || this.graphics.destroyed) {
-      return;
-    }
+    if (!this.graphics || this.graphics.destroyed) return;
+
     let width, height, minX, minY;
 
     if (fixedSize) {
@@ -573,24 +572,27 @@ export class ModernBox {
         tmaxY = -Infinity;
 
       targetArray.forEach((target) => {
-        if (!target || target.destroyed || !target.anchor) {
-          return;
-        }
-        if (target.text === "" && targetArray.length === 1) {
-          tminX = -10;
-          tminY = -10;
-          tmaxX = 10;
-          tmaxY = 10;
-          return;
+        if (!target || target.destroyed) return;
+
+        let x, y, w, h;
+
+        // Handle objects with anchors (Sprite, Text)
+        if (target.anchor) {
+          w = target.width;
+          h = target.height;
+          x = target.x - target.anchor.x * w;
+          y = target.y - target.anchor.y * h;
+        } else {
+          // Handle Containers or Graphics without anchors
+          const bounds = target.getLocalBounds();
+          w = bounds.width;
+          h = bounds.height;
+          x = target.x + bounds.x;
+          y = target.y + bounds.y;
         }
 
-        const w = target.width;
-        const h = target.height;
-        const ax = target.anchor ? target.anchor.x : 0;
-        const ay = target.anchor ? target.anchor.y : 0;
-
-        const x = target.x - ax * w;
-        const y = target.y - ay * h;
+        // Skip invalid/empty calculations
+        if (w === 0 && h === 0) return;
 
         tminX = Math.min(tminX, x);
         tminY = Math.min(tminY, y);
@@ -604,13 +606,11 @@ export class ModernBox {
       minY = tminY - this.padding;
     }
 
-    if (this.graphics.context) {
-      this.graphics.clear();
-      this.graphics.fill({ color: this.color, alpha: this.boxAlpha });
-      this.graphics.stroke({ width: 1, color: 0x333333 });
-      this.graphics.roundRect(minX, minY, width, height, 12);
-      this.graphics.fill();
-    }
+    this.graphics.clear();
+    this.graphics.fill({ color: this.color, alpha: this.boxAlpha });
+    this.graphics.roundRect(minX, minY, width, height, 12);
+    this.graphics.fill();
+    this.graphics.stroke({ width: 1, color: 0x333333 });
   }
 }
 
@@ -670,6 +670,141 @@ export class GlassBox extends ModernBox {
       minY + 8,
     ]);
     this.graphics.fill({ color: 0xffffff, alpha: 0.3 });
+  }
+}
+
+export class BoxGenerator {
+  constructor(app, { boxType = "glass", padding = 30 } = {}) {
+    this.app = app;
+    this.boxType = boxType;
+    this.padding = padding;
+  }
+
+  async createCard({
+    header = "Header",
+    imagePath = null,
+    subtext = "",
+    width = 320,
+    height = null,
+  }) {
+    const container = new PIXI.Container();
+
+    let currentY = 0;
+
+    const headerText = new PIXI.Text(header, {
+      fontSize: 22,
+      fill: "#ffffff",
+      fontWeight: "bold",
+    });
+
+    headerText.anchor.set(0.5, 0);
+    headerText.x = 0;
+    headerText.y = currentY;
+
+    container.addChild(headerText);
+
+    currentY += headerText.height + 15;
+
+    let imageSprite = null;
+
+    if (imagePath) {
+      const texture = await PIXI.Assets.get(imagePath);
+
+      if (!texture) {
+        console.warn(`Texture not found in cache: ${imagePath}`);
+      } else {
+        imageSprite = new PIXI.Sprite(texture);
+
+        imageSprite.anchor.set(0.5, 0);
+        imageSprite.x = 0;
+        imageSprite.y = currentY;
+
+        const targetWidth = width - this.padding * 2;
+        fitSprite(imageSprite, targetWidth, texture.height);
+
+        container.addChild(imageSprite);
+
+        currentY += imageSprite.height + 15;
+      }
+    }
+
+    const bodyText = new PIXI.Text(subtext, {
+      fontSize: 16,
+      fill: "#ffffff",
+      wordWrap: true,
+      wordWrapWidth: width - this.padding * 2,
+    });
+
+    bodyText.anchor.set(0.5, 0);
+    bodyText.x = 0;
+    bodyText.y = currentY;
+
+    container.addChild(bodyText);
+
+    currentY += bodyText.height;
+
+    container.pivot.set(0, 0);
+    container.x = width / 2;
+
+    const box =
+      this.boxType === "glass"
+        ? new GlassBox(this.padding)
+        : new ModernBox(this.padding);
+
+    box.reshape(container, {
+      width,
+      height: height || currentY + this.padding,
+    });
+
+    container.addChildAt(box.graphics, 0);
+
+    container.__box = box;
+
+    return container;
+  }
+
+  layoutLinear(
+    cards,
+    { direction = "horizontal", spacing = 40, startX = 0, startY = 0 } = {},
+  ) {
+    let offset = 0;
+
+    cards.forEach((card) => {
+      if (direction === "horizontal") {
+        card.x = startX + offset;
+        card.y = startY;
+        offset += card.width + spacing;
+      } else {
+        card.y = startY + offset;
+        card.x = startX;
+        offset += card.height + spacing;
+      }
+    });
+  }
+
+  layoutStack(
+    cards,
+    { offsetX = 15, offsetY = 15, startX = 0, startY = 0 } = {},
+  ) {
+    cards.forEach((card, index) => {
+      card.x = startX + index * offsetX;
+      card.y = startY + index * offsetY;
+      card.zIndex = index;
+    });
+  }
+
+  layoutCarousel(cards, { centerX, centerY, radius = 400 }) {
+    const total = cards.length;
+
+    cards.forEach((card, index) => {
+      const angle = ((index / total) * Math.PI) / 2;
+
+      card.x = centerX + Math.cos(angle) * radius;
+      card.y = centerY + Math.sin(angle) * radius * 0.4;
+
+      const scale = 0.7 + 0.3 * (1 - Math.abs(Math.sin(angle)));
+      card.scale.set(scale);
+    });
   }
 }
 
@@ -805,238 +940,391 @@ export class FunFactBox {
   }
 }
 
-export class ResponderEnclosure {
+export class SlidingOverlay {
   constructor(
-    imagePath,
-    name,
-    padding = 20,
-    isHeader = false,
-    color = 0xd9b8b8,
+    app,
+    {
+      side = "left",
+      tabText = "MENU",
+      closeHint = "",
+      bgColor = "#000000",
+      bgAlpha = 0.9,
+      animationDuration = 700,
+    },
   ) {
-    this.container = new PIXI.Container();
-    this.bg = new ModernBox(padding, color);
-    this.container.addChild(this.bg.graphics);
-
-    const baseStyle = {
-      fontFamily: "Roboto",
-      fill: "#151414",
-      align: "center",
-    };
-
-    if (imagePath) {
-      this.sprite = PIXI.Sprite.from(imagePath);
-      this.sprite.anchor.set(0.5);
-
-      fitSprite(this.sprite, 200, 200);
-      this.sprite.y = -40;
-      this.container.addChild(this.sprite);
-    }
-
-    this.label = new PIXI.Text(name, {
-      ...baseStyle,
-      fontFamily: isHeader ? "Brush Script MT" : "Garamond",
-      fontSize: isHeader ? 64 : 24,
-      fontWeight: isHeader ? "bold" : "normal",
-    });
-    this.label.anchor.set(0.5);
-    if (this.sprite) {
-      this.label.y = this.sprite.y + this.sprite.height / 2 + 80;
-    } else {
-      this.label.y = 0;
-    }
-    this.container.addChild(this.label);
-
-    this.subLabel = new PIXI.Text("", {
-      ...baseStyle,
-      fontSize: 24,
-      fill: "#9387c9",
-    });
-    this.subLabel.anchor.set(0.5);
-    this.subLabel.y = 80;
-    this.subLabel.visible = isHeader;
-    this.container.addChild(this.subLabel);
-
-    this.refresh();
-  }
-
-  refresh(fixedSize = null) {
-    const targets = [this.label];
-    if (this.sprite) targets.push(this.sprite);
-    if (this.subLabel && this.subLabel.text !== "") targets.push(this.subLabel);
-
-    this.bg.reshape(targets, fixedSize);
-  }
-}
-
-class ResponderCard {
-  constructor(index, width = 400, height = 600) {
-    this.container = new PIXI.Container();
-
-    const cardBg = new PIXI.Graphics()
-      .fill({ color: 0x2a2a2a, alpha: 1 })
-      .stroke({ width: 2, color: 0x1e90ff })
-      .roundRect(-width / 2, -height / 2, width, height, 20)
-      .fill();
-    this.container.addChild(cardBg);
-
-    const sprite = PIXI.Sprite.from(RESPONDERS[index]);
-    sprite.anchor.set(0.5);
-    sprite.y = -height * 0.25;
-
-    const targetWidth = index === 2 ? 80 : 180;
-    const scale = targetWidth / sprite.texture.width;
-    sprite.scale.set(scale);
-    this.container.addChild(sprite);
-
-    const nameLabel = new PIXI.Text(BIO_DATA[index].name, {
-      fontFamily: "Brush Script MT",
-      fontSize: 36,
-      fontWeight: "bold",
-      fill: "#1e90ff",
-    });
-    nameLabel.anchor.set(0.5);
-    nameLabel.y = -height * 0.03;
-    this.container.addChild(nameLabel);
-
-    const bioLabel = new PIXI.Text(BIO_DATA[index].bio, {
-      fontFamily: "Roboto",
-      fontSize: 16,
-      fill: "#ffffff",
-      align: "left",
-      lineHeight: 22,
-      wordWrap: true,
-      wordWrapWidth: width - 40,
-    });
-
-    bioLabel.anchor.set(0.5, 0);
-    bioLabel.y = 20;
-    this.container.addChild(bioLabel);
-  }
-}
-
-export class InfoOverlay {
-  constructor(app) {
     this.app = app;
-    this.container = new PIXI.Container();
-    this.container.visible = true;
+    this.side = side;
+    this.animationDuration = animationDuration;
     this.isOpen = false;
 
-    // this.tabLabel = new PIXI.Text("FISH STORIES \n       ▼", {
-    //   fontFamily: "Arial Black",
-    //   fontSize: 16,
-    //   fill: "#00ced1",
-    //   letterSpacing: 2,
-    // });
-    this.tabLabel = new PIXI.Text("F\nI\nS\nH\n\nS\nT\nO\nR\nI\nE\nS\n\n▶▶", {
+    this.container = new PIXI.Container();
+
+    // -------- TAB LABEL (Will sit at the edge of the screen) --------
+    this.tabLabel = new PIXI.Text(tabText, {
       fontFamily: "Arial Black",
       fontSize: 16,
       fill: "#00ced1",
       letterSpacing: 2,
+      align: "center",
     });
+
     this.tabLabel.anchor.set(0.5);
-    //this.tabLabel.rotation = -Math.PI / 2;
-    this.tabLabel.position.set(80, app.screen.height / 2);
     this.container.addChild(this.tabLabel);
 
+    // ---------- SLIDING PANEL ----------
+    this.panel = new PIXI.Container();
+    this.container.addChild(this.panel);
+
+    this.solidBg = new PIXI.Graphics()
+      .rect(0, 0, app.screen.width, app.screen.height)
+      .fill({ color: bgColor, alpha: bgAlpha });
+    this.panel.addChild(this.solidBg);
+
+    if (closeHint) {
+      this.closeText = new PIXI.Text(closeHint, {
+        fontFamily: "Arial Black",
+        fontSize: 28,
+        fill: "#15e0f7",
+      });
+
+      this.closeText.anchor.set(0.5);
+      this.closeText.position.set(
+        app.screen.width / 2,
+        app.screen.height - 220,
+      );
+      this.panel.addChild(this.closeText);
+    }
+
+    this.setupPositions();
+    this.initTabAnimation();
+  }
+
+  initTabAnimation() {
     this.bounceInterval = setInterval(() => {
       if (!this.isOpen && this.tabLabel.alpha > 0.5) {
+        const isHorizontal = this.side === "left" || this.side === "right";
+        const axis = isHorizontal ? "x" : "y";
+        const startPos = isHorizontal ? this.tabLabel.x : this.tabLabel.y;
+
         anime({
           targets: this.tabLabel,
-          x: [80, 100, 80, 100, 80],
+          [axis]: [startPos, startPos + 20, startPos],
           duration: 800,
           easing: "easeInOutCubic",
         });
       }
     }, 3000);
+  }
 
-    this.panel = new PIXI.Container();
-    this.container.addChild(this.panel);
+  setupPositions() {
+    const { width, height } = this.app.screen;
 
-    const solidBg = new PIXI.Graphics()
-      .rect(0, 0, app.screen.width, app.screen.height)
-      .fill({ color: 0x000000, alpha: 0.9 });
-    this.panel.addChild(solidBg);
+    switch (this.side) {
+      case "left":
+        this.closedPos = -width;
+        this.openPos = 0;
+        this.panel.x = this.closedPos;
 
-    this.closedX = -app.screen.width;
-    this.openX = 0;
-    this.panel.x = this.closedX;
+        this.tabLabel.position.set(80, height / 2);
+        break;
+      case "right":
+        this.closedPos = width;
+        this.openPos = 0;
+        this.panel.x = this.closedPos;
 
-    const totalCards = BIO_DATA.length;
-    const cardContainer = new PIXI.Container();
-    const spacing = 320;
-    const startX = -((totalCards - 1) * spacing) / 2;
+        this.tabLabel.position.set(width - 80, height / 2);
+        break;
 
-    BIO_DATA.forEach((_, i) => {
-      const card = new ResponderCard(i, 300, 500);
-      card.container.x = startX + i * spacing;
-      cardContainer.addChild(card.container);
+      case "top":
+        this.closedPos = -height;
+        this.openPos = 0;
+        this.panel.y = this.closedPos;
+
+        this.tabLabel.position.set(width / 2, 80);
+        break;
+
+      case "bottom":
+        this.closedPos = height;
+        this.openPos = 0;
+        this.panel.y = this.closedPos;
+
+        this.tabLabel.position.set(width / 2, height - 80);
+        break;
+    }
+  }
+
+  animatePanel(targetValue) {
+    const prop = this.side === "left" || this.side === "right" ? "x" : "y";
+    anime.remove(this.panel);
+    anime({
+      targets: this.panel,
+      [prop]: targetValue,
+      duration: this.animationDuration,
+      easing: "easeInOutExpo",
     });
-
-    cardContainer.x = app.screen.width / 2;
-    cardContainer.y = app.screen.height / 2;
-    this.panel.addChild(cardContainer);
-
-    const hint = new PIXI.Text("◀ LEFT ARROW TO CLOSE FISH STORIES", {
-      fontFamily: "Arial Black",
-      fontSize: 28,
-      fill: "#15e0f7",
-    });
-    this.hint = hint;
-    hint.anchor.set(0.5);
-    hint.position.set(app.screen.width / 2, app.screen.height - 220);
-    // this.hint.alpha = 0;
-    this.panel.addChild(this.hint);
   }
 
   rollout() {
     if (this.isOpen) return;
     this.isOpen = true;
 
-    anime({
-      targets: this.panel,
-      x: this.openX,
-      duration: 700,
-      easing: "easeInOutExpo",
-    });
+    this.animatePanel(this.openPos);
   }
 
   rollin() {
     if (!this.isOpen) return;
     this.isOpen = false;
 
-    anime({
-      targets: this.panel,
-      x: this.closedX,
-      duration: 600,
-      easing: "easeInOutExpo",
-      complete: () => {
-        anime({
-          targets: this.tabLabel,
-          alpha: 1,
-          duration: 300,
-          easing: "linear",
-        });
-      },
-    });
-  }
-
-  destroy() {
-    if (this.bounceInterval) {
-      clearInterval(this.bounceInterval);
-    }
-
-    anime.remove(this.container);
-    anime.remove(this.panel);
-    anime.remove(this.tabLabel);
-    anime.remove(this.hint);
-
-    this.container.destroy({ children: true });
+    this.animatePanel(this.closedPos);
   }
 
   toggle() {
     this.isOpen ? this.rollin() : this.rollout();
   }
+
+  destroy() {
+    if (this.bounceInterval) clearInterval(this.bounceInterval);
+    anime.remove(this.panel);
+    anime.remove(this.tabLabel);
+
+    this.container.destroy({ children: true });
+  }
 }
+
+export class ResponderEnclosure {
+  constructor(data, padding = 20, color = 0xd9b8b8, fixedSize = null) {
+    this.container = new PIXI.Container();
+    this.bg = new ModernBox(padding, color);
+    this.container.addChild(this.bg.graphics);
+    this.fixedSize = fixedSize;
+
+    const baseStyle = {
+      fontFamily: "Garamond",
+      fill: "#151414",
+      align: "center",
+      wordWrap: true,
+      wordWrapWidth: fixedSize ? fixedSize.width - padding * 2 : 280,
+    };
+
+    this.label = new PIXI.Text(data.name.toUpperCase(), {
+      ...baseStyle,
+      fontSize: 28,
+      fontWeight: "bold",
+    });
+    this.label.anchor.set(0.5);
+    this.label.y = fixedSize ? -fixedSize.height / 2 + padding + 20 : -220;
+    this.container.addChild(this.label);
+
+    if (data.path) {
+      this.sprite = PIXI.Sprite.from(data.path);
+      this.sprite.anchor.set(0.5);
+      fitSprite(this.sprite, 180, 180);
+      this.sprite.y = fixedSize ? -50 : -80;
+      this.container.addChild(this.sprite);
+
+      if (data.bio) {
+        this.subLabel = new PIXI.Text(data.bio, {
+          ...baseStyle,
+          fontSize: 14,
+          align: "left",
+        });
+        this.subLabel.anchor.set(0.5, 0);
+        this.subLabel.y = 60;
+        this.container.addChild(this.subLabel);
+      }
+    }
+
+    if (!data.path && data.bio) {
+      this.subLabel = new PIXI.Text(data.bio, {
+        ...baseStyle,
+        fontFamily: "Verdana",
+        fontSize: 16,
+        align: "left",
+      });
+      this.subLabel.anchor.set(0.5, 0);
+      this.subLabel.y = fixedSize ? -100 : -100;
+      this.container.addChild(this.subLabel);
+    }
+
+    this.refresh();
+  }
+
+  refresh() {
+    if (this.fixedSize) {
+      this.bg.reshape(null, this.fixedSize);
+    } else {
+      const targets = [this.label, this.subLabel];
+      if (this.sprite) targets.push(this.sprite);
+
+      this.bg.reshape(targets);
+    }
+  }
+}
+
+export class InfoOverlay extends SlidingOverlay {
+  constructor(app, data, config) {
+    super(app, {
+      side: config.side || "left",
+      tabText: config.tabText || "",
+      closeHint: config.closeHint || "",
+      bgColor: config.bgColor || 0x000000,
+      bgAlpha: config.bgAlpha || 0.9,
+    });
+
+    this.data = data;
+    this.populate();
+  }
+
+  populate() {
+    const cardContainer = new PIXI.Container();
+    const spacing = 365;
+
+    const startX = -((this.data.length - 1) * spacing) / 2;
+
+    this.data.forEach((data, i) => {
+      const card = new ResponderEnclosure(data, 40, 0xffffff, {
+        width: 350,
+        height: 500,
+      });
+
+      card.container.x = startX + i * spacing;
+      cardContainer.addChild(card.container);
+    });
+
+    cardContainer.x = this.app.screen.width / 2;
+    cardContainer.y = this.app.screen.height / 2;
+
+    this.panel.addChild(cardContainer);
+
+    if (this.closeText) {
+      this.panel.addChild(this.closeText);
+    }
+  }
+}
+
+// export class InfoOverlay {
+//   constructor(app) {
+//     this.app = app;
+//     this.container = new PIXI.Container();
+//     this.container.visible = true;
+//     this.isOpen = false;
+
+//     // this.tabLabel = new PIXI.Text("FISH STORIES \n       ▼", {
+//     //   fontFamily: "Arial Black",
+//     //   fontSize: 16,
+//     //   fill: "#00ced1",
+//     //   letterSpacing: 2,
+//     // });
+//     this.tabLabel = new PIXI.Text("F\nI\nS\nH\n\nS\nT\nO\nR\nI\nE\nS\n\n▶▶", {
+//       fontFamily: "Arial Black",
+//       fontSize: 16,
+//       fill: "#00ced1",
+//       letterSpacing: 2,
+//     });
+//     this.tabLabel.anchor.set(0.5);
+//     //this.tabLabel.rotation = -Math.PI / 2;
+//     this.tabLabel.position.set(80, app.screen.height / 2);
+//     this.container.addChild(this.tabLabel);
+
+//     this.bounceInterval = setInterval(() => {
+//       if (!this.isOpen && this.tabLabel.alpha > 0.5) {
+//         anime({
+//           targets: this.tabLabel,
+//           x: [80, 100, 80, 100, 80],
+//           duration: 800,
+//           easing: "easeInOutCubic",
+//         });
+//       }
+//     }, 3000);
+
+//     this.panel = new PIXI.Container();
+//     this.container.addChild(this.panel);
+
+//     const solidBg = new PIXI.Graphics()
+//       .rect(0, 0, app.screen.width, app.screen.height)
+//       .fill({ color: 0x000000, alpha: 0.9 });
+//     this.panel.addChild(solidBg);
+
+//     this.closedX = -app.screen.width;
+//     this.openX = 0;
+//     this.panel.x = this.closedX;
+
+//     const totalCards = BIO_DATA.length;
+//     const cardContainer = new PIXI.Container();
+//     const spacing = 320;
+//     const startX = -((totalCards - 1) * spacing) / 2;
+
+//     BIO_DATA.forEach((_, i) => {
+//       const card = new ResponderCard(i, 300, 500);
+//       card.container.x = startX + i * spacing;
+//       cardContainer.addChild(card.container);
+//     });
+
+//     cardContainer.x = app.screen.width / 2;
+//     cardContainer.y = app.screen.height / 2;
+//     this.panel.addChild(cardContainer);
+
+//     const hint = new PIXI.Text("◀ LEFT ARROW TO CLOSE FISH STORIES", {
+//       fontFamily: "Arial Black",
+//       fontSize: 28,
+//       fill: "#15e0f7",
+//     });
+//     this.hint = hint;
+//     hint.anchor.set(0.5);
+//     hint.position.set(app.screen.width / 2, app.screen.height - 220);
+//     // this.hint.alpha = 0;
+//     this.panel.addChild(this.hint);
+//   }
+
+//   rollout() {
+//     if (this.isOpen) return;
+//     this.isOpen = true;
+
+//     anime({
+//       targets: this.panel,
+//       x: this.openX,
+//       duration: 700,
+//       easing: "easeInOutExpo",
+//     });
+//   }
+
+//   rollin() {
+//     if (!this.isOpen) return;
+//     this.isOpen = false;
+
+//     anime({
+//       targets: this.panel,
+//       x: this.closedX,
+//       duration: 600,
+//       easing: "easeInOutExpo",
+//       complete: () => {
+//         anime({
+//           targets: this.tabLabel,
+//           alpha: 1,
+//           duration: 300,
+//           easing: "linear",
+//         });
+//       },
+//     });
+//   }
+
+//   destroy() {
+//     if (this.bounceInterval) {
+//       clearInterval(this.bounceInterval);
+//     }
+
+//     anime.remove(this.container);
+//     anime.remove(this.panel);
+//     anime.remove(this.tabLabel);
+//     anime.remove(this.hint);
+
+//     this.container.destroy({ children: true });
+//   }
+
+//   toggle() {
+//     this.isOpen ? this.rollin() : this.rollout();
+//   }
+// }
 
 export class OptionsOverlay {
   constructor(app) {

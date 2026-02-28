@@ -13,8 +13,16 @@ import {
   GlassBox,
   FunFactBox,
   ControlsOverlay,
+  BoxGenerator,
+  SlidingOverlay,
 } from "../assets/sprites_anime.js";
-import { BACKGROUNDS, ANIMATED_FISH, RESPONDERS } from "../app.js";
+import {
+  BACKGROUNDS,
+  ANIMATED_FISH,
+  RESPONDERS,
+  RESPONDER_LORE,
+  CONTROLS,
+} from "../app.js";
 
 export class IdleSceneAnime {
   constructor(app) {
@@ -74,13 +82,18 @@ export class IdleSceneAnime {
       this.funFactBox.updateFunFact();
     }, 10000);
 
-    this.infoOverlay = new InfoOverlay(app);
+    this.infoOverlay = new InfoOverlay(app, RESPONDER_LORE, {
+      side: "left",
+      tabText: "F\nI\nS\nH\n\nS\nT\nO\nR\nI\nE\nS\n\n▶▶",
+      closeHint: "◀ LEFT ARROW TO CLOSE FISH STORIES",
+    });
     this.container.addChild(this.infoOverlay.container);
 
-    this.optionsOverlay = new OptionsOverlay(app);
-    this.container.addChild(this.optionsOverlay.container);
-
-    this.controlsOverlay = new ControlsOverlay(app);
+    this.controlsOverlay = new InfoOverlay(app, CONTROLS, {
+      side: "right",
+      tabText: "◀◀\n\nC\nO\nN\nT\nR\nO\nL\nS",
+      closeHint: "RIGHT ARROW TO CLOSE CONTROLS ▶",
+    });
     this.container.addChild(this.controlsOverlay.container);
 
     this.shuffleInterval = setInterval(() => {
@@ -94,10 +107,6 @@ export class IdleSceneAnime {
     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
     if (this.funFactInterval) clearInterval(this.funFactInterval);
 
-    if (this.infoOverlay) this.infoOverlay.destroy();
-    if (this.optionsOverlay) this.optionsOverlay.destroy();
-    if (this.controlsOverlay) this.controlsOverlay.destroy();
-
     this.funFactBox.destroy();
 
     PIXI.Ticker.shared.remove(this.swarmUpdate);
@@ -107,13 +116,116 @@ export class IdleSceneAnime {
 
     window.currentActiveScene = null;
 
-    this.container.destroy({
-      children: true,
-      texture: true,
-      baseTexture: true,
-    });
+    this.container.destroy({ children: true });
   }
 }
+
+/**
+ * VERSION 2 -- FULLY WORKING DO NOT DELETE
+ */
+
+// export class IdleSceneAnime {
+//   constructor(app) {
+//     this.app = app;
+//     this.container = new PIXI.Container();
+
+//     this.bgManager = new BackgroundManager(app, BACKGROUNDS);
+//     this.container.addChild(this.bgManager.container);
+
+//     this.swarm = new FishSwarm(
+//       20,
+//       app.screen.width,
+//       app.screen.height,
+//       ANIMATED_FISH,
+//       80,
+//     );
+//     this.container.addChild(this.swarm.container);
+
+//     this.swarmUpdate = () => this.swarm.update();
+//     PIXI.Ticker.shared.add(this.swarmUpdate);
+
+//     this.title = new GradientText({
+//       text: "CORAL NET",
+//       fontSize: 80,
+//       fontFamily: "Arial",
+//       gradientColor1: "#efef05",
+//       gradientColor2: "#db9271",
+//       x: app.screen.width / 2,
+//       y: app.screen.height / 2,
+//       bold: true,
+//       shadowColor: "rgba(239, 255, 11, 0.5)",
+//       shadowBlur: 10,
+//     });
+
+//     this.titleBox = new GlassBox(20);
+//     this.titleBox.graphics.position.set(
+//       this.title.sprite.x,
+//       this.title.sprite.y,
+//     );
+//     this.container.addChild(this.titleBox.graphics);
+//     this.container.addChild(this.title.sprite);
+//     this.titleBox.reshape(this.title.sprite);
+
+//     this.funFactBox = new FunFactBox(app, [
+//       "The first computer bug was an actual bug — a moth found in a relay.",
+//       "Ada Lovelace is considered the first programmer.",
+//       "The first 1GB hard drive weighed 550 lbs and cost $40,000.",
+//     ]);
+//     this.funFactBox.setPosition(
+//       app.screen.width / 2,
+//       (app.screen.height / 2) * 0.25,
+//     );
+//     this.container.addChild(this.funFactBox.container);
+
+//     this.funFactBox.updateFunFact();
+//     this.funFactInterval = setInterval(() => {
+//       this.funFactBox.updateFunFact();
+//     }, 10000);
+
+//     this.infoOverlay = new InfoOverlay(app);
+//     this.container.addChild(this.infoOverlay.container);
+
+//     this.optionsOverlay = new OptionsOverlay(app);
+//     this.container.addChild(this.optionsOverlay.container);
+
+//     this.controlsOverlay = new ControlsOverlay(app);
+//     this.container.addChild(this.controlsOverlay.container);
+
+//     this.shuffleInterval = setInterval(() => {
+//       this.bgManager.next();
+//     }, 30000);
+
+//     window.currentActiveScene = this;
+//   }
+
+//   destroy() {
+//     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
+//     if (this.funFactInterval) clearInterval(this.funFactInterval);
+
+//     if (this.infoOverlay) this.infoOverlay.destroy();
+//     if (this.optionsOverlay) this.optionsOverlay.destroy();
+//     if (this.controlsOverlay) this.controlsOverlay.destroy();
+
+//     this.funFactBox.destroy();
+
+//     PIXI.Ticker.shared.remove(this.swarmUpdate);
+
+//     if (this.bgManager && this.bgManager.destroy) this.bgManager.destroy();
+//     if (this.swarm && this.swarm.destroy) this.swarm.destroy();
+
+//     window.currentActiveScene = null;
+
+//     this.container.destroy({
+//       children: true,
+//       texture: true,
+//       baseTexture: true,
+//     });
+//   }
+// }
+
+/**
+ * VERSION 1 -- FULLY WORKING DO NOT DELETE
+ */
 
 // export class IdleSceneAnime {
 //   constructor(app) {

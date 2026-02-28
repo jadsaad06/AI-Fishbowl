@@ -23,6 +23,76 @@ export const BACKGROUNDS = ["assets/images/deep_sea_bg.jpg"];
 
 export const LISTENING_BACKGROUND = ["assets/images/light_background_1.png"];
 
+export const RESPONDER_LORE = [
+  {
+    name: "Pinto",
+    bio: "- A cute, friendly, chill guy.\n- Born and brought up off the coast of Astoria, Oregon.\n- Holds the Pacific Coral Cuteness title for 4 years running.\n- Loves to help out, but can be a little too relaxed at times.\n- Claims that the beans were named after him, but no one is sure if that one's true.",
+    path: "assets/images/responder_1.png",
+  },
+  {
+    name: "Jimbo",
+    bio: "- A little rough around the edges, but such is life on the Atlantic Coast.\n- Banished by the East Coast Fish Union for being a bit too competitive.\n- Moved to Oregon to start fresh in 2010, but he's grumpier than back then.\n- DOES NOT LIKE FLORIDA\n- Still very sharp though.",
+    path: "assets/images/responder_2.png",
+  },
+  {
+    name: "Bongo",
+    bio: "- He's been depressed for a while now, Pinto says it's because he's on social media too much.\n- Born off the coast of Japan, he drifted aimlessly across the Pacific.\n- Extremely intelligent, but extremely shy.\n- Be nice to him!",
+    path: "assets/images/responder_3.png",
+  },
+  {
+    name: "Koko",
+    bio: "- Your aquatic CS advisor\n- Grew up in the Willamette River and has a special bond with Kiki\n- Has a vast knowledge of CS concepts and is always ready to help you navigate through your coding journey\n- Is professional, but values a friendly and approachable demeanor",
+    path: "assets/images/responder_advisor.png",
+  },
+  {
+    name: "Kiki",
+    bio: "- Your aquatic CS Grad School Advisor\n- Born and raised in the Columbia River, but has traveled across the Willamette with Koko\n- Is familiar with PSU Grad School policies since she has been in the area for a while\n- Values precision, clarity, and prides herself on knowledge collection",
+    path: "assets/images/responder_gradvisor.png",
+  },
+];
+
+export const CONTROLS = [
+  {
+    name: "TO SPEAK",
+    bio:
+      "- View Fish Stories With ▶ And Pick Your Favorite\n\n" +
+      "- View Available Tools and Controls For Your Fish ▲\n\n" +
+      "- Greet Your Fish with Hey, Hi, Hello <Fish Name> \n\n" +
+      "- You Will See Your Fish With Some Example Prompts\n\n" +
+      "- BUT, don't worry, you can ask them anything.\n\n",
+  },
+  {
+    name: "TO TYPE",
+    bio:
+      "- View Fish Stories With ▶ And Pick Your Favorite\n\n" +
+      "- View Available Tools, And The Fish Number For Your Fish ▲\n\n" +
+      "- Select Fish By Typing Fish Number (1-5) \n\n" +
+      "- Press K \n\n" +
+      "- You Will See Your Fish With Some Example Prompts\n\n" +
+      "- BUT, don't worry, you can ask them anything.\n\n",
+  },
+  {
+    name: "TO SELECT RANDOM FISH",
+    bio:
+      "- View Fish Stories With ▶ And Pick Your Favorite\n\n" +
+      "- View Available Tools, And The Fish Number For Your Fish With ▲\n\n" +
+      "- Press R\n\n" +
+      "- Press K \n\n" +
+      "- You Will See Your Fish With Some Example Prompts\n\n" +
+      "- NOTE: Advisors (4,5) Need To Be Selected Explicitly\n\n",
+  },
+  {
+    name: "ABOUT THE DEVS",
+    bio:
+      "- Team Lead - Jad Saad\n\n" +
+      "- Hardware - Daniel Schuster\n\n" +
+      "- Speech To Text - Joseph Bec\n\n" +
+      "- Model Context Protocol (MCP) - Michel Karam, Sal Ambriz\n\n" +
+      "- Speech To Text - Henry Mcdowell\n\n" +
+      "- Frontend/Animations - Satvik Mudgal\n\n",
+  },
+];
+
 export const THINKING_BACKGROUNDS = [
   "assets/images/background_3.png",
   "assets/images/deep_sea_bg.jpg",
