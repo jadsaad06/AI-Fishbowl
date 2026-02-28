@@ -90,7 +90,8 @@ export class IdleSceneAnime {
     this.optionsOverlay = new InfoOverlay(this.app, RESPONDER_OPTIONS, {
       side: "bottom",
       tabText: "RESPONDERS & CONTROLS\n▲",
-      closeHint: "▼ Down Arrow To Close | ◀ ▶ To Navigate",
+      closeHint:
+        "Press ENTER To Select\n\n▼ Down Arrow To Close | ◀ ▶ To Navigate",
       type: "carousel",
     });
 
@@ -127,10 +128,10 @@ export class IdleSceneAnime {
         path: data.path,
         bio:
           `To Talk: Say 'Hey ${data.name}'\n` +
-          `To Type: Press ${data.id} and Press K\n` +
-          `To Select Other: Press ▲ to view options\n` +
-          `To view stories: Press ◀ to view stories\n` +
-          `To view controls: Press ▶ to view controls`,
+          `To Type: Press K\n` +
+          `To Select Other: Press ▲ to view options and Press ENTER\n` +
+          `To view stories: Press ▶ to view stories\n` +
+          `To view controls: Press ◀ to view controls`,
       };
 
       const activeFishCard = new ResponderEnclosure(

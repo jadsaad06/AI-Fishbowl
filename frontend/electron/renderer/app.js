@@ -64,6 +64,7 @@ export const RESPONDER_OPTIONS = [
       "- GREETING: 'Hey Pinto', 'Hi Pinto', 'Okay Pinto', 'Hello Pinto'\n\n" +
       "- TOOLS: LeetCode, Dad Jokes, Google Maps \n\n",
     path: "assets/images/responder_1.png",
+    id: 1,
   },
   {
     name: "Jimbo",
@@ -73,6 +74,7 @@ export const RESPONDER_OPTIONS = [
       "- GREETING: 'Hey Jimbo', 'Hi Jimbo', 'Okay Jimbo', 'Hello Jimbo'\n\n" +
       "- TOOLS: Weather, Google Maps \n\n",
     path: "assets/images/responder_2.png",
+    id: 2,
   },
   {
     name: "Bongo",
@@ -82,6 +84,7 @@ export const RESPONDER_OPTIONS = [
       "- GREETING: 'Hey Bongo', 'Hi Bongo', 'Okay Bongo', 'Hello Bongo'\n\n" +
       "- TOOLS: LeetCode, Dad Jokes, Weather \n\n",
     path: "assets/images/responder_3.png",
+    id: 3,
   },
   {
     name: "Koko",
@@ -91,6 +94,7 @@ export const RESPONDER_OPTIONS = [
       "- GREETING: 'Hey Koko', 'Hi Koko', 'Okay Koko', 'Hello Koko'\n\n" +
       "- TOOLS: All Undergraduate Advising \n\n",
     path: "assets/images/responder_advisor.png",
+    id: 4,
   },
   {
     name: "Kiki",
@@ -100,6 +104,7 @@ export const RESPONDER_OPTIONS = [
       "- GREETING: 'Hey Kiki', 'Hi Kiki', 'Okay Kiki', 'Hello Kiki'\n\n" +
       "- TOOLS: All Graduate Advising \n\n",
     path: "assets/images/responder_gradvisor.png",
+    id: 5,
   },
 ];
 
@@ -116,10 +121,11 @@ export const CONTROLS = [
   {
     name: "TO TYPE",
     bio:
-      "- View Fish Stories With ▶ And Pick Your Favorite\n\n" +
-      "- View Available Tools, And The Fish Number For Your Fish ▲\n\n" +
-      "- Select Fish By Typing Fish Number (1-5) \n\n" +
+      "- If You Know Your Fish Number, Select Fish By Typing Fish Number (1-5) \n\n" +
       "- Press K \n\n" +
+      "- OR View Fish Stories With ▶ And Pick Your Favorite\n\n" +
+      "- View Available Tools, And The Fish Number For Your Fish ▲\n\n" +
+      "- Hit Enter On The Fish Of Your Choice\n\n" +
       "- You Will See Your Fish With Some Example Prompts\n\n" +
       "- BUT, don't worry, you can ask them anything.\n\n",
   },
@@ -443,11 +449,15 @@ function setupKeyboardInput() {
   window.addEventListener("keydown", (e) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
 
-    if (
-      e.key === "Escape" &&
-      getState() !== "thinking" &&
-      getState() !== "responding"
-    ) {
+    const currentState = getState();
+
+    if (e.key === "Escape") {
+      if (currentState === "thinking" || currentState === "responding") return;
+      if (currentState === "speech") {
+        window.fishbowl.requestState("idle");
+        return;
+      }
+
       currentSessionId++;
       console.log("Session Invalidated. New ID:", currentSessionId);
       setPrompt("");
@@ -456,135 +466,276 @@ function setupKeyboardInput() {
         clearTimeout(responseTimeout);
         responseTimeout = null;
       }
-
       window.fishbowl.requestState("idle");
       return;
     }
 
-    const currentState = getState();
-
     if (currentState === "idle") {
-      const activeScene = window.currentActiveScene;
-      if (!activeScene) return;
-
-      const { optionsOverlay, infoOverlay, controlsOverlay } = activeScene;
-
-      if (optionsOverlay?.isOpen) {
-        switch (e.key) {
-          case "ArrowDown":
-            optionsOverlay.rollin();
-            return;
-          case "ArrowRight":
-            optionsOverlay.next();
-            return;
-          case "ArrowLeft":
-            optionsOverlay.prev();
-            return;
-        }
-        return;
-      }
-
-      if (infoOverlay?.isOpen) {
-        if (e.key === "ArrowLeft") {
-          infoOverlay.rollin();
-          return;
-        }
-        return;
-      }
-
-      if (controlsOverlay?.isOpen) {
-        if (e.key === "ArrowRight") {
-          controlsOverlay.rollin();
-          return;
-        }
-        return;
-      }
-
-      switch (e.key) {
-        case "ArrowUp":
-          optionsOverlay.rollout();
-          break;
-
-        case "ArrowRight":
-          infoOverlay?.rollout();
-          break;
-
-        case "ArrowLeft":
-          controlsOverlay?.rollout();
-          break;
-      }
+      handleIdleKeys(e);
+      return;
     }
 
     if (currentState === "keyboard") {
-      if (e.key === "Enter") {
+      handleKeyboardKeys(e);
+      return;
+    }
+  });
+
+  function handleIdleKeys(e) {
+    const activeScene = window.currentActiveScene;
+    if (!activeScene) return;
+
+    const { optionsOverlay, infoOverlay, controlsOverlay } = activeScene;
+
+    if (optionsOverlay?.isOpen) {
+      switch (e.key) {
+        case "ArrowDown":
+          optionsOverlay.rollin();
+          break;
+        case "ArrowRight":
+          optionsOverlay.next();
+          break;
+        case "ArrowLeft":
+          optionsOverlay.prev();
+          break;
+        case "Enter": {
+          const selectedFish = optionsOverlay.getSelectedData();
+          if (selectedFish && selectedFish.id !== getResponder()) {
+            console.log("Carousel Selection Confirmed:", selectedFish.name);
+            window.fishbowl.requestResponderChange(selectedFish.id);
+            optionsOverlay.rollin();
+          }
+          break;
+        }
+      }
+      return;
+    }
+
+    if (infoOverlay?.isOpen) {
+      if (e.key === "ArrowLeft") infoOverlay.rollin();
+      return;
+    }
+
+    if (controlsOverlay?.isOpen) {
+      if (e.key === "ArrowRight") controlsOverlay.rollin();
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowUp":
+        optionsOverlay?.rollout();
+        break;
+      case "ArrowRight":
+        infoOverlay?.rollout();
+        break;
+      case "ArrowLeft":
+        controlsOverlay?.rollout();
+        break;
+      case "k":
+        e.preventDefault();
+        window.fishbowl.requestState("keyboard");
+        break;
+      case "1":
+      case "2":
+      case "3":
+      case "4":
+      case "5": {
+        const id = Number(e.key);
+        if (getResponder() !== id) {
+          console.log("Responder selected:", id);
+          window.fishbowl.requestResponderChange(id);
+        }
+        break;
+      }
+      case "r": {
+        const randomID = Math.floor(Math.random() * 3) + 1;
+        if (getResponder() !== randomID) {
+          console.log("Responder selected:", randomID);
+          window.fishbowl.requestResponderChange(randomID);
+        }
+        break;
+      }
+    }
+  }
+
+  function handleKeyboardKeys(e) {
+    switch (e.key) {
+      case "Enter": {
         const prompt = getPrompt().trim();
         if (!prompt) return;
-
         console.log("Keyboard Prompt Submitted:", prompt);
-        if (ws && ws.readyState == WebSocket.OPEN) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(prompt);
         } else {
           console.log("Agent is not connected to the web server");
         }
-
-        // ------- SEND PROMPT TO MCP FROM HERE (Michel) -------------
         setPrompt("");
         window.fishbowl.requestState("thinking");
-        return;
+        break;
       }
-
-      if (e.key === "Backspace") {
+      case "Backspace":
         setPrompt(getPrompt().slice(0, -1));
-        return;
-      }
-
-      if (e.key.length === 1) {
-        setPrompt(getPrompt() + e.key);
-      }
-    } else {
-      if (
-        (e.key === "1" ||
-          e.key === "2" ||
-          e.key === "3" ||
-          e.key === "4" ||
-          e.key === "5") &&
-        currentState === "idle"
-      ) {
-        if (getResponder() === Number(e.key)) {
-          return;
-        } else {
-          window.fishbowl.requestResponderChange(Number(e.key));
-          console.log("Responder selected:", e.key);
-        }
-
-        return;
-      }
-
-      if (e.key.toLowerCase() === "r") {
-        const randomID = Math.floor(Math.random() * 3) + 1;
-        if (getResponder() === Number(randomID)) {
-          return;
-        } else {
-          console.log("Responder selected:", randomID);
-          window.fishbowl.requestResponderChange(randomID);
-        }
-
-        return;
-      }
-
-      if (e.key.toLowerCase() === "k" && currentState === "idle") {
-        e.preventDefault();
-        window.fishbowl.requestState("keyboard");
-        return;
-      }
-
-      if (e.key === "Escape" && currentState === "speech") {
-        window.fishbowl.requestState("idle");
-        return;
-      }
+        break;
+      default:
+        if (e.key.length === 1) setPrompt(getPrompt() + e.key);
     }
-  });
+  }
 }
+
+// function setupKeyboardInput() {
+//   window.addEventListener("keydown", (e) => {
+//     if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+//     if (
+//       e.key === "Escape" &&
+//       getState() !== "thinking" &&
+//       getState() !== "responding"
+//     ) {
+//       currentSessionId++;
+//       console.log("Session Invalidated. New ID:", currentSessionId);
+//       setPrompt("");
+//       fullAgentResponse = "";
+//       if (responseTimeout) {
+//         clearTimeout(responseTimeout);
+//         responseTimeout = null;
+//       }
+
+//       window.fishbowl.requestState("idle");
+//       return;
+//     }
+
+//     const currentState = getState();
+
+//     if (currentState === "idle") {
+//       const activeScene = window.currentActiveScene;
+//       if (!activeScene) return;
+
+//       const { optionsOverlay, infoOverlay, controlsOverlay } = activeScene;
+
+//       if (optionsOverlay?.isOpen) {
+//         switch (e.key) {
+//           case "ArrowDown":
+//             optionsOverlay.rollin();
+//             return;
+//           case "ArrowRight":
+//             optionsOverlay.next();
+//             return;
+//           case "ArrowLeft":
+//             optionsOverlay.prev();
+//             return;
+//           case "Enter":
+//             const selectedFish = optionsOverlay.getSelectedData();
+//             if (selectedFish && selectedFish.id !== getResponder()) {
+//               console.log("Carousel Selection Confirmed:", selectedFish.name);
+//               window.fishbowl.requestResponderChange(selectedFish.id);
+
+//               optionsOverlay.rollin();
+//             }
+//         }
+//         return;
+//       }
+
+//       if (infoOverlay?.isOpen) {
+//         if (e.key === "ArrowLeft") {
+//           infoOverlay.rollin();
+//           return;
+//         }
+//         return;
+//       }
+
+//       if (controlsOverlay?.isOpen) {
+//         if (e.key === "ArrowRight") {
+//           controlsOverlay.rollin();
+//           return;
+//         }
+//         return;
+//       }
+
+//       switch (e.key) {
+//         case "ArrowUp":
+//           optionsOverlay.rollout();
+//           break;
+
+//         case "ArrowRight":
+//           infoOverlay?.rollout();
+//           break;
+
+//         case "ArrowLeft":
+//           controlsOverlay?.rollout();
+//           break;
+//       }
+//     }
+
+//     if (currentState === "keyboard") {
+//       if (e.key === "Enter") {
+//         const prompt = getPrompt().trim();
+//         if (!prompt) return;
+
+//         console.log("Keyboard Prompt Submitted:", prompt);
+//         if (ws && ws.readyState == WebSocket.OPEN) {
+//           ws.send(prompt);
+//         } else {
+//           console.log("Agent is not connected to the web server");
+//         }
+
+//         // ------- SEND PROMPT TO MCP FROM HERE (Michel) -------------
+//         setPrompt("");
+//         window.fishbowl.requestState("thinking");
+//         return;
+//       }
+
+//       if (e.key === "Backspace") {
+//         setPrompt(getPrompt().slice(0, -1));
+//         return;
+//       }
+
+//       if (e.key.length === 1) {
+//         setPrompt(getPrompt() + e.key);
+//       }
+//     } else {
+//       if (
+//         (e.key === "1" ||
+//           e.key === "2" ||
+//           e.key === "3" ||
+//           e.key === "4" ||
+//           e.key === "5") &&
+//         currentState === "idle"
+//       ) {
+//         if (getResponder() === Number(e.key)) {
+//           return;
+//         } else {
+//           window.fishbowl.requestResponderChange(Number(e.key));
+//           console.log("Responder selected:", e.key);
+//         }
+
+//         return;
+//       }
+
+//       if (e.key.toLowerCase() === "r") {
+//         const randomID = Math.floor(Math.random() * 3) + 1;
+//         if (getResponder() === Number(randomID)) {
+//           return;
+//         } else {
+//           console.log("Responder selected:", randomID);
+//           window.fishbowl.requestResponderChange(randomID);
+//         }
+
+//         return;
+//       }
+
+//       if (e.key.toLowerCase() === "k" && currentState === "idle") {
+//         e.preventDefault();
+//         window.fishbowl.requestState("keyboard");
+//         return;
+//       }
+
+//       if (e.key === "Escape" && currentState === "speech") {
+//         window.fishbowl.requestState("idle");
+//         return;
+//       }
+//     }
+//   });
+// }
 
 async function run_all() {
   await init();

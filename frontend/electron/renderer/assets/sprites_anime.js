@@ -584,9 +584,10 @@ export class SlidingOverlay {
 
     if (closeHint) {
       this.closeText = new PIXI.Text(closeHint, {
-        fontFamily: "Brush Script MT",
+        fontFamily: "Garamond",
         fontSize: 28,
         fill: "#ffea00",
+        align: "center",
       });
 
       this.closeText.anchor.set(0.5);
@@ -919,6 +920,10 @@ export class InfoOverlay extends SlidingOverlay {
       this.currentIndex--;
       this.updateCarousel();
     }
+  }
+
+  getSelectedData() {
+    return this.data[this.currentIndex];
   }
 
   destroy() {
