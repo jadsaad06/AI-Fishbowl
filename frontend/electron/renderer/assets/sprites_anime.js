@@ -984,7 +984,7 @@ export class InfoOverlay {
     this.hint = hint;
     hint.anchor.set(0.5);
     hint.position.set(app.screen.width / 2, app.screen.height - 220);
-    this.hint.alpha = 0;
+    // this.hint.alpha = 0;
     this.panel.addChild(this.hint);
   }
 
@@ -1377,7 +1377,7 @@ export class ControlsOverlay {
     anime.remove(this.container);
     anime.remove(this.panel);
     anime.remove(this.tabLabel);
-    anime.remove(this.hint);
+    anime.remove(this.closeHint);
 
     this.container.destroy({ children: true });
   }

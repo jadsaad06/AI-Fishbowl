@@ -92,18 +92,26 @@ export class IdleSceneAnime {
 
   destroy() {
     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
+    if (this.funFactInterval) clearInterval(this.funFactInterval);
+
     if (this.infoOverlay) this.infoOverlay.destroy();
     if (this.optionsOverlay) this.optionsOverlay.destroy();
-    if (this.titleBox && this.titleBox.graphics) {
-      this.titleBox.graphics.destroy();
-    }
-    if (this.funFactInterval) clearInterval(this.funFactInterval);
+    if (this.controlsOverlay) this.controlsOverlay.destroy();
+
     this.funFactBox.destroy();
+
     PIXI.Ticker.shared.remove(this.swarmUpdate);
+
+    if (this.bgManager && this.bgManager.destroy) this.bgManager.destroy();
+    if (this.swarm && this.swarm.destroy) this.swarm.destroy();
 
     window.currentActiveScene = null;
 
-    this.container.destroy({ children: true });
+    this.container.destroy({
+      children: true,
+      texture: true,
+      baseTexture: true,
+    });
   }
 }
 
