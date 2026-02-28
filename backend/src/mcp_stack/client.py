@@ -14,7 +14,7 @@ import os
 import asyncio
 from contextlib import AsyncExitStack
 import httpx
-
+import traceback
 
 
 load_dotenv()
@@ -23,14 +23,25 @@ load_dotenv()
 mcp_servers_url = os.getenv("MCP_SERVERS_URL")
 
 mcp_server_urls = mcp_servers_url.split(",")
+
 for i in range(len(mcp_server_urls)):
     print(mcp_server_urls[i])
+
 SMITHERY_KEY = os.getenv("SMITHERY_KEY")
+
+
+
 
 http_client = httpx.AsyncClient(
     headers={"Authorization" : f"Bearer {SMITHERY_KEY}"},
     timeout=httpx.Timeout(30)
 )
+
+ALLOW_SPECIFIC_TOOLS = {
+    "get-dad-joke",
+    "web_search_exa",
+    "company_research_exa"
+}
 
 
 class RequestPrompt(BaseModel): # Class for denoting the request that the user will prompt for a post request.
@@ -78,11 +89,16 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                     
                     total_mcp_tools = []
 
-
-                    for s in mcp_sessions:
+                    for i, s in enumerate(mcp_sessions):
                         tool = await load_mcp_tools(s) # Load mcp tools from the server
-                        total_mcp_tools.extend(tool) # Add to total tools list
-                    
+
+                        if i == 0:
+                            total_mcp_tools.extend(tool)
+                        else:
+                            for t in tool:
+                                if t.name in ALLOW_SPECIFIC_TOOLS:
+                                    total_mcp_tools.append(t) # Add to total tools list
+                        
 
                     app.state.agent_Pinto = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Pinto, tools=total_mcp_tools) # Create a simple answerful agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
                     app.state.agent_Jimbo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Jimbo, tools=total_mcp_tools) # Create a mad sarcastic agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
@@ -102,7 +118,6 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                         await asyncio.sleep(60) # Take a 1 minute break interval to avoid flooding
 
             except Exception as e: # If the session ping was not successful, or some other issue occured, we assume that the MCP server disconnected, and print the error.
-                import traceback
                 print("MCP Server connection failed, trying again")
                 traceback.print_exc()                
 
@@ -166,7 +181,8 @@ async def ws_text_input(ws : WebSocket):
     app.state.ws_sessions[oid] = {
         "ws" : ws,
         "conversation" : [],
-        "curr_agent" : app.state.agent_Pinto
+        "curr_agent" : app.state.agent_Pinto,
+        "personality_id" : "1"
     }
 
 
@@ -180,27 +196,27 @@ async def ws_text_input(ws : WebSocket):
                 case "PERSONALIZATION: 1":
                     curr_session["curr_agent"] = app.state.agent_Pinto
                     curr_session["conversation"] = []
-                    personality_id = "1"
+                    curr_session["personality_id"] = "1"
                     continue
                 case "PERSONALIZATION: 2":
                     curr_session["curr_agent"] = app.state.agent_Jimbo
                     curr_session["conversation"] = []
-                    personality_id = "2"
+                    curr_session["personality_id"] = "2"
                     continue
                 case "PERSONALIZATION: 3":
                     curr_session["curr_agent"] = app.state.agent_Bongo
                     curr_session["conversation"] = []
-                    personality_id = "3"
+                    curr_session["personality_id"] = "3"
                     continue
                 case "PERSONALIZATION: 4":
                     curr_session["curr_agent"] = app.state.agent_koko
                     curr_session["conversation"] = []
-                    personality_id = "4"
+                    curr_session["personality_id"] = "4"
                     continue
                 case "PERSONALIZATION: 5":
                     curr_session["curr_agent"] = app.state.agent_kiki
                     curr_session["conversation"] = []
-                    personality_id = "5"
+                    curr_session["personality_id"] = "5"
                     continue
 
             
@@ -226,8 +242,8 @@ async def ws_text_input(ws : WebSocket):
             response = await curr_session["curr_agent"].ainvoke({"messages": curr_session["conversation"]}) #asynchronously invoke the agent
             stripped_response = grab_agent_final_response(response)     
 
-
-            await curr_session["ws"].send_text(f"{personality_id}:{stripped_response}")
+            print(stripped_response)
+            await curr_session["ws"].send_text(f"{curr_session["personality_id"]}:{stripped_response}")
             
 
 
@@ -240,6 +256,7 @@ async def ws_text_input(ws : WebSocket):
     except WebSocketDisconnect:
         pass
     except Exception:
+        traceback.print_exc()
         pass
 
     finally:
