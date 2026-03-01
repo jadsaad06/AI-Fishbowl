@@ -12,15 +12,36 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
 import asyncio
-
+from contextlib import AsyncExitStack
+import httpx
+import traceback
 
 
 load_dotenv()
 
 
-mcp_server_url = os.getenv("MCP_SERVER_URL")
+mcp_servers_url = os.getenv("MCP_SERVERS_URL")
+
+mcp_server_urls = mcp_servers_url.split(",")
+
+for i in range(len(mcp_server_urls)):
+    print(mcp_server_urls[i])
+
+SMITHERY_KEY = os.getenv("SMITHERY_KEY")
 
 
+
+
+http_client = httpx.AsyncClient(
+    headers={"Authorization" : f"Bearer {SMITHERY_KEY}"},
+    timeout=httpx.Timeout(30)
+)
+
+ALLOW_SPECIFIC_TOOLS = {
+    "get-dad-joke",
+    "web_search_exa",
+    "company_research_exa"
+}
 
 
 class RequestPrompt(BaseModel): # Class for denoting the request that the user will prompt for a post request.
@@ -50,31 +71,55 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
 
 
         while not stop_agent.is_set():
+            mcp_sessions = []
+
             try:    
-                async with streamable_http_client(f"{mcp_server_url}/mcp") as (read, write, _):  # Grab read and write streams between the server and client
-                    async with ClientSession(read, write) as session: # Create a connection between the server and client
+                 async with AsyncExitStack() as stack:
+                    for mcp_url in mcp_server_urls:
+                        if "smithery" in mcp_url:
+                            read, write, _ = await stack.enter_async_context(streamable_http_client(url=mcp_url, http_client=http_client)) # Add the context manager into the stack, leaving the session open for the context manager function which is asynchronous, and grab read and write streams between the server and client
+                        else:
+                            read, write, _ = await stack.enter_async_context(streamable_http_client(url=mcp_url)) # Add the context manager into the stack, leaving the session open for the context manager function which is asynchronous, and grab read and write streams between the server and client
+
+                        session = await stack.enter_async_context(ClientSession(read, write)) # Add the context manager into the stack leaving the session open, and create a connection between the server and client
+
                         await session.initialize() # Create the handshake between the server and client
 
-                        tools = await load_mcp_tools(session) # Load mcp tools from the server
+                        mcp_sessions.append(session)
+                    
+                    total_mcp_tools = []
 
+                    for i, s in enumerate(mcp_sessions):
+                        tool = await load_mcp_tools(s) # Load mcp tools from the server
 
-                        app.state.agent_Pinto = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Pinto, tools=tools) # Create a simple answerful agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
-                        app.state.agent_Jimbo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Jimbo, tools=tools) # Create a mad sarcastic agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
-                        app.state.agent_Bongo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Bongo, tools=tools) # Create a shy agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
-                        app.state.agent_koko = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_koko, tools=[get_context]) # Create a undergraduate advisor agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
-                        app.state.agent_kiki = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_kiki, tools=[get_context]) # Create a graduate advisor agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                        if i == 0:
+                            total_mcp_tools.extend(tool)
+                        else:
+                            for t in tool:
+                                if t.name in ALLOW_SPECIFIC_TOOLS:
+                                    total_mcp_tools.append(t) # Add to total tools list
+                        
 
-                        app.state.agent_ready = True # If we made it to this point where we have an agent object set, then the agent is ready.
+                    app.state.agent_Pinto = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Pinto, tools=total_mcp_tools) # Create a simple answerful agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                    app.state.agent_Jimbo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Jimbo, tools=total_mcp_tools) # Create a mad sarcastic agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                    app.state.agent_Bongo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Bongo, tools=total_mcp_tools) # Create a shy agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                    app.state.agent_koko = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_koko, tools=[get_context]) # Create a undergraduate advisor agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                    app.state.agent_kiki = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_kiki, tools=[get_context]) # Create a graduate advisor agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
 
-                        while not stop_agent.is_set(): # While the event object is not set, then we will continuously loop through inside the client session to keep the session alive
-                            await session.send_ping() # Send a ping to the MCP server to ensure the MCP server is alive
-                            print("ping ok")
-                            await asyncio.sleep(60) # Take a 1 minute break interval to avoid flooding
+                    app.state.agent_ready = True # If we made it to this point where we have an agent object set, then the agent is ready.
 
+                    while not stop_agent.is_set(): # While the event object is not set, then we will continuously loop through inside the client session to keep the session alive
+                        tasks = []
+                        for s in mcp_sessions:
+                            tasks.append(asyncio.create_task(s.send_ping()))
+                        
+                        await asyncio.gather(*tasks) # Send a ping to the MCP server to ensure the MCP server is alive
+                        print("ping ok")
+                        await asyncio.sleep(60) # Take a 1 minute break interval to avoid flooding
 
             except Exception as e: # If the session ping was not successful, or some other issue occured, we assume that the MCP server disconnected, and print the error.
                 print("MCP Server connection failed, trying again")
-                print(e)
+                traceback.print_exc()                
 
             finally: # We finally set the agent to no object since the connection between the MCP server and client is gone, so we don't know what MCP server tools we may have anymore if we consider a new connection.
                 app.state.agent_Pinto = None
@@ -136,7 +181,8 @@ async def ws_text_input(ws : WebSocket):
     app.state.ws_sessions[oid] = {
         "ws" : ws,
         "conversation" : [],
-        "curr_agent" : app.state.agent_Pinto
+        "curr_agent" : app.state.agent_Pinto,
+        "personality_id" : "1"
     }
 
 
@@ -150,27 +196,27 @@ async def ws_text_input(ws : WebSocket):
                 case "PERSONALIZATION: 1":
                     curr_session["curr_agent"] = app.state.agent_Pinto
                     curr_session["conversation"] = []
-                    personality_id = "1"
+                    curr_session["personality_id"] = "1"
                     continue
                 case "PERSONALIZATION: 2":
                     curr_session["curr_agent"] = app.state.agent_Jimbo
                     curr_session["conversation"] = []
-                    personality_id = "2"
+                    curr_session["personality_id"] = "2"
                     continue
                 case "PERSONALIZATION: 3":
                     curr_session["curr_agent"] = app.state.agent_Bongo
                     curr_session["conversation"] = []
-                    personality_id = "3"
+                    curr_session["personality_id"] = "3"
                     continue
                 case "PERSONALIZATION: 4":
                     curr_session["curr_agent"] = app.state.agent_koko
                     curr_session["conversation"] = []
-                    personality_id = "4"
+                    curr_session["personality_id"] = "4"
                     continue
                 case "PERSONALIZATION: 5":
                     curr_session["curr_agent"] = app.state.agent_kiki
                     curr_session["conversation"] = []
-                    personality_id = "5"
+                    curr_session["personality_id"] = "5"
                     continue
 
             
@@ -196,8 +242,8 @@ async def ws_text_input(ws : WebSocket):
             response = await curr_session["curr_agent"].ainvoke({"messages": curr_session["conversation"]}) #asynchronously invoke the agent
             stripped_response = grab_agent_final_response(response)     
 
-
-            await curr_session["ws"].send_text(f"{personality_id}:{stripped_response}")
+            print(stripped_response)
+            await curr_session["ws"].send_text(f"{curr_session["personality_id"]}:{stripped_response}")
             
 
 
@@ -210,6 +256,7 @@ async def ws_text_input(ws : WebSocket):
     except WebSocketDisconnect:
         pass
     except Exception:
+        traceback.print_exc()
         pass
 
     finally:
