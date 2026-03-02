@@ -2,7 +2,4 @@ device_manager
 sounddevice
 soundfile
 numpy
-Adafruit_SSD1306
 setuptools
-Pillow
-smbus
