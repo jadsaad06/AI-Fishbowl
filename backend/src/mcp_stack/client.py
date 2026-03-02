@@ -329,7 +329,7 @@ async def ws_text_input(ws : WebSocket):
             stripped_response = grab_agent_final_response(response)     
 
             print(stripped_response)
-            await curr_session["ws"].send_text(f"{curr_session["personality_id"]}:{stripped_response}")
+            await curr_session["ws"].send_text(f"{curr_session['personality_id']}:{stripped_response}")
             
 
 
