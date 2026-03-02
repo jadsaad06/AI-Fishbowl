@@ -111,7 +111,8 @@ def random_leetcode(difficulty : str = "", tag : str = "") -> str:
 def get_problem_by_tag(tag_slug : str, difficulty : str = "", limit : int = 5, skip : int = 50) -> str:
     """
     This function will get problems based on the tag slug which is a required field, then you have the optional difficulty field, and limit field 5, you can 
-    alter this as you decide to respond to the user, ensure that your response wouldn't be huge so keep the answer within 1 - 5 of the amount of problems.
+    alter this as you decide to respond to the user, ensure that your response wouldn't be huge so keep the answer within 1 - 5 of the amount of problems. This can potentially
+    help you give hints to the user for the leetcode problem, or help.
 
 
     ALWAYS RANDOMIZE THE SKIP from 1 - 1000 to keep things randomized to get different pages for the leetcode problems.

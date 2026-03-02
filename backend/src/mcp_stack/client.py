@@ -20,12 +20,64 @@ import traceback
 load_dotenv()
 
 
-mcp_servers_url = os.getenv("MCP_SERVERS_URL")
 
-mcp_server_urls = mcp_servers_url.split(",")
+pinto_servers_urls = os.getenv("PINTO_MCP_SERVERS")
+jimbo_servers_urls = os.getenv("JIMBO_MCP_SERVERS")
+bongo_servers_urls = os.getenv("BONGO_MCP_SERVERS")
 
-for i in range(len(mcp_server_urls)):
-    print(mcp_server_urls[i])
+
+
+pinto_servers_urls = pinto_servers_urls.split(",")
+
+jimbo_servers_urls = jimbo_servers_urls.split(",")
+
+bongo_servers_urls = bongo_servers_urls.split(",")
+
+
+print("PINTO'S MCP SERVERS")
+for i in range(len(pinto_servers_urls)):
+    print(pinto_servers_urls[i])
+
+print("------------")
+print("JIMBO'S MCP SERVERS")
+for i in range(len(jimbo_servers_urls)):
+    print(jimbo_servers_urls[i])
+
+print("------------")
+print("BONGO's MCP SERVERS")
+for i in range(len(bongo_servers_urls)):
+    print(bongo_servers_urls[i])
+
+
+
+pinto_permission = os.getenv("PINTO_ALLOW_ALL", "true").lower()
+jimbo_permission = os.getenv("JIMBO_ALLOW_ALL", "false").lower()
+bongo_permission = os.getenv("BONGO_ALLOW_ALL", "true").lower()
+
+PINTO_PERM_TOOLS = {
+    "text_search",
+    "nearby_search",
+    "get_route"
+}
+
+JIMBO_PERM_TOOLS = {
+    "get-dad-joke",
+    "web_search_exa",
+    "company_research_exa"
+}
+
+BONGO_PERM_TOOLS = {
+    "Set-your-tools-here"
+}
+
+
+fish_grouping = {
+    "pinto" : pinto_servers_urls,
+    "jimbo" : jimbo_servers_urls,
+    "bongo" : bongo_servers_urls
+}
+
+
 
 SMITHERY_KEY = os.getenv("SMITHERY_KEY")
 
@@ -37,11 +89,11 @@ http_client = httpx.AsyncClient(
     timeout=httpx.Timeout(30)
 )
 
-ALLOW_SPECIFIC_TOOLS = {
-    "get-dad-joke",
-    "web_search_exa",
-    "company_research_exa"
-}
+
+
+
+
+
 
 
 class RequestPrompt(BaseModel): # Class for denoting the request that the user will prompt for a post request.
@@ -71,38 +123,72 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
 
 
         while not stop_agent.is_set():
-            mcp_sessions = []
+            pinto_sessions = []
+            jimbo_sessions = []
+            bongo_sessions = []
+
 
             try:    
                  async with AsyncExitStack() as stack:
-                    for mcp_url in mcp_server_urls:
-                        if "smithery" in mcp_url:
-                            read, write, _ = await stack.enter_async_context(streamable_http_client(url=mcp_url, http_client=http_client)) # Add the context manager into the stack, leaving the session open for the context manager function which is asynchronous, and grab read and write streams between the server and client
-                        else:
-                            read, write, _ = await stack.enter_async_context(streamable_http_client(url=mcp_url)) # Add the context manager into the stack, leaving the session open for the context manager function which is asynchronous, and grab read and write streams between the server and client
 
-                        session = await stack.enter_async_context(ClientSession(read, write)) # Add the context manager into the stack leaving the session open, and create a connection between the server and client
+                    for fish, mcp_urls in fish_grouping.items():
+                        for mcp_url in mcp_urls:
+                            if "smithery" in mcp_url:
+                                read, write, _ = await stack.enter_async_context(streamable_http_client(url=mcp_url, http_client=http_client)) # Add the context manager into the stack, leaving the session open for the context manager function which is asynchronous, and grab read and write streams between the server and client
+                            else:
+                                read, write, _ = await stack.enter_async_context(streamable_http_client(url=mcp_url)) # Add the context manager into the stack, leaving the session open for the context manager function which is asynchronous, and grab read and write streams between the server and client
 
-                        await session.initialize() # Create the handshake between the server and client
+                            session = await stack.enter_async_context(ClientSession(read, write)) # Add the context manager into the stack leaving the session open, and create a connection between the server and client
 
-                        mcp_sessions.append(session)
+                            await session.initialize() # Create the handshake between the server and client
+                                
+                            if fish == "pinto":
+                                pinto_sessions.append(session)
+                            elif fish == "jimbo":
+                                jimbo_sessions.append(session)
+                            elif fish == "bongo":
+                                bongo_sessions.append(session)
+
+                    pinto_tools = []
+                    jimbo_tools = []
+                    bongo_tools = []
                     
-                    total_mcp_tools = []
-
-                    for i, s in enumerate(mcp_sessions):
-                        tool = await load_mcp_tools(s) # Load mcp tools from the server
-
-                        if i == 0:
-                            total_mcp_tools.extend(tool)
-                        else:
-                            for t in tool:
-                                if t.name in ALLOW_SPECIFIC_TOOLS:
-                                    total_mcp_tools.append(t) # Add to total tools list
+                    for s in pinto_sessions:
+                        tools = await load_mcp_tools(s)
                         
+                        if pinto_permission == "true":
+                            print("yessy ess")
+                            pinto_tools.extend(tools)
+                        else:
+                            for tool in tools:
+                                if tool.name in PINTO_PERM_TOOLS:
+                                    pinto_tools.append(tool)
 
-                    app.state.agent_Pinto = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Pinto, tools=total_mcp_tools) # Create a simple answerful agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
-                    app.state.agent_Jimbo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Jimbo, tools=total_mcp_tools) # Create a mad sarcastic agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
-                    app.state.agent_Bongo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Bongo, tools=total_mcp_tools) # Create a shy agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                    for s in jimbo_sessions:
+                        tools = await load_mcp_tools(s)
+                        
+                        if jimbo_permission == "true":
+                            jimbo_tools.extend(tools)
+                        else:
+                            for tool in tools:
+                                if tool.name in JIMBO_PERM_TOOLS:
+                                    jimbo_tools.append(tool)
+
+                    for s in bongo_sessions:
+                        tools = await load_mcp_tools(s)
+                        
+                        if bongo_permission == "true":
+                            bongo_tools.extend(tools)
+                        else:
+                            for tool in tools:
+                                if tool.name in BONGO_PERM_TOOLS:
+                                    bongo_tools.append(tool)                                                        
+                        
+                    total_sessions = pinto_sessions + jimbo_sessions + bongo_sessions
+
+                    app.state.agent_Pinto = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Pinto, tools=pinto_tools) # Create a simple answerful agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                    app.state.agent_Jimbo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Jimbo, tools=jimbo_tools) # Create a mad sarcastic agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                    app.state.agent_Bongo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Bongo, tools=bongo_tools) # Create a shy agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
                     app.state.agent_koko = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_koko, tools=[get_context]) # Create a undergraduate advisor agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
                     app.state.agent_kiki = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_kiki, tools=[get_context]) # Create a graduate advisor agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
 
@@ -110,7 +196,7 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
 
                     while not stop_agent.is_set(): # While the event object is not set, then we will continuously loop through inside the client session to keep the session alive
                         tasks = []
-                        for s in mcp_sessions:
+                        for s in total_sessions:
                             tasks.append(asyncio.create_task(s.send_ping()))
                         
                         await asyncio.gather(*tasks) # Send a ping to the MCP server to ensure the MCP server is alive
