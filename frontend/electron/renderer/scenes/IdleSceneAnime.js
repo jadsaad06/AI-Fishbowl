@@ -56,7 +56,11 @@ export class IdleSceneAnime {
       },
       { c1: "#f53500", c2: "#a8540a" },
       {
-        header: { fontSize: 52, fontFamily: "Verdana" },
+        header: {
+          fontSize: 80,
+          fontFamily: "Trebuchet MS",
+          fontWeight: "bold",
+        },
       },
     );
     this.titleEnclosure.container.position.set(
