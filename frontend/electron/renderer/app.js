@@ -18,9 +18,11 @@ import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
 import { ListeningSceneAnime } from "./scenes/ListeningSceneAnime.js";
 import { RespondingSceneAnime } from "./scenes/RespondingSceneAnime.js";
 
-export const BACKGROUNDS = ["assets/images/idle_hd_2.jpg"];
-
-export const LISTENING_BACKGROUND = ["assets/images/light_background_1.png"];
+export const BACKGROUNDS = [
+  "assets/images/glass_box_idle.jpg",
+  "assets/images/glass_box_idle_2.jpg",
+];
+export const SPEECH_BACKGROUNDS = ["assets/images/glass_box_main.jpg"];
 
 export const RESPONDER_LORE = [
   {
@@ -62,7 +64,7 @@ export const RESPONDER_OPTIONS = [
       "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 1\n\n" +
       "- GREETING: 'Hey Pinto', 'Hi Pinto', 'Okay Pinto', 'Hello Pinto'\n\n" +
-      "- TOOLS: LeetCode, Dad Jokes, Google Maps \n\n",
+      "- TOOLS: Dad Jokes, Google Maps \n\n",
     path: "assets/images/responder_1.png",
     id: 1,
   },
@@ -72,7 +74,7 @@ export const RESPONDER_OPTIONS = [
       "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 2\n\n" +
       "- GREETING: 'Hey Jimbo', 'Hi Jimbo', 'Okay Jimbo', 'Hello Jimbo'\n\n" +
-      "- TOOLS: Weather, Google Maps \n\n",
+      "- TOOLS: Web Search \n\n",
     path: "assets/images/responder_2.png",
     id: 2,
   },
@@ -82,7 +84,7 @@ export const RESPONDER_OPTIONS = [
       "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 3\n\n" +
       "- GREETING: 'Hey Bongo', 'Hi Bongo', 'Okay Bongo', 'Hello Bongo'\n\n" +
-      "- TOOLS: LeetCode, Dad Jokes, Weather \n\n",
+      "- TOOLS: LeetCode, Weather \n\n",
     path: "assets/images/responder_3.png",
     id: 3,
   },
@@ -147,75 +149,61 @@ export const CONTROLS = [
       "- Speech To Text - Joseph Bec\n\n" +
       "- Model Context Protocol (MCP) - Michel Karam, Sal Ambriz\n\n" +
       "- Speech To Text - Henry Mcdowell\n\n" +
-      "- Frontend/Animations - Satvik Mudgal\n\n",
+      "- Frontend/Animations - Satvik Mudgal\n\n\n\n" +
+      "- The Devs know they promised an animated fish...\n" +
+      "We took the proposal to the fish, but they referred us to their emloyees - The seahorses\n",
   },
-];
-
-export const RESPONDING_BACKGROUNDS = [
-  "assets/images/idle_hd_2.jpg",
-  "assets/images/idle_hd.jpg",
-  "assets/images/responding_hd.jpg",
 ];
 
 export const RESPONDER_PROMPTS = {
   1: {
     name: "Pinto",
     prompts: [
-      "Start talking, I'm listening!\n",
-      "OR Press ESC to go to the homepage\n\n",
       "Examples of stuff I can help you with: \n",
-      "Pick a random LeetCode problem for me.",
-      "What's the weather in Portland, Oregon?",
-      "How do Linked Lists work?",
-      "Tell me your story.",
+      " 1. Tell Me A Dad Joke",
+      " 2. What's The Best Route From Portland To Seattle?",
+      " 3. How Long Will It Take Me To Drive From Billings, MT to Ames, IA",
+      " 4. Will AI take over the world?",
     ],
   },
   2: {
     name: "Jimbo",
     prompts: [
-      "Start talking, I'm listening!\n",
-      "OR Press ESC to go to the homepage\n\n",
       "Examples of stuff I can help you with: \n",
-      "Why are you so mean?",
-      "Why does everyone mess up pointers?",
-      "What's the weather in Florida?",
-      "What's the fastest way to crack a coding interview?",
+      " 1. Give Me An Update On Current Events",
+      " 2. List AI Research Papers Published In The Last Month.",
+      " 3. List Companies That Are Hiring Software Engineers.",
+      " 4. What's the fastest way to crack a coding interview?",
     ],
   },
   3: {
     name: "Bongo",
     prompts: [
-      "Start talking, I'm listening!\n",
-      "OR Press ESC to go to the homepage\n\n",
       "Examples of stuff I can help you with: \n",
-      "Walk me through dynamic programming",
-      "What's the weather like in Fairbanks, Alaska?",
-      "How does Binary Search work?",
-      "Why do you sound so unsure of yourself? Cheer up!",
+      " 1. Pick A Random LeetCode Problem For Me",
+      " 2. What's the weather like in Fairbanks, Alaska?",
+      " 3. How does Binary Search work?",
+      " 4. Why do you sound so unsure of yourself? Cheer up!",
     ],
   },
   4: {
     name: "Koko",
     prompts: [
-      "Start talking, I'm listening!\n",
-      "OR Press ESC to go to the homepage\n\n",
       "Examples of stuff I can help you with: \n",
-      "What low-level programming classes can I take next semester?",
-      "How many credits do I need to graduate with a Bachelor's in CS?",
-      "What electives pair well with software engineering?",
-      "How did you meet Kiki?",
+      " 1. What low-level programming classes can I take next semester?",
+      " 2. How many credits do I need to graduate with a Bachelor's in CS?",
+      " 3. What electives pair well with software engineering?",
+      " 4. How did you meet Kiki?",
     ],
   },
   5: {
     name: "Kiki",
     prompts: [
-      "Start talking, I'm listening!\n",
-      "OR Press ESC to go to the homepage\n\n",
       "Examples of stuff I can help you with: \n",
-      "How many credits do I need for a Master's degree in CS?",
-      "How many electives are recommended per term?",
-      "How many credits is CS510: Deep Learning?",
-      "What are the grad school application requirements?",
+      " 1. How many credits do I need for a Master's degree in CS?",
+      " 2. How many electives are recommended per term?",
+      " 3. How many credits is CS510: Deep Learning?",
+      " 4. What are the grad school application requirements?",
     ],
   },
 };
@@ -278,7 +266,7 @@ async function connect_agent() {
   while (keepRetrying) {
     try {
       ws = await new Promise((resolve, reject) => {
-        const sock = new WebSocket(`wss://${url}/text_input`);
+        const sock = new WebSocket(`ws://${url}/text_input`);
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
@@ -343,13 +331,13 @@ let infoOverlay;
 async function init() {
   try {
     await PIXI.Assets.load(BACKGROUNDS);
+    await PIXI.Assets.load(SPEECH_BACKGROUNDS);
     await PIXI.Assets.load(ANIMATED_FISH);
     await PIXI.Assets.load(ENHANCED_FISH);
     await PIXI.Assets.load(RESPONDERS);
     await PIXI.Assets.load("assets/images/ocean_diver.png");
     await PIXI.Assets.load("assets/images/listening_fish_cropped.png");
     await PIXI.Assets.load("assets/images/thinking_fish.png");
-    await PIXI.Assets.load(RESPONDING_BACKGROUNDS);
 
     /** Displays the application document */
     await app.init({

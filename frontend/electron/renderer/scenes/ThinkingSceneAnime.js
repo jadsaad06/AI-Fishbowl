@@ -9,7 +9,7 @@ import {
   ModernBox,
   PulseText,
 } from "../assets/sprites_anime.js";
-import { RESPONDING_BACKGROUNDS } from "../app.js";
+import { BACKGROUNDS } from "../app.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 
 export class ThinkingSceneAnime {
@@ -17,7 +17,7 @@ export class ThinkingSceneAnime {
     this.app = app;
     this.container = new PIXI.Container();
 
-    this.bg = new BackgroundRandomizer(app, RESPONDING_BACKGROUNDS);
+    this.bg = new BackgroundRandomizer(app, BACKGROUNDS);
     this.container.addChild(this.bg.container);
 
     this.divers = [];

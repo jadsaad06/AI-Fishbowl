@@ -7,7 +7,12 @@ import {
   FALLBACK_PROMPTS,
 } from "../app.js";
 import { BackgroundManager, createResponder } from "../assets/sprites.js";
-import { PulseText, ModernBox } from "../assets/sprites_anime.js";
+import {
+  PulseText,
+  ModernBox,
+  GlassBox,
+  TypewriterText,
+} from "../assets/sprites_anime.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 
 export class KeyboardScene {
@@ -17,11 +22,6 @@ export class KeyboardScene {
 
     this.bgManager = new BackgroundManager(app, BACKGROUNDS);
     this.container.addChild(this.bgManager.container);
-
-    const margin = 40;
-    const boxHeight = 80;
-    const boxY = app.screen.height - boxHeight - margin;
-    const boxWidth = app.screen.width - margin * 2;
 
     this.syncGroup = new PIXI.Container();
     this.syncGroup.position.set(
@@ -44,8 +44,9 @@ export class KeyboardScene {
       promptHint,
       {
         fontFamily: "Courier New",
-        fontSize: 26,
-        fill: "#ffffff",
+        fontSize: 30,
+        fill: "#000000",
+        fontWeight: "bold",
         wordWrap: true,
         wordWrapWidth: app.screen.width * 0.4,
       },
@@ -61,36 +62,63 @@ export class KeyboardScene {
     this.hintText.textObject.anchor.set(0, 0.5);
     this.hintText.container.position.set(250, 0);
 
-    this.hintBox = new ModernBox(30, 0x1a1a1a, 0.7);
+    this.hintBox = new GlassBox(30);
     this.hintText.container.addChildAt(this.hintBox.graphics, 0);
-
     this.syncGroup.addChild(this.hintText.container);
 
-    this.hintBox.reshape(this.hintText.textObject);
-
-    this.promptBox = new PIXI.Graphics();
-    this.promptBox.beginFill(0x1a1a1a, 0.85);
-    this.promptBox.lineStyle(2, 0x00f000, 1);
-    this.promptBox.drawRoundedRect(
-      0,
-      0,
-      app.screen.width - margin * 2,
-      boxHeight,
-      15,
+    this.listeningText = new TypewriterText(
+      "Start Typing, I'm Ready!",
+      {
+        fontFamily: "Garamond",
+        fontSize: 34,
+        fill: "#000000",
+        fontWeight: "bold",
+      },
+      { durationPerChar: 50 },
     );
-    this.promptBox.endFill();
+    this.listeningText.container.position.set(
+      app.screen.width / 2,
+      app.screen.height * 0.15,
+    );
+    this.container.addChild(this.listeningText.container);
+    this.glassBox = new GlassBox(25);
+    this.listeningText.container.addChildAt(this.glassBox.graphics, 0);
 
-    this.promptBox.position.set(margin, boxY);
+    // 4. Back Text (Top Left)
+    this.backText = new TypewriterText(
+      "Press ESC To Go Back",
+      {
+        fontFamily: "Garamond",
+        fontSize: 34,
+        fontWeight: "italic",
+        fill: "#000000",
+      },
+      { durationPerChar: 70 },
+    );
+    this.backText.container.position.set(
+      app.screen.width * 0.15,
+      app.screen.height * 0.15,
+    );
+    this.container.addChild(this.backText.container);
+    this.backBox = new GlassBox(20);
+    this.backText.container.addChildAt(this.backBox.graphics, 0);
+
+    const margin = 40;
+    const boxHeight = 80;
+    this.promptBox = new PIXI.Graphics()
+      .fill({ color: 0x1a1a1a, alpha: 0.85 })
+      .stroke({ width: 2, color: 0x00f000 })
+      .roundRect(0, 0, app.screen.width - margin * 2, boxHeight, 15)
+      .fill();
+    this.promptBox.position.set(margin, app.screen.height - boxHeight - 150);
     this.container.addChild(this.promptBox);
 
     this.text = new PIXI.Text({
       text: "> Ready to type...",
       style: {
         fontFamily: "monospace",
-        fill: "#00f000",
+        fill: "#712e01",
         fontSize: 24,
-        wordWrap: true,
-        wordWrapWidth: boxWidth - 40,
       },
     });
 
@@ -104,14 +132,29 @@ export class KeyboardScene {
 
     this.updateLoop = () => {
       this.hintBox.reshape(this.hintText.textObject);
+      this.glassBox.reshape(this.listeningText.textObject);
+      this.backBox.reshape(this.backText.textObject);
     };
     this.app.ticker.add(this.updateLoop);
 
+    this.rippleInterval = null;
     this.initAnimations();
+    this.setupSyncEffects();
 
     this.bgInterval = setInterval(() => {
       this.bgManager.next();
-    }, 5000);
+    }, 10000);
+  }
+
+  setupSyncEffects() {
+    const trigger = () => {
+      this.glassBox.ripple("#ff8f45");
+      this.backBox.ripple("#ff8f45");
+      this.listeningText.play();
+      this.backText.play();
+    };
+    trigger();
+    this.rippleInterval = setInterval(trigger, 3000);
   }
 
   initAnimations() {
@@ -130,10 +173,13 @@ export class KeyboardScene {
       clearInterval(this.bgInterval);
       this.bgInterval = null;
     }
+    if (this.rippleInterval) clearInterval(this.rippleInterval);
     this.unsubscribe?.();
     this.app.ticker.remove(this.updateLoop);
     anime.remove(this.syncGroup);
     if (this.hintText) this.hintText.destroy();
+    if (this.listeningText) this.listeningText.destroy();
+    if (this.backText) this.backText.destroy();
     this.container.destroy({ children: true });
   }
 }

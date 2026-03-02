@@ -334,12 +334,64 @@ export class ModernBox {
 export class GlassBox extends ModernBox {
   constructor(padding = 30) {
     super(padding, 0xffffff, 0.1);
+    this.rippleContainer = new PIXI.Container();
+    this.graphics.addChild(this.rippleContainer);
   }
 
   reshape(targets, fixedSize = null) {
+    const target = Array.isArray(targets) ? targets[0] : targets;
+    if (target && target.text === "") {
+      this.graphics.clear();
+      return;
+    }
+
     super.reshape(targets, fixedSize);
     if (this.graphics.context && !this.graphics.destroyed) {
       this.drawGlassEffects(targets, fixedSize);
+    }
+  }
+
+  ripple(rippleColor = 0xffffff) {
+    if (!this.graphics || this.graphics.destroyed) return;
+
+    const bounds = this.graphics.getLocalBounds();
+    const width = bounds.width || 100;
+    const height = bounds.height || 40;
+    const centerX = bounds.x + width / 2;
+    const centerY = bounds.y + height / 2;
+
+    for (let i = 1; i <= 4; i++) {
+      const g = new PIXI.Graphics();
+      this.rippleContainer.addChild(g);
+
+      const state = {
+        expansion: 0,
+        alpha: 0.8 * (1 - i / 5),
+      };
+
+      anime({
+        targets: state,
+        expansion: i * 40,
+        alpha: 0,
+        duration: 1500,
+        delay: i * 100,
+        easing: "easeOutExpo",
+        update: () => {
+          if (g.destroyed) return;
+          g.clear();
+          g.stroke({ width: 2, color: rippleColor, alpha: state.alpha });
+          // Draw expanding from center
+          g.roundRect(
+            centerX - (width + state.expansion) / 2,
+            centerY - (height + state.expansion) / 2,
+            width + state.expansion,
+            height + state.expansion,
+            20 + i * 2,
+          );
+          g.stroke();
+        },
+        complete: () => g.destroy(),
+      });
     }
   }
 
@@ -454,10 +506,8 @@ export class FunFactBox {
   }
 
   _reshapeBox() {
-    this.box.reshape(this.typewriter.textObject, {
-      width: 650,
-      height: 450,
-    });
+    const size = { width: 650, height: 450 };
+    this.box.reshape(this.typewriter.textObject, size);
   }
 
   applyFact(text) {

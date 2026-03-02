@@ -31,7 +31,7 @@ export class IdleSceneAnime {
     this.container.addChild(this.bgManager.container);
 
     this.swarm = new FishSwarm(
-      20,
+      12,
       app.screen.width,
       app.screen.height,
       ANIMATED_FISH,
@@ -60,26 +60,26 @@ export class IdleSceneAnime {
       },
     );
     this.titleEnclosure.container.position.set(
-      app.screen.width / 2,
-      app.screen.height * 0.2,
+      this.app.screen.width * 0.7,
+      this.app.screen.height * 0.4,
     );
     this.container.addChild(this.titleEnclosure.container);
 
-    this.funFactBox = new FunFactBox(app, [
-      "The first computer bug was an actual bug — a moth found in a relay.",
-      "Ada Lovelace is considered the first programmer.",
-      "The first 1GB hard drive weighed 550 lbs and cost $40,000.",
-    ]);
-    this.funFactBox.setPosition(
-      (app.screen.width / 2) * 0.8,
-      app.screen.height * 0.6,
-    );
-    this.container.addChild(this.funFactBox.container);
+    // this.funFactBox = new FunFactBox(app, [
+    //   "The first computer bug was an actual bug — a moth found in a relay.",
+    //   "Ada Lovelace is considered the first programmer.",
+    //   "The first 1GB hard drive weighed 550 lbs and cost $40,000.",
+    // ]);
+    // this.funFactBox.setPosition(
+    //   (app.screen.width / 2) * 0.8,
+    //   app.screen.height * 0.6,
+    // );
+    // this.container.addChild(this.funFactBox.container);
 
-    this.funFactBox.updateFunFact();
-    this.funFactInterval = setInterval(() => {
-      this.funFactBox.updateFunFact();
-    }, 10000);
+    // this.funFactBox.updateFunFact();
+    // this.funFactInterval = setInterval(() => {
+    //   this.funFactBox.updateFunFact();
+    // }, 10000);
 
     this.infoOverlay = new InfoOverlay(app, RESPONDER_LORE, {
       side: "left",
@@ -89,7 +89,7 @@ export class IdleSceneAnime {
 
     this.optionsOverlay = new InfoOverlay(this.app, RESPONDER_OPTIONS, {
       side: "bottom",
-      tabText: "RESPONDERS & CONTROLS\n▲",
+      tabText: "GET STARTED HERE\n▲",
       closeHint:
         "Press ENTER To Select\n\n▼ Down Arrow To Close | ◀ ▶ To Navigate",
       type: "carousel",
@@ -143,8 +143,8 @@ export class IdleSceneAnime {
       );
 
       activeFishCard.container.position.set(
-        this.app.screen.width * 0.7,
-        this.app.screen.height * 0.6,
+        app.screen.width * 0.35,
+        app.screen.height / 2,
       );
 
       this.responderDisplayContainer.addChild(activeFishCard.container);
@@ -157,22 +157,63 @@ export class IdleSceneAnime {
     const initialId = getResponder();
     if (initialId) this.updateActiveResponder(initialId);
 
+    this.helpText = new TypewriterText(
+      "Use Arrow Keys [▲ ▼ ◀ ▶] To Operate",
+      {
+        fontFamily: "Garamond",
+        fontSize: 30,
+        fill: "#fff200",
+        fontWeight: "bold",
+        align: "center",
+      },
+      { durationPerChar: 50 },
+    );
+
+    this.helpText.container.position.set(
+      this.app.screen.width * 0.7,
+      this.app.screen.height * 0.6,
+    );
+    this.container.addChild(this.helpText.container);
+
+    this.helpBox = new GlassBox(25);
+    this.helpText.container.addChildAt(this.helpBox.graphics, 0);
+
+    this.updateLoop = () => {
+      if (this.helpBox && this.helpText) {
+        this.helpBox.reshape(this.helpText.textObject);
+      }
+    };
+    this.app.ticker.add(this.updateLoop);
+
+    const triggerHelpEffect = () => {
+      this.helpBox.ripple("#f53500");
+      this.helpText.play();
+    };
+
+    triggerHelpEffect();
+    this.helpInterval = setInterval(triggerHelpEffect, 4000);
+
     window.currentActiveScene = this;
   }
 
   destroy() {
     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
+    if (this.helpInterval) clearInterval(this.helpInterval);
     if (this.funFactInterval) clearInterval(this.funFactInterval);
     if (this.unsubscribeResponder) this.unsubscribeResponder();
     if (this.responderDisplayContainer) {
       this.responderDisplayContainer.destroy({ children: true });
     }
 
+    if (this.updateLoop) {
+      this.app.ticker.remove(this.updateLoop);
+    }
+
     if (this.infoOverlay) this.infoOverlay.destroy();
     if (this.optionsOverlay) this.optionsOverlay.destroy();
     if (this.controlsOverlay) this.controlsOverlay.destroy();
-
-    this.funFactBox.destroy();
+    if (this.helpText) this.helpText.destroy();
+    //this.funFactBox.destroy();
 
     PIXI.Ticker.shared.remove(this.swarmUpdate);
 

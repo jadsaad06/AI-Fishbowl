@@ -1,12 +1,17 @@
 import * as PIXI from "pixi.js";
 import { getResponder } from "../state/store.js";
 import { BackgroundRandomizer, createResponder } from "../assets/sprites.js";
-import { PulseText, ModernBox } from "../assets/sprites_anime.js";
+import {
+  PulseText,
+  ModernBox,
+  TypewriterText,
+  GlassBox,
+} from "../assets/sprites_anime.js";
 import {
   RESPONDERS,
-  RESPONDING_BACKGROUNDS,
   RESPONDER_PROMPTS,
   FALLBACK_PROMPTS,
+  BACKGROUNDS,
 } from "../app.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 
@@ -15,7 +20,7 @@ export class SpeechSceneAnime {
     this.app = app;
     this.container = new PIXI.Container();
 
-    this.bg = new BackgroundRandomizer(app, RESPONDING_BACKGROUNDS);
+    this.bg = new BackgroundRandomizer(app, BACKGROUNDS);
     this.container.addChild(this.bg.container);
 
     this.syncGroup = new PIXI.Container();
@@ -36,10 +41,11 @@ export class SpeechSceneAnime {
     this.pulseText = new PulseText(
       promptText,
       {
-        fontFamily: "Courier New",
-        fontSize: 30,
-        fill: "#ffffff",
-        align: "left",
+        fontFamily: "Garamond",
+        fontSize: 34,
+        fill: "#000000",
+        align: "center",
+        fontWeight: "bold",
         wordWrap: true,
         wordWrapWidth: app.screen.width * 0.5,
         breakWords: true,
@@ -55,23 +61,101 @@ export class SpeechSceneAnime {
       },
     );
     this.pulseText.textObject.anchor.set(0, 0.5);
-    this.pulseText.container.position.set(250, 0);
+    this.pulseText.container.position.set(250, 40);
 
-    this.promptBox = new ModernBox(40, 0x1a1a1a, 0.9);
+    this.promptBox = new GlassBox(40);
     this.pulseText.container.addChildAt(this.promptBox.graphics, 0);
 
     this.syncGroup.addChild(this.pulseText.container);
+    this.syncGroup.position.set(app.screen.width / 2, app.screen.height * 0.8);
 
     this.promptBox.reshape(this.pulseText.textObject);
+
+    this.listeningText = new TypewriterText(
+      "Start Talking, I'm Listening!",
+      {
+        fontFamily: "Garamond",
+        fontSize: 34,
+        fill: "#000000",
+        fontWeight: "bold",
+        align: "center",
+      },
+      { durationPerChar: 50 },
+    );
+
+    this.listeningText.container.position.set(
+      app.screen.width / 2,
+      app.screen.height * 0.15,
+    );
+    this.container.addChild(this.listeningText.container);
+
+    this.glassBox = new GlassBox(25);
+
+    this.listeningText.container.addChildAt(this.glassBox.graphics, 0);
+
+    this.backText = new TypewriterText(
+      "Press ESC To Go Back",
+      {
+        fontFamily: "Garamond",
+        fontSize: 34,
+        fontWeight: "italic",
+        fill: "#000000",
+        align: "center",
+      },
+      { durationPerChar: 70 },
+    );
+
+    this.backText.container.position.set(
+      this.app.screen.width * 0.15,
+      this.app.screen.height * 0.15,
+    );
+    this.container.addChild(this.backText.container);
+
+    this.backBox = new GlassBox(20);
+    this.backText.container.addChildAt(this.backBox.graphics, 0);
 
     this.updateLoop = () => {
       if (this.promptBox && this.pulseText) {
         this.promptBox.reshape(this.pulseText.textObject);
       }
+
+      if (this.glassBox && this.listeningText) {
+        this.glassBox.reshape(this.listeningText.textObject);
+      }
+
+      if (this.backBox && this.backText) {
+        this.backBox.reshape(this.backText.textObject);
+      }
     };
     this.app.ticker.add(this.updateLoop);
 
+    this.rippleInterval = null;
     this.initAnimations();
+    this.setupListeningUI();
+  }
+
+  setupListeningUI() {
+    this.glassBox.reshape(this.listeningText.textObject);
+
+    const originalUpdate = this.updateLoop;
+    this.updateLoop = () => {
+      if (originalUpdate) originalUpdate();
+      if (this.glassBox && this.listeningText) {
+        this.glassBox.reshape(this.listeningText.textObject);
+      }
+      if (this.backBox && this.backText) {
+        this.backBox.reshape(this.backText.textObject);
+      }
+    };
+
+    const triggerEffect = () => {
+      this.glassBox.ripple("#ff8f45");
+      this.backBox.ripple("#ff8f45");
+      this.listeningText.play();
+      this.backText.play();
+    };
+    triggerEffect();
+    this.rippleInterval = setInterval(triggerEffect, 3000);
   }
 
   initAnimations() {
@@ -98,10 +182,15 @@ export class SpeechSceneAnime {
   }
 
   destroy() {
+    if (this.rippleInterval) {
+      clearInterval(this.rippleInterval);
+    }
     if (this.updateLoop) {
       this.app.ticker.remove(this.updateLoop);
     }
     anime.remove(this.syncGroup);
+    if (this.listeningText) this.listeningText.destroy();
+    if (this.backText) this.backText.destroy();
     if (this.pulseText) this.pulseText.destroy();
     if (this.container && !this.container.destroyed) {
       this.container.destroy({ children: true });
