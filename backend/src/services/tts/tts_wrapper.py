@@ -26,7 +26,7 @@ def main():
             if text_to_speak:
                 print_flush("TTS_SPEECH_STARTED")
                 try:
-                    tts_functions.speak_text(text_to_speak, 1)
+                    tts_functions.speak_text(text_to_speak, personality_id)
                 except Exception as e:
                     print(f"Error in tts_functions: {e}", file=sys.stderr)
                     import traceback
