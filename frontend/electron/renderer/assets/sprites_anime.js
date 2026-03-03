@@ -14,7 +14,7 @@ export class GradientText {
       x = 0,
       y = 0,
       bold = true,
-      shadowColor = "#979392",
+      shadowColor = "#000000",
       shadowBlur = 10,
       padding = 40,
     } = options;
@@ -430,7 +430,7 @@ export class GlassBox extends ModernBox {
       minY = tminY - this.padding;
     }
 
-    this.graphics.fill({ color: 0xffffff, alpha: 0.1 });
+    this.graphics.fill({ color: 0xffffff, alpha: 0.05 });
     this.graphics.roundRect(minX + 4, minY + 4, width - 8, height - 8, 15);
     this.graphics.fill();
 
@@ -440,7 +440,7 @@ export class GlassBox extends ModernBox {
 
     this.graphics.stroke({
       width: 2.5,
-      color: 0xf53500,
+      color: "#b0cbfc",
       alpha: 0.8,
       alignment: 0,
     });
@@ -614,7 +614,7 @@ export class SlidingOverlay {
     this.tabLabel = new PIXI.Text(tabText, {
       fontFamily: "Trebuchet MS",
       fontSize: 20,
-      fill: "#ffea00",
+      fill: "#ffff00",
       letterSpacing: 2,
       align: "center",
       fontWeight: "bold",
@@ -636,7 +636,7 @@ export class SlidingOverlay {
       this.closeText = new PIXI.Text(closeHint, {
         fontFamily: "Garamond",
         fontSize: 28,
-        fill: "#ffea00",
+        fill: "#ffff00",
         align: "center",
       });
 
@@ -656,10 +656,10 @@ export class SlidingOverlay {
     if (this.bounceInterval) clearInterval(this.bounceInterval);
 
     const config = {
-      left: { axis: "x", distance: 30 }, // Move Right (+20) then back
-      right: { axis: "x", distance: -30 }, // Move Left (-20) then back
-      bottom: { axis: "y", distance: -30 }, // Move Up (-20) then back
-      top: { axis: "y", distance: 30 }, // Move Down (+20) then back
+      left: { axis: "x", distance: 50 }, // Move Right (+20) then back
+      right: { axis: "x", distance: -50 }, // Move Left (-20) then back
+      bottom: { axis: "y", distance: -50 }, // Move Up (-20) then back
+      top: { axis: "y", distance: 50 }, // Move Down (+20) then back
     }[this.side];
 
     const axis = config.axis;
@@ -767,9 +767,9 @@ export class ResponderEnclosure {
   constructor(
     data,
     padding = 20,
-    color = 0xd9b8b8,
+    color = "#ffffff",
     fixedSize = null,
-    gradientColors = { c1: "#efef05", c2: "#db9271" },
+    gradientColors = { c1: "#50ffc8", c2: "#036b97" },
     styles = {},
   ) {
     const defaultStyles = {
@@ -794,7 +794,7 @@ export class ResponderEnclosure {
     this.fixedSize = fixedSize;
 
     const baseStyle = {
-      fill: "#ffea00",
+      fill: "#ffff00",
       align: "center",
       fontSize: 20,
       wordWrap: true,
@@ -891,7 +891,7 @@ export class InfoOverlay extends SlidingOverlay {
           width: 360,
           height: 580,
         },
-        { c1: "#ec4d20", c2: "#ef8325" },
+        { c1: "#ff2402", c2: "#ffff00" },
         {
           header: { fontSize: 24, fontFamily: "Verdana" },
           subLabel: { fontSize: 18, fontFamily: "Garamond" },

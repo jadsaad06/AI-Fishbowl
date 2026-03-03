@@ -117,7 +117,7 @@ export class KeyboardScene {
       text: "> Ready to type...",
       style: {
         fontFamily: "monospace",
-        fill: "#712e01",
+        fill: "#fff652",
         fontSize: 24,
       },
     });

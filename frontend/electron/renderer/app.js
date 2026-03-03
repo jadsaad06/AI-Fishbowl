@@ -18,10 +18,7 @@ import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
 import { ListeningSceneAnime } from "./scenes/ListeningSceneAnime.js";
 import { RespondingSceneAnime } from "./scenes/RespondingSceneAnime.js";
 
-export const BACKGROUNDS = [
-  "assets/images/glass_box_idle.jpg",
-  "assets/images/glass_box_idle_2.jpg",
-];
+export const BACKGROUNDS = ["assets/images/idle_hd_2.jpg"];
 export const SPEECH_BACKGROUNDS = ["assets/images/glass_box_main.jpg"];
 
 export const RESPONDER_LORE = [

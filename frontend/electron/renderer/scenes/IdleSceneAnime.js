@@ -54,18 +54,18 @@ export class IdleSceneAnime {
         width: 600,
         height: 200,
       },
-      { c1: "#f53500", c2: "#a8540a" },
+      { c1: "#ff2402", c2: "#ffff00" },
       {
         header: {
-          fontSize: 80,
-          fontFamily: "Trebuchet MS",
-          fontWeight: "bold",
+          fontSize: 64,
+          fontFamily: "Verdana",
+          fontWeight: "italic",
         },
       },
     );
     this.titleEnclosure.container.position.set(
-      this.app.screen.width * 0.7,
-      this.app.screen.height * 0.4,
+      this.app.screen.width / 2,
+      this.app.screen.height * 0.3,
     );
     this.container.addChild(this.titleEnclosure.container);
 
@@ -128,27 +128,22 @@ export class IdleSceneAnime {
 
       if (!data) return;
       const displayData = {
-        name: "Your Fish",
+        name: `${data.name}`,
         path: data.path,
-        bio:
-          `To Talk: Say 'Hey ${data.name}'\n` +
-          `To Type: Press K\n` +
-          `To Select Other: Press ▲ to view options and Press ENTER\n` +
-          `To view stories: Press ▶ to view stories\n` +
-          `To view controls: Press ◀ to view controls`,
+        bio: `Choose Someone Else:\nPress [1-5] OR ▲`,
       };
 
       const activeFishCard = new ResponderEnclosure(
         displayData,
         20,
         0xffffff,
-        { width: 320, height: 450 },
-        { c1: "#f53500", c2: "#a8540a" },
+        { width: 300, height: 400 },
+        { c1: "#ff2402", c2: "#ffff00" },
       );
 
       activeFishCard.container.position.set(
-        app.screen.width * 0.35,
-        app.screen.height / 2,
+        this.app.screen.width * 0.6,
+        this.app.screen.height * 0.65,
       );
 
       this.responderDisplayContainer.addChild(activeFishCard.container);
@@ -162,20 +157,26 @@ export class IdleSceneAnime {
     if (initialId) this.updateActiveResponder(initialId);
 
     this.helpText = new TypewriterText(
-      "Use Arrow Keys [▲ ▼ ◀ ▶] To Operate",
+      "Use Arrow Keys [▲ ▼ ◀ ▶] To Operate\n\n" +
+        `Speak To Fish By Saying:\n` +
+        `   'Hey', 'Hello', 'Hi' To Your Fish\n` +
+        `Chat With Your Fish By Pressing K\n` +
+        `   ▶ Get To Know Your Fish!\n` +
+        `   ◀ Get To Know The System!\n` +
+        `   ▲ Choose Your Fish And Get Started!`,
       {
         fontFamily: "Garamond",
-        fontSize: 30,
-        fill: "#fff200",
+        fontSize: 24,
+        fill: "#ebee40",
         fontWeight: "bold",
-        align: "center",
+        align: "left",
       },
-      { durationPerChar: 50 },
+      { durationPerChar: 30 },
     );
 
     this.helpText.container.position.set(
-      this.app.screen.width * 0.7,
-      this.app.screen.height * 0.6,
+      this.app.screen.width * 0.4,
+      this.app.screen.height * 0.65,
     );
     this.container.addChild(this.helpText.container);
 
@@ -190,12 +191,12 @@ export class IdleSceneAnime {
     this.app.ticker.add(this.updateLoop);
 
     const triggerHelpEffect = () => {
-      this.helpBox.ripple("#f53500");
+      this.helpBox.ripple("#1bdcf6");
       this.helpText.play();
     };
 
     triggerHelpEffect();
-    this.helpInterval = setInterval(triggerHelpEffect, 4000);
+    this.helpInterval = setInterval(triggerHelpEffect, 30000);
 
     window.currentActiveScene = this;
   }
