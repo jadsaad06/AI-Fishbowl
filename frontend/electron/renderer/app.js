@@ -61,7 +61,7 @@ export const RESPONDER_OPTIONS = [
       "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 1\n\n" +
       "- GREETING: 'Hey Pinto', 'Hi Pinto', 'Okay Pinto', 'Hello Pinto'\n\n" +
-      "- TOOLS: Dad Jokes, Google Maps \n\n",
+      "- TOOLS: Google Maps, And A List Of Awesome Things \n\n",
     path: "assets/images/responder_1.png",
     id: 1,
   },
@@ -71,7 +71,7 @@ export const RESPONDER_OPTIONS = [
       "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 2\n\n" +
       "- GREETING: 'Hey Jimbo', 'Hi Jimbo', 'Okay Jimbo', 'Hello Jimbo'\n\n" +
-      "- TOOLS: Web Search \n\n",
+      "- TOOLS: Web Search, Dad Jokes \n\n",
     path: "assets/images/responder_2.png",
     id: 2,
   },
@@ -157,9 +157,9 @@ export const RESPONDER_PROMPTS = {
     name: "Pinto",
     prompts: [
       "Examples of stuff I can help you with: \n",
-      " 1. Tell Me A Dad Joke",
+      " 1. What tools do you have access to?",
       " 2. What's The Best Route From Portland To Seattle?",
-      " 3. How Long Will It Take Me To Drive From Billings, MT to Ames, IA",
+      " 3. How Long Will It Take Me To Drive From Billings, MT to Ames, IA?",
       " 4. Will AI take over the world?",
     ],
   },
@@ -167,10 +167,10 @@ export const RESPONDER_PROMPTS = {
     name: "Jimbo",
     prompts: [
       "Examples of stuff I can help you with: \n",
-      " 1. Give Me An Update On Current Events",
+      " 1. Tell Me A Dad Joke",
       " 2. List AI Research Papers Published In The Last Month.",
       " 3. List Companies That Are Hiring Software Engineers.",
-      " 4. What's the fastest way to crack a coding interview?",
+      " 4. Tell Me The Imporant Current Headlines.",
     ],
   },
   3: {
