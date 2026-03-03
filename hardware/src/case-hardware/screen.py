@@ -303,8 +303,8 @@ if __name__ == "__main__":
                 oled_debug = True
         oled = OLED(clear=oled_clear, debug=oled_debug)
         try:
-            import smbus
-            bus = smbus.SMBus(7)
+            import smbus2
+            bus = smbus2.SMBus(7)
             if not oled_clear:
                 start = 1    
                 bus.write_byte_data(0x0E, 0x08, start)

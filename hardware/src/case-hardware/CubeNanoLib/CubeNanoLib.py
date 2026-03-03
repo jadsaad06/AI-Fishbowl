@@ -3,7 +3,7 @@
 
 #!/usr/bin/env python3
 #coding: utf-8
-import smbus
+import smbus2
 import time
 
 # V1.0.1
@@ -12,7 +12,7 @@ class CubeNano(object):
     def __init__(self, i2c_bus=7, delay=0.002, debug=False):
         self.__debug = debug
         self.__delay = delay
-        self.__i2c_bus = smbus.SMBus(int(i2c_bus))
+        self.__i2c_bus = smbus2.SMBus(int(i2c_bus))
         
         self.__Addr = 0x0E
         self.__REG_FAN = 0x08
