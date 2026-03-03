@@ -14,6 +14,17 @@ LLM_ENV="$ROOT/backend/src/services/llm/.env"
 SCREEN_PID=""
 SERVER_PID=""
 
+SYSTEM=$(cat /proc/device-tree/model)
+ON_JETSON=0
+
+if [[ "$SYSTEM" == *"Orin Nano"* ]]; then
+	echo "Detected Jetson Orin Nano!"
+	ON_JETSON=1
+else
+	echo "Not on Jetson Orin Nano. Case hardware setup will be skipped."
+	ON_JETSON=0
+fi
+
 
 load_envs() {
 	echo "*****Loading .env files..."
@@ -88,6 +99,10 @@ setup() {
 	echo "*****Installing Python dependencies..."
 	pip install -r "$ROOT/backend/requirements.txt"
 	pip install -r "$ROOT/hardware/requirements.txt"
+	if [[ $ON_JETSON == 1 ]]; then
+		pip install -r "$ROOT/hardware/src/case-hardware/requirements.txt"
+		pip install "$HOME/torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl"
+	fi
 
 	echo "*****Installing NodeJS dependencies..."
 	(cd "$ROOT/frontend/electron" && npm install)
@@ -161,10 +176,12 @@ run() {
 		echo "*****Skipping local server. App will use Google Cloud STT."
 	fi
 
-	# run case hardware scripts, start program
-	python "$ROOT/hardware/src/case-hardware/led-color.py"
-	python "$ROOT/hardware/src/case-hardware/screen.py" &
-	SCREEN_PID=$!
+	# run case hardware scripts if on Jetson, start program
+	if [[ $ON_JETSON == 1 ]]; then
+		python "$ROOT/hardware/src/case-hardware/led-color.py"
+		python "$ROOT/hardware/src/case-hardware/screen.py" &
+		SCREEN_PID=$!
+	fi
 	(cd "$ROOT/frontend/electron" && npm start)
 
 }
