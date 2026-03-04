@@ -8,7 +8,7 @@ import torch
 PREBUFFER_CHUNKS = 1
 
 tts_model = None
-default_voice_state = None
+voice_state = None
 
 
 def _resolve_runtime_device() -> torch.device:
@@ -38,15 +38,17 @@ def _move_model_state_to_device(model_state: dict, device: torch.device) -> dict
     return model_state
 
 
-def _load_model():
+def _load_model(personality_id):
     # Load the TTS model and voice state globally.
-    global tts_model, default_voice_state
+    global tts_model, voice_state
+    # Always resolve the desired runtime device first.
+    device = _resolve_runtime_device()
 
-    if tts_model is None:  # Only loads if not already loaded.
+    # Load the model if it isn't already loaded.
+    if tts_model is None:
         print("Loading Kyutai Pocket TTS model...", flush=True)
         print(f"Torch CUDA available: {torch.cuda.is_available()}", flush=True)
 
-        device = _resolve_runtime_device()
         if device.type == "cuda":
             print(f"Using CUDA device: {torch.cuda.get_device_name(0)}", flush=True)
         else:
@@ -55,12 +57,30 @@ def _load_model():
         tts_model = TTSModel.load_model().to(device)
         tts_model.eval()
         print(f"TTS model runtime device: {tts_model.device}", flush=True)
+    else:
+        # Ensure model is on the requested device (no-op if already there).
+        try:
+            tts_model = tts_model.to(device)
+        except Exception:
+            pass
 
-        print("Getting voice state for 'alba'", flush=True)
-        default_voice_state = tts_model.get_state_for_audio_prompt("alba")  # Preset voice for Kyutai.
-        default_voice_state = _move_model_state_to_device(default_voice_state, device)
+    # voice name for each personality_id.
+    if personality_id == '1':
+        voice_name = 'alba'
+    elif personality_id == '2':
+        voice_name = 'jean'
+    elif personality_id == '3':
+        voice_name = 'marius'
+    elif personality_id == '5':
+        voice_name = 'azelma'
+    else:
+        voice_name = 'alba'  #Tried javert, but speaks too slowly
 
-        print("Voice state loaded.", flush=True)
+    print(f"Getting voice state for '{voice_name}'", flush=True)
+    voice_state = tts_model.get_state_for_audio_prompt(voice_name)
+    voice_state = _move_model_state_to_device(voice_state, device)
+
+    print("Voice state loaded.", flush=True)
 
 
 def _play_audio_stream(sample_rate: int):
@@ -80,19 +100,18 @@ def _write_audio_chunk(stream, audio: np.ndarray):
     stream.write(audio_int16.tobytes())
 
 
-def speak_text(text: str, personality_id: str = None):
-    del personality_id
+def speak_text(text: str, personality_id: str):
     if not text or not text.strip():
         return
 
-    _load_model()
+    _load_model(personality_id)
 
     start_time = time.monotonic()
 
     print("Streaming TTS")
 
     # copy_state=True keeps each text chunk independent and avoids premature cutoff on long utterances.
-    chunks = tts_model.generate_audio_stream(default_voice_state, text, copy_state=True)
+    chunks = tts_model.generate_audio_stream(voice_state, text, copy_state=True)
     buffer = []
 
     # Buffer only a small number of chunks to smooth playback startup.

@@ -4,7 +4,7 @@
  */
 let currentState = "idle";
 let currentSubtitles = "";
-let currentResponder = null;
+let currentResponder = 1;
 let currentPrompt = "";
 // Set of callback functions that want to be notified when the state changes
 const listeners = new Set();

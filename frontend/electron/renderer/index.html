@@ -2,9 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Think Tank</title>
+    <title>Coral Net</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <meta name="viewport" content="width=device-width, initial scale=1.0" />
+    <style>
+      /* Prevent margins and scrollbars from showing white edges */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body,
+      html {
+        width: 100%;
+        height: 100%;
+        overflow: hidden; /* Critical: prevents scrollbars during panel rollout */
+      }
+
+      canvas {
+        display: block; /* Removes the default inline-block bottom gap */
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+
     <script type="importmap">
       {
         "imports": {
@@ -16,11 +38,5 @@
 
   <body>
     <script type="module" src="./app.js"></script>
-    <button onclick="window.fishbowl?.setState('listening')">Listening</button>
-    <button onclick="window.fishbowl?.setState('thinking')">Thinking</button>
-    <button onclick="window.fishbowl?.setState('responding')">
-      Responding
-    </button>
-    <button onclick="window.fishbowl?.setState('keyboard')">Keyboard</button>
   </body>
 </html>
