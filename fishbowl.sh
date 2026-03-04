@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV="${ROOT}/.venv"
@@ -11,6 +11,19 @@ WHISPER_MODEL="$WHISPER_ROOT/models/ggml-base.en.bin"
 TTS_ENV="$ROOT/backend/src/services/tts/.env"
 STT_ENV="$ROOT/backend/src/services/stt/.env"
 LLM_ENV="$ROOT/backend/src/services/llm/.env"
+SCREEN_PID=""
+SERVER_PID=""
+
+SYSTEM=$(cat /proc/device-tree/model 2>/dev/null)
+ON_JETSON=0
+
+if [[ "$SYSTEM" == *"Orin Nano"* ]]; then
+	echo "Detected Jetson Orin Nano!"
+	ON_JETSON=1
+else
+	echo "Not on Jetson Orin Nano. Case hardware setup will be skipped."
+	ON_JETSON=0
+fi
 
 
 load_envs() {
@@ -44,6 +57,38 @@ ensure_defaults() {
 	export KEY="${KEY:-}" # Gemini TTS
 }
 
+cleanup_screen() {
+	local pid="${SCREEN_PID:-}"
+	if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+		kill -INT "$pid" 2>/dev/null || true
+		wait "$pid" 2>/dev/null || true
+	fi
+	SCREEN_PID=""
+}
+
+cleanup_led() {
+	python "$ROOT/hardware/src/case-hardware/led-off.py"
+}
+
+cleanup_server() {
+	local pid="${SERVER_PID:-}"
+	if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+		echo ""
+		echo "*****Stopping Whisper Server (PID: $pid)."
+		kill -TERM "$pid" 2>/dev/null || true
+		wait "$pid" 2>/dev/null || true
+	fi
+	SERVER_PID=""
+}
+
+cleanup_all() {
+	if [ $ON_JETSON == 1 ]; then
+		cleanup_screen
+		cleanup_led
+	fi
+	cleanup_server
+	rm "$ROOT/whisper_server.log"
+}
 
 setup() {
 	load_envs
@@ -57,6 +102,10 @@ setup() {
 	echo "*****Installing Python dependencies..."
 	pip install -r "$ROOT/backend/requirements.txt"
 	pip install -r "$ROOT/hardware/requirements.txt"
+	if [[ $ON_JETSON == 1 ]]; then
+		pip install -r "$ROOT/hardware/src/case-hardware/requirements.txt"
+		pip install "$HOME/torch-2.5.0a0+872d972e41.nv24.08.17622132-cp310-cp310-linux_aarch64.whl"
+	fi
 
 	echo "*****Installing NodeJS dependencies..."
 	(cd "$ROOT/frontend/electron" && npm install)
@@ -73,72 +122,71 @@ setup() {
 
 
 run() {
-    load_envs
-    ensure_defaults
+	# set up environment
+	load_envs
+	ensure_defaults
+	if [ ! -d "$VENV" ]; then
+		echo "Missing venv at $VENV. Run: $0 setup"
+		exit 1
+	fi
+	source "$VENV/bin/activate"
 
-    if [ ! -d "$VENV" ]; then
-        echo "Missing venv at $VENV. Run: $0 setup"
-        exit 1
-    fi
-    source "$VENV/bin/activate"
+	# traps for actions on program exit
+	trap cleanup_all EXIT
+	trap 'cleanup_all; exit 130' INT
+	trap 'cleanup_all; exit 143' TERM
+	trap 'cleanup_all; exit 129' HUP
 
-    # --- WHISPER SERVER LOGIC ---
-    SERVER_PID=""
+	# --- WHISPER SERVER LOGIC ---
+	SERVER_PID=""
+	echo "*****Attempting to start local Whisper STT server."
+	if [ -f "$WHISPER_BIN" ] && [ -f "$WHISPER_MODEL" ]; then
+		echo "*****Found Whisper binary/model. Starting local STT server."
 
-    echo "*****Attempting to start local Whisper STT server."
+		# Log output to file for debugging. Log deleted on program close
+		local log_file="$ROOT/whisper_server.log"
+		"$WHISPER_BIN" \
+			-m "$WHISPER_MODEL" \
+			--host 127.0.0.1 --port 8080 > "$log_file" 2>&1 &
+		SERVER_PID=$!
 
-    cleanup() {
-        if [ -n "${SERVER_PID:-}" ]; then
-            echo -e "\n*****Stopping Whisper Server (PID: $SERVER_PID)."
-            kill "$SERVER_PID" 2>/dev/null || true
-        fi
-    }
-    trap cleanup EXIT
+		# Health check: verify process stays alive briefly.
+		local tries=0
+		local max_tries=10
+		local started=false
+		while [ "$tries" -lt "$max_tries" ]; do
+			if kill -0 "$SERVER_PID" 2>/dev/null; then
+				if [ "$tries" -ge 2 ]; then
+					started=true
+					break
+				fi
+			else
+				break
+			fi
+			sleep 1
+			tries=$((tries + 1))
+		done
 
-    if [ -f "$WHISPER_BIN" ]; then
-        echo "*****Found Whisper binary. Starting local STT server."
+		if [ "$started" = true ]; then
+			echo "*****Whisper Server active (PID: $SERVER_PID)."
+		else
+			echo "*****Warning: Whisper Server failed to start. See $log_file for details."
+			echo "*****Skipping local server. App will use Google Cloud STT."
+			cleanup_server
+		fi
+	else
+		echo "*****Whisper binary/model not found."
+		echo "*****Skipping local server. App will use Google Cloud STT."
+	fi
 
-        # Log output to file for debugging
-        LOG_FILE="$ROOT/whisper_server.log"
-        "$WHISPER_BIN" \
-            -m "$WHISPER_MODEL" \
-            --host 127.0.0.1 --port 8080 > "$LOG_FILE" 2>&1 &
+	# run case hardware scripts if on Jetson, start program
+	if [[ $ON_JETSON == 1 ]]; then
+		python "$ROOT/hardware/src/case-hardware/led-color.py"
+		python "$ROOT/hardware/src/case-hardware/screen.py" &
+		SCREEN_PID=$!
+	fi
+	(cd "$ROOT/frontend/electron" && npm start)
 
-        SERVER_PID=$!
-
-        # Health check: Wait for port 8080 (requires netcat) or just verify process is alive
-        local tries=0
-        local max_tries=10
-        local started=false
-
-        while [ $tries -lt $max_tries ]; do
-            if kill -0 $SERVER_PID 2>/dev/null; then
-                # Optional: Check if port is actually open using nc (netcat)
-                # if nc -z 127.0.0.1 8080; then started=true; break; fi
-
-                # Simple Fallback: Just assume 2 seconds is enough if process didn't die
-                if [ $tries -ge 2 ]; then started=true; break; fi
-            else
-                break
-            fi
-            sleep 1
-            tries=$((tries+1))
-        done
-
-        if [ "$started" = true ]; then
-             echo "*****Whisper Server active (PID: $SERVER_PID)."
-        else
-             echo "*****Warning: Whisper Server failed to start. See $LOG_FILE for details."
-       	     echo "*****Skipping local server. App will use Google Cloud STT."
-             SERVER_PID="" # reset server PID since it didn't start
-        fi
-    else
-        echo "*****Whisper binary not found at $WHISPER_BIN"
-        echo "*****Skipping local server. App will use Google Cloud STT."
-    fi
-
-    # Start Frontend
-    (cd "$ROOT/frontend/electron" && npm start)
 }
 
 
@@ -147,5 +195,4 @@ setup) setup ;;
 run) run ;;
 *) echo "Usage: $0 {setup|run}" ;;
 esac
-
 

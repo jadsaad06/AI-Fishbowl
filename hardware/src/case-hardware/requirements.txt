@@ -1,0 +1,4 @@
+#only required on local Jetson system for case hardware management
+smbus2
+Pillow
+Adafruit_SSD1306
