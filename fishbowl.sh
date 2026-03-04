@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV="${ROOT}/.venv"
@@ -14,7 +14,7 @@ LLM_ENV="$ROOT/backend/src/services/llm/.env"
 SCREEN_PID=""
 SERVER_PID=""
 
-SYSTEM=$(cat /proc/device-tree/model)
+SYSTEM=$(cat /proc/device-tree/model 2>/dev/null)
 ON_JETSON=0
 
 if [[ "$SYSTEM" == *"Orin Nano"* ]]; then
@@ -82,9 +82,12 @@ cleanup_server() {
 }
 
 cleanup_all() {
-	cleanup_screen
+	if [ $ON_JETSON == 1 ]; then
+		cleanup_screen
+		cleanup_led
+	fi
 	cleanup_server
-	cleanup_led
+	rm "$ROOT/whisper_server.log"
 }
 
 setup() {
@@ -140,7 +143,7 @@ run() {
 	if [ -f "$WHISPER_BIN" ] && [ -f "$WHISPER_MODEL" ]; then
 		echo "*****Found Whisper binary/model. Starting local STT server."
 
-		# Log output to file for debugging
+		# Log output to file for debugging. Log deleted on program close
 		local log_file="$ROOT/whisper_server.log"
 		"$WHISPER_BIN" \
 			-m "$WHISPER_MODEL" \
