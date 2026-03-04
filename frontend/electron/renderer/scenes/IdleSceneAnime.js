@@ -88,21 +88,26 @@ export class IdleSceneAnime {
 
     this.micIndicator.setVoiceActive(getMicActive());
 
-    // this.funFactBox = new FunFactBox(app, [
-    //   "The first computer bug was an actual bug — a moth found in a relay.",
-    //   "Ada Lovelace is considered the first programmer.",
-    //   "The first 1GB hard drive weighed 550 lbs and cost $40,000.",
-    // ]);
-    // this.funFactBox.setPosition(
-    //   (app.screen.width / 2) * 0.8,
-    //   app.screen.height * 0.6,
-    // );
-    // this.container.addChild(this.funFactBox.container);
+    this.factOverlay = new SlidingOverlay(app, {
+      side: "top",
+      tabText: "⬇ RANDOM FACT ⬇",
+      closeHint: "▲ Up Arrow To Close",
+      bgColor: "#000000",
+      bgAlpha: 0.92,
+      animationDuration: 1000,
+    });
 
-    // this.funFactBox.updateFunFact();
-    // this.funFactInterval = setInterval(() => {
-    //   this.funFactBox.updateFunFact();
-    // }, 10000);
+    this.funFactBox = new FunFactBox(app, [
+      "The first computer bug was an actual bug — a moth found in a relay.",
+      "Ada Lovelace is considered the first programmer.",
+      "The first 1GB hard drive weighed 550 lbs and cost $40,000.",
+    ]);
+
+    this.factOverlay.attachContent(
+      this.funFactBox.container,
+      app.screen.width / 2,
+      app.screen.height / 2,
+    );
 
     this.infoOverlay = new InfoOverlay(app, RESPONDER_LORE, {
       side: "left",
@@ -130,6 +135,7 @@ export class IdleSceneAnime {
 
     this.responderDisplayContainer = new PIXI.Container();
     this.container.addChild(this.responderDisplayContainer);
+    this.container.addChild(this.factOverlay.container);
     this.container.addChild(this.infoOverlay.container);
     this.container.addChild(this.optionsOverlay.container);
     this.container.addChild(this.controlsOverlay.container);
@@ -226,6 +232,8 @@ export class IdleSceneAnime {
     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
     if (this.helpInterval) clearInterval(this.helpInterval);
     if (this.funFactInterval) clearInterval(this.funFactInterval);
+    if (this.factOverlay) this.factOverlay.destroy();
+    if (this.funFactBox) this.funFactBox.destroy();
     if (this.unsubscribeResponder) this.unsubscribeResponder();
     if (this.unsubscribeMic) this.unsubscribeMic();
     if (this.micIndicator) this.micIndicator.destroy();

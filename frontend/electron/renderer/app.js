@@ -477,7 +477,8 @@ function setupKeyboardInput() {
     const activeScene = window.currentActiveScene;
     if (!activeScene) return;
 
-    const { optionsOverlay, infoOverlay, controlsOverlay } = activeScene;
+    const { optionsOverlay, infoOverlay, controlsOverlay, factOverlay } =
+      activeScene;
 
     if (optionsOverlay?.isOpen) {
       switch (e.key) {
@@ -503,6 +504,11 @@ function setupKeyboardInput() {
       return;
     }
 
+    if (factOverlay?.isOpen) {
+      if (e.key === "ArrowUp") factOverlay.rollin();
+      return;
+    }
+
     if (infoOverlay?.isOpen) {
       if (e.key === "ArrowLeft") infoOverlay.rollin();
       return;
@@ -522,6 +528,11 @@ function setupKeyboardInput() {
         break;
       case "ArrowLeft":
         controlsOverlay?.rollout();
+        break;
+      case "ArrowDown":
+        factOverlay?.rollout(() => {
+          activeScene.funFactBox.updateFunFact();
+        });
         break;
       case "k":
         e.preventDefault();

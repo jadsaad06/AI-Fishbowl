@@ -339,10 +339,12 @@ export class GlassBox extends ModernBox {
   }
 
   reshape(targets, fixedSize = null) {
-    const target = Array.isArray(targets) ? targets[0] : targets;
-    if (target && target.text === "") {
-      this.graphics.clear();
-      return;
+    if (targets !== null) {
+      const target = Array.isArray(targets) ? targets[0] : targets;
+      if (target && target.text === "") {
+        this.graphics.clear();
+        return;
+      }
     }
 
     super.reshape(targets, fixedSize);
@@ -607,7 +609,7 @@ export class FunFactBox {
     );
     this.typewriter.container.position.set(0, 20);
 
-    this.box = new GlassBox(24);
+    this.box = new GlassBox(40);
     this.box.graphics.position.set(0, 0);
 
     this.container.addChild(this.box.graphics);
@@ -618,8 +620,8 @@ export class FunFactBox {
   }
 
   _reshapeBox() {
-    const size = { width: 650, height: 450 };
-    this.box.reshape(this.typewriter.textObject, size);
+    const size = { width: 800, height: 500 };
+    this.box.reshape(null, size);
   }
 
   applyFact(text) {
@@ -846,12 +848,18 @@ export class SlidingOverlay {
     });
   }
 
-  rollout() {
+  attachContent(displayObject, x, y) {
+    this.panel.addChild(displayObject);
+    displayObject.position.set(x, y);
+  }
+
+  rollout(onOpen) {
     if (this.isOpen) return;
     this.isOpen = true;
     this.container.zIndex = 100;
-
     this.animatePanel(this.openPos);
+
+    if (onOpen) onOpen();
   }
 
   rollin() {
