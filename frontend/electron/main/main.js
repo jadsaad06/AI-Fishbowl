@@ -29,12 +29,13 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1920,
     height: 1080,
-    fullscreen: true,
-    kiosk: true,
+    fullscreen: false,
+    kiosk: false,
     webPreferences: {
       preload: path.join(__dirname, "../preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      devTools: true,
     },
   });
 
@@ -189,9 +190,14 @@ function startServices() {
     }
 
     if (out.includes("EVENT:MIC_STARTED")) {
+      win.webContents.send("mic-state-changed", { active: true });
       if (currentAppState === "speech") {
         transitionState("listening");
       }
+    }
+
+    if (out.includes("EVENT:MIC_STOPPED")) {
+      win.webContents.send("mic-state-changed", { active: false });
     }
   });
 

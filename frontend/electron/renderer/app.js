@@ -12,6 +12,7 @@ import {
   getState,
   setResponder,
   getResponder,
+  setMicActive,
 } from "./state/store.js";
 import { setScene, currentScene } from "./scenes/index.js";
 import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
@@ -369,6 +370,10 @@ async function init() {
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send("PERSONALIZATION: " + responderId);
         }
+      });
+
+      window.fishbowl.onMicState(({ active }) => {
+        setMicActive(active);
       });
 
       window.fishbowl.onUserPrompt((text) => {

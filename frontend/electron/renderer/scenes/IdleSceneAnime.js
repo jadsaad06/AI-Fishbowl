@@ -1,7 +1,12 @@
 import * as PIXI from "pixi.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 import { BackgroundManager, FishSwarm } from "../assets/sprites.js";
-import { getResponder, subscribeResponder } from "../state/store.js";
+import {
+  getResponder,
+  subscribeResponder,
+  subscribeMic,
+  getMicActive,
+} from "../state/store.js";
 
 import {
   TypewriterText,
@@ -11,6 +16,7 @@ import {
   FunFactBox,
   SlidingOverlay,
   ResponderEnclosure,
+  MicIndicator,
 } from "../assets/sprites_anime.js";
 import {
   BACKGROUNDS,
@@ -68,6 +74,19 @@ export class IdleSceneAnime {
       this.app.screen.height * 0.3,
     );
     this.container.addChild(this.titleEnclosure.container);
+
+    this.micIndicator = new MicIndicator(app, 250, 80);
+    this.micIndicator.container.position.set(
+      this.app.screen.width * 0.4,
+      this.app.screen.height * 0.5,
+    );
+    this.container.addChild(this.micIndicator.container);
+
+    this.unsubscribeMic = subscribeMic((active) => {
+      this.micIndicator.setVoiceActive(active);
+    });
+
+    this.micIndicator.setVoiceActive(getMicActive());
 
     // this.funFactBox = new FunFactBox(app, [
     //   "The first computer bug was an actual bug — a moth found in a relay.",
@@ -206,6 +225,8 @@ export class IdleSceneAnime {
     if (this.helpInterval) clearInterval(this.helpInterval);
     if (this.funFactInterval) clearInterval(this.funFactInterval);
     if (this.unsubscribeResponder) this.unsubscribeResponder();
+    if (this.unsubscribeMic) this.unsubscribeMic();
+    if (this.micIndicator) this.micIndicator.destroy();
     if (this.responderDisplayContainer) {
       this.responderDisplayContainer.destroy({ children: true });
     }

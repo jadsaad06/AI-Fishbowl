@@ -461,6 +461,109 @@ export class GlassBox extends ModernBox {
   }
 }
 
+export class MicIndicator {
+  constructor(app, width = 300, height = 100) {
+    this.app = app;
+    this.container = new PIXI.Container();
+    this.isActive = false;
+
+    this.waveProps = {
+      amplitude: 0,
+      phase: 0,
+      frequency: 0.1,
+      speed: 0.15,
+    };
+
+    this.header = new PIXI.Text({
+      text: "Microphone Off",
+      style: {
+        fontFamily: "Arial",
+        fontSize: 18,
+        fill: "#ffffff",
+        fontWeight: "bold",
+        letterSpacing: 1,
+      },
+    });
+    this.header.anchor.set(0.5, 1);
+    this.header.y = -height / 2 + 20;
+
+    this.waveGraphics = new PIXI.Graphics();
+    this.glassBox = new GlassBox(20);
+
+    this.container.addChild(this.glassBox.graphics);
+    this.container.addChild(this.header);
+    this.container.addChild(this.waveGraphics);
+
+    this.width = width;
+    this.height = height;
+    this.glassBox.reshape([], { width: this.width, height: this.height });
+
+    this.app.ticker.add(this.update, this);
+  }
+
+  update(ticker) {
+    if (this.waveGraphics.destroyed) return;
+
+    this.waveGraphics.clear();
+    this.waveGraphics.poly(this.calculateWavePoints());
+    this.waveGraphics.stroke({
+      width: 2,
+      color: this.isActive ? "#5ebd9d" : "#666666",
+      alpha: 0.8,
+    });
+
+    this.waveProps.phase += this.waveProps.speed * (this.isActive ? 1 : 0.2);
+  }
+
+  calculateWavePoints() {
+    const points = [];
+    const segments = 60;
+    const waveWidth = this.width - 60;
+    const startX = -waveWidth / 2;
+
+    for (let i = 0; i <= segments; i++) {
+      const x = startX + (i / segments) * waveWidth;
+
+      const variation = this.isActive ? Math.random() * 0.2 + 0.9 : 1;
+      const y =
+        Math.sin(i * this.waveProps.frequency + this.waveProps.phase) *
+          this.waveProps.amplitude *
+          variation +
+        Math.sin(
+          i * this.waveProps.frequency * 1.7 + this.waveProps.phase * 1.3,
+        ) *
+          this.waveProps.amplitude *
+          0.3;
+      points.push(x, y + 10);
+    }
+
+    return points;
+  }
+
+  setVoiceActive(active) {
+    if (this.isActive === active) return;
+    this.isActive = active;
+
+    this.header.text = active ? "Collecting Input..." : "Mic Standby";
+
+    anime({
+      targets: this.waveProps,
+      amplitude: active ? 20 : 0,
+      duration: 400,
+      easing: "easeOutElastic(1, .6)",
+    });
+
+    if (active) {
+      this.glassBox.ripple("#5ebd9d");
+    }
+  }
+
+  destroy() {
+    this.app.ticker.remove(this.update);
+    this.container.destroy({ children: true });
+  }
+}
+
 export class FunFactBox {
   constructor(app, factsList = []) {
     this.app = app;

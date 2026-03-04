@@ -1,36 +1,33 @@
 [
   {
     "id": 1,
-    "name": "kiki",
+    "name": "pinto",
     "wake_phrases": [
-      "hey kiki",
-      "hi kiki",
-      "hello kiki",
-      "okay kiki",
-      "ok kiki",
+      "hey pinto",
+      "hi pinto",
+      "hello pinto",
+      "okay pinto",
+      "ok pinto",
 
-      "kiki",
-      "key key",
-      "kee kee",
-      "keekee",
-      "ki ki",
-      "kee key",
-      "kiki?",
-      "kiki.",
+      "pinto",
+      "pin toe",
+      "peen toe",
+      "pen toe",
+      "pento",
+      "peento",
+      "pinto?",
 
-      "hey key key",
-      "hi key key",
-      "hello key key",
+      "hey pin toe",
+      "hi pin toe",
 
-      "kiki assistant",
-      "kiki fish",
-      "kiki please",
+      "pinto assistant",
+      "pinto please",
 
-      "kicky",
-      "keaky",
-      "keke",
-      "keke?",
-      "kiki hey"
+      "bean toe",
+      "bean to",
+      "beanto",
+      "pinta",
+      "pinto hey"
     ]
   },
   {
@@ -65,33 +62,32 @@
   },
   {
     "id": 3,
-    "name": "pinto",
+    "name": "bongo",
     "wake_phrases": [
-      "hey pinto",
-      "hi pinto",
-      "hello pinto",
-      "okay pinto",
-      "ok pinto",
+      "hey bongo",
+      "hi bongo",
+      "hello bongo",
+      "okay bongo",
+      "ok bongo",
 
-      "pinto",
-      "pin toe",
-      "peen toe",
-      "pen toe",
-      "pento",
-      "peento",
-      "pinto?",
+      "bongo",
+      "bon go",
+      "bungo",
+      "bong go",
+      "bongo?",
+      "bongo.",
 
-      "hey pin toe",
-      "hi pin toe",
+      "hey bon go",
+      "hi bon go",
 
-      "pinto assistant",
-      "pinto please",
+      "bongo assistant",
+      "bongo please",
 
-      "bean toe",
-      "bean to",
-      "beanto",
-      "pinta",
-      "pinto hey"
+      "pongo",
+      "mongo",
+      "bonko",
+      "bengo",
+      "bong oh"
     ]
   },
   {
@@ -129,32 +125,36 @@
   },
   {
     "id": 5,
-    "name": "bongo",
+    "name": "kiki",
     "wake_phrases": [
-      "hey bongo",
-      "hi bongo",
-      "hello bongo",
-      "okay bongo",
-      "ok bongo",
+      "hey kiki",
+      "hi kiki",
+      "hello kiki",
+      "okay kiki",
+      "ok kiki",
 
-      "bongo",
-      "bon go",
-      "bungo",
-      "bong go",
-      "bongo?",
-      "bongo.",
+      "kiki",
+      "key key",
+      "kee kee",
+      "keekee",
+      "ki ki",
+      "kee key",
+      "kiki?",
+      "kiki.",
 
-      "hey bon go",
-      "hi bon go",
+      "hey key key",
+      "hi key key",
+      "hello key key",
 
-      "bongo assistant",
-      "bongo please",
+      "kiki assistant",
+      "kiki fish",
+      "kiki please",
 
-      "pongo",
-      "mongo",
-      "bonko",
-      "bengo",
-      "bong oh"
+      "kicky",
+      "keaky",
+      "keke",
+      "keke?",
+      "kiki hey"
     ]
   }
 ]
