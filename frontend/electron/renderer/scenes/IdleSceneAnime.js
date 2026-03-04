@@ -75,10 +75,10 @@ export class IdleSceneAnime {
     );
     this.container.addChild(this.titleEnclosure.container);
 
-    this.micIndicator = new MicIndicator(app, 250, 80);
+    this.micIndicator = new MicIndicator(app, 484, 100);
     this.micIndicator.container.position.set(
-      this.app.screen.width * 0.4,
-      this.app.screen.height * 0.5,
+      this.app.screen.width * 0.6,
+      this.app.screen.height * 0.505,
     );
     this.container.addChild(this.micIndicator.container);
 
@@ -156,13 +156,13 @@ export class IdleSceneAnime {
         displayData,
         20,
         0xffffff,
-        { width: 300, height: 400 },
+        { width: 300, height: 410 },
         { c1: "#ff2402", c2: "#ffff00" },
       );
 
       activeFishCard.container.position.set(
-        this.app.screen.width * 0.6,
-        this.app.screen.height * 0.65,
+        this.app.screen.width * 0.4,
+        this.app.screen.height * 0.64,
       );
 
       this.responderDisplayContainer.addChild(activeFishCard.container);
@@ -177,25 +177,27 @@ export class IdleSceneAnime {
 
     this.helpText = new TypewriterText(
       "Use Arrow Keys [▲ ▼ ◀ ▶] To Operate\n\n" +
-        `Speak To Fish By Saying:\n` +
-        `   'Hey', 'Hello', 'Hi' To Your Fish\n` +
-        `Chat With Your Fish By Pressing K\n` +
+        `- Chat With Your Fish By Pressing K\n` +
+        `- Interact With System By Saying:\n` +
+        `   'Hey', 'Hello', 'Hi'\n` +
+        `- Select Your Own Fish:\n` +
         `   ▶ Get To Know Your Fish!\n` +
         `   ◀ Get To Know The System!\n` +
         `   ▲ Choose Your Fish And Get Started!`,
       {
         fontFamily: "Garamond",
-        fontSize: 24,
-        fill: "#ebee40",
+        fontSize: 20,
+        fill: "#ffff00",
         fontWeight: "bold",
         align: "left",
+        letterSpacing: 3,
       },
       { durationPerChar: 30 },
     );
 
     this.helpText.container.position.set(
-      this.app.screen.width * 0.4,
-      this.app.screen.height * 0.65,
+      this.app.screen.width * 0.6,
+      this.app.screen.height * 0.71,
     );
     this.container.addChild(this.helpText.container);
 

@@ -479,16 +479,18 @@ export class MicIndicator {
       style: {
         fontFamily: "Arial",
         fontSize: 18,
-        fill: "#ffffff",
+        fill: "#ffff00",
         fontWeight: "bold",
         letterSpacing: 1,
       },
     });
-    this.header.anchor.set(0.5, 1);
-    this.header.y = -height / 2 + 20;
+    this.header.anchor.set(0.5, 0.5);
+    this.header.y = -height / 2 + 30;
+
+    this.waveOffset = height / 4;
 
     this.waveGraphics = new PIXI.Graphics();
-    this.glassBox = new GlassBox(20);
+    this.glassBox = new GlassBox(30);
 
     this.container.addChild(this.glassBox.graphics);
     this.container.addChild(this.header);
@@ -507,8 +509,8 @@ export class MicIndicator {
     this.waveGraphics.clear();
     this.waveGraphics.poly(this.calculateWavePoints());
     this.waveGraphics.stroke({
-      width: 2,
-      color: this.isActive ? "#5ebd9d" : "#666666",
+      width: 4,
+      color: this.isActive ? "#37ff24" : "#f70101",
       alpha: 0.8,
     });
 
@@ -524,7 +526,7 @@ export class MicIndicator {
     for (let i = 0; i <= segments; i++) {
       const x = startX + (i / segments) * waveWidth;
 
-      const variation = this.isActive ? Math.random() * 0.2 + 0.9 : 1;
+      const variation = this.isActive ? Math.random() * 0.2 + 0.9 : 0.1;
       const y =
         Math.sin(i * this.waveProps.frequency + this.waveProps.phase) *
           this.waveProps.amplitude *
@@ -534,7 +536,7 @@ export class MicIndicator {
         ) *
           this.waveProps.amplitude *
           0.3;
-      points.push(x, y + 10);
+      points.push(x, y + this.waveOffset);
     }
 
     return points;
@@ -545,6 +547,13 @@ export class MicIndicator {
     this.isActive = active;
 
     this.header.text = active ? "Collecting Input..." : "Mic Standby";
+    this.header.style = {
+      fontFamily: "Arial",
+      fontSize: 18,
+      fill: this.isActive ? "#ffff00" : "#eef071",
+      fontWeight: "bold",
+      letterSpacing: 1,
+    };
 
     anime({
       targets: this.waveProps,
@@ -554,7 +563,7 @@ export class MicIndicator {
     });
 
     if (active) {
-      this.glassBox.ripple("#5ebd9d");
+      this.glassBox.ripple("#00ffea");
     }
   }
 

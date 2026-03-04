@@ -112,6 +112,8 @@ export const CONTROLS = [
   {
     name: "TO SPEAK",
     bio:
+      "- Just Say 'Hey' or 'Hi' To Speak To Anyone Without Choosing\n\n" +
+      "- To Choose Your Own Fish,\n" +
       "- View Fish Stories With ▶ And Pick Your Favorite\n\n" +
       "- View Available Tools and Controls For Your Fish ▲\n\n" +
       "- Greet Your Fish with Hey, Hi, Hello <Fish Name> \n\n" +
