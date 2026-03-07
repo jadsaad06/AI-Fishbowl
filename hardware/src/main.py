@@ -1,1 +1,0 @@
-# main hardware entrypoint
