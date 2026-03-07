@@ -1,94 +1,89 @@
 # AI Fishbowl
 
-**AI Fishbowl** is an interactive conversational AI installation developed as a **Portland State University Computer Science capstone project**. The system presents a voice-driven digital fish housed within a virtual aquarium, enabling users to engage in natural, spoken conversations through real-time speech recognition, language model reasoning, and text-to-speech synthesis.
+AI Fishbowl is a voice-first interactive kiosk experience built for the Portland State University Computer Science capstone project. The system listens for speech, routes prompts to personality-based LLM agents, speaks responses aloud, and animates a fish character in an Electron front end.
 
-The project explores how multimodal AI systems can be integrated into a cohesive, character-driven experience suitable for public and educational environments.
+## Current Repository Layout
 
----
+- `backend/`: FastAPI + MCP client/server, STT fallback support, TTS integration, and LLM/RAG components
+- `frontend/electron/`: Electron kiosk app and Pixi-based animation scenes
+- `hardware/`: microphone and VAD scripts, plus case-hardware scripts for Jetson devices
+- `fishbowl.sh`: end-to-end setup/run script used for Linux/Jetson workflows
 
-## Overview
+## Architecture (Current)
 
-AI Fishbowl provides a hands-free conversational interface designed to support university-related use cases, including general CS guidance and informational interaction. The installation emphasizes clarity, responsiveness, and system modularity, while maintaining a polished and approachable user experience.
+1. Microphone audio is captured in backend STT scripts.
+2. User transcript is sent to the MCP-backed agent service.
+3. Agent response is sent to TTS.
+4. Electron updates visual scene state and subtitles while audio plays.
 
----
+## Prerequisites
 
-## Core Capabilities
+- Python 3.11-3.13
+- Node.js 18+ and npm
+- (Optional) whisper.cpp local server for local STT
+- (Optional) Jetson dependencies for case-hardware scripts
 
-- **Speech-to-Text (STT)**  
-  Real-time transcription of user speech for conversational input.
+## Setup
 
-- **Conversational Reasoning**  
-  LLM-based agent logic for intent interpretation, context management, and response generation.
+### 1) Install Python dependencies (root)
 
-- **Text-to-Speech (TTS)**  
-  High-quality speech synthesis for audible system responses.
+```bash
+python -m venv .venv
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+# Linux/macOS
+source .venv/bin/activate
 
-- **Visual Character Interface**  
-  An animated digital fish rendered within an aquarium environment, synchronized with conversational output.
-
-- **Educational Context**  
-  Tailored for Portland State University Computer Science–related interactions.
-
----
-
-## High-Level Architecture
-```
-Audio Input
-↓
-Speech-to-Text (STT)
-↓
-Conversation & Agent Logic
-↓
-Text-to-Speech (TTS)
-↓
-Visual + Audio Output
+pip install -r requirements.txt
 ```
 
+`requirements.txt` in the repo root now installs combined Python deps from:
 
-The architecture separates **input/output pipelines** (STT, TTS) from **agent reasoning**, enabling modular development, testing, and future extensibility.
+- `backend/requirements.txt`
+- `hardware/requirements.txt`
 
----
+Jetson-only case hardware dependencies remain optional at:
 
-## Technology Stack
+- `hardware/src/case-hardware/requirements.txt`
 
-- **Speech Recognition:** Real-time Google Cloud STT engine  
-- **Language Model:** Gemini 2.5 Flash with RAG DB Implementation 
-- **Speech Synthesis:** Google Cloud TTS  
-- **Frontend:** Animated Fishbowl interface  
-- **Backend:** Modular MCP-style service architecture with FastAPI integration for cross-component communication
-- **Target Hardware:** Edge-capable deployment platform
+### 2) Install frontend dependencies
 
----
+```bash
+cd frontend/electron
+npm install
+```
 
-## Project Objectives
+### 3) Configure environment variables
 
-- Design a robust, voice-first conversational AI system  
-- Demonstrate modular agent-based architecture in a real-world installation  
-- Deliver a professional, public-facing capstone project  
-- Explore multimodal interaction beyond traditional chat interfaces
+Create `.env` files from the consolidated examples:
 
----
+- `backend/.env.example` -> `backend/.env`
+- `frontend/.env.example` -> `frontend/.env`
+- `hardware/.env.example` -> `hardware/.env`
+
+Notes:
+
+- `backend/.env.example` contains backend variables used by MCP server/client, RAG loading, STT fallback, and TTS runtime device selection.
+- `frontend/.env.example` contains frontend variables used by Electron preload/main process.
+- `hardware/.env.example` is currently a placeholder because no hardware env vars are required today.
+
+If you run Electron directly and rely on `dotenv`, also copy frontend values into `frontend/electron/.env`.
+
+## Running
+
+### Full stack (Linux/Jetson workflow)
+
+```bash
+./fishbowl.sh setup
+./fishbowl.sh run
+```
+
+### Run components manually
+
+- Backend MCP server: `python backend/src/mcp_stack/server.py`
+- Backend MCP client (FastAPI): `fastapi dev backend/src/mcp_stack/client.py`
+- Frontend: `cd frontend/electron && npm start`
 
 ## Project Status
 
-**In Development**  
-System architecture, agent logic, and interaction pipelines are actively under construction.
-
----
-
-## Team
-
-Developed by a multidisciplinary **Portland State University Computer Science capstone team**, with contributions spanning AI systems, backend services, UI/UX, and hardware integration.
-
----
-
-## Repository Notes
-
-This repository reflects ongoing development.  
-Architectural decisions, interfaces, and documentation may evolve as the project matures.
-
----
-
-*AI Fishbowl demonstrates how conversational AI can be embedded into immersive, character-driven installations for educational environments.*
-
-
+Active development. Core pipelines are integrated, and documentation is being updated as modules are stabilized.
