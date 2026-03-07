@@ -4,13 +4,12 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV="${ROOT}/.venv"
 
-WHISPER_ROOT="$HOME/whisper.cpp"
-WHISPER_BIN="$WHISPER_ROOT/build/bin/whisper-server"
-WHISPER_MODEL="$WHISPER_ROOT/models/ggml-base.en.bin"
-
-TTS_ENV="$ROOT/backend/src/services/tts/.env"
-STT_ENV="$ROOT/backend/src/services/stt/.env"
-LLM_ENV="$ROOT/backend/src/services/llm/.env"
+BACKEND_ENV="$ROOT/backend/.env"
+FRONTEND_ENV="$ROOT/frontend/.env"
+HARDWARE_ENV="$ROOT/hardware/.env"
+LEGACY_TTS_ENV="$ROOT/backend/src/services/tts/.env"
+LEGACY_STT_ENV="$ROOT/backend/src/services/stt/.env"
+LEGACY_LLM_ENV="$ROOT/backend/src/services/llm/.env"
 SCREEN_PID=""
 SERVER_PID=""
 
@@ -29,9 +28,12 @@ fi
 load_envs() {
 	echo "*****Loading .env files..."
 	local env_files=(
-		"$TTS_ENV"
-		"$STT_ENV"
-		"$LLM_ENV"
+		"$BACKEND_ENV"
+		"$FRONTEND_ENV"
+		"$HARDWARE_ENV"
+		"$LEGACY_TTS_ENV"
+		"$LEGACY_STT_ENV"
+		"$LEGACY_LLM_ENV"
 	)
 	local env_file=""
 
@@ -54,7 +56,12 @@ ensure_defaults() {
 	export PATH_NAME="${PATH_NAME:-computer-science}"
 	export GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS:-}"
 	export GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT:-}"
-	export KEY="${KEY:-}" # Gemini TTS
+	export TTS_DEVICE="${TTS_DEVICE:-cuda}"
+	export GCP_MCP_URL="${GCP_MCP_URL:-ws://127.0.0.1:8000/text_input}"
+	export API_NINJAS_KEY="${API_NINJAS_KEY:-}"
+	export WHISPER_ROOT="${WHISPER_ROOT:-$HOME/whisper.cpp}"
+	export WHISPER_BIN="${WHISPER_BIN:-$WHISPER_ROOT/build/bin/whisper-server}"
+	export WHISPER_MODEL="${WHISPER_MODEL:-$WHISPER_ROOT/models/ggml-base.en.bin}"
 }
 
 cleanup_screen() {
