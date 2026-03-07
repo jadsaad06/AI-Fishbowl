@@ -61,13 +61,30 @@ Create `.env` files from the consolidated examples:
 - `frontend/.env.example` -> `frontend/.env`
 - `hardware/.env.example` -> `hardware/.env`
 
+**Important:** Google Cloud Speech-to-Text (v2, streaming) does **not** support API keys.
+It requires OAuth authentication using a **service account**.
+
+This is because streaming STT is a long-running, high-cost API, and Google locks it behind IAM/OAuth instead of simple API keys.
+
+### Setting Up Authentication
+
+You’ll need a **service account JSON key** from the Google Cloud Console.
+
+Set the following environment variables in your `.env` file:
+```
+GOOGLE_APPLICATION_CREDENTIALS="path/to/your-service-account.json"
+GOOGLE_CLOUD_PROJECT="your-google-cloud-project-id"
+```
+
+For **Local STT Setup** go to hardware/README.md
+
 Notes:
 
 - `backend/.env.example` contains backend variables used by MCP server/client, RAG loading, STT fallback, and TTS runtime device selection.
 - `frontend/.env.example` contains frontend variables used by Electron preload/main process.
 - `hardware/.env.example` is currently a placeholder because no hardware env vars are required today.
 
-If you run Electron directly and rely on `dotenv`, also copy frontend values into `frontend/electron/.env`.
+Electron reads `frontend/.env` directly, so no duplicate `frontend/electron/.env` file is required.
 
 ## Running
 
