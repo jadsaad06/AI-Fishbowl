@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const { start } = require("repl");
-require("dotenv").config();
+require("dotenv").config({ path: path.join(__dirname, "../../.env") });
 
 const GCP_URL = process.env.GCP_MCP_URL;
 app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication");

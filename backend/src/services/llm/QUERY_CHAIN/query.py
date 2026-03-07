@@ -6,9 +6,8 @@ from langchain_core.tools import tool
 
 
 
-load_dotenv()
-
 query_file = Path(__file__).resolve() # Grab the path to this file
+load_dotenv(query_file.parents[4] / ".env")
 
 llm_dir = query_file.parents[1] #Grab the parent dir of llm
 

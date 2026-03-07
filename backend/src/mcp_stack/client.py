@@ -15,9 +15,10 @@ import asyncio
 from contextlib import AsyncExitStack
 import httpx
 import traceback
+from pathlib import Path
 
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 
 

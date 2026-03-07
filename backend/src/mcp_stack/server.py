@@ -3,8 +3,9 @@ import requests
 from dotenv import load_dotenv
 import os
 import json
+from pathlib import Path
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 weather_key = os.getenv("Weather_API_KEY")  
 
