@@ -4,8 +4,6 @@
  * renderer process and the Node APIs accessed by the main process.
  * The bridge transmits information from the frontend to the main process using ipcRenderer.
  */
-const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, "../.env") });
 const { contextBridge, ipcRenderer } = require("electron");
 
 /**
