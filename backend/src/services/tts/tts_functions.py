@@ -68,13 +68,13 @@ def _load_model(personality_id):
     if personality_id == '1':
         voice_name = 'alba'
     elif personality_id == '2':
-        voice_name = 'jean'
+        voice_name = 'cosette'
     elif personality_id == '3':
         voice_name = 'marius'
     elif personality_id == '5':
         voice_name = 'azelma'
     else:
-        voice_name = 'alba'  #Tried javert, but speaks too slowly
+        voice_name = 'alba'
 
     print(f"Getting voice state for '{voice_name}'", flush=True)
     voice_state = tts_model.get_state_for_audio_prompt(voice_name)
