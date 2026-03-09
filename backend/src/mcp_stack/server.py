@@ -6,6 +6,7 @@ import os
 load_dotenv()
 
 weather_key = os.getenv("Weather_API_KEY")  
+LASTFM_CLIENT_ID = os.getenv("LASTFM_API_KEY")
 
 mcp = FastMCP("ai-fishbowl-mcp")
 
@@ -139,6 +140,31 @@ def get_daily_problem() -> dict:
     """
     resp = requests.get("https://leetcode-api-pied.vercel.app/daily")
     return resp.json()
+
+@mcp.tool()
+def get_similar_artists(artist_name: str, limit: int = 3) -> str:
+    '''
+    Finds similar artists based on a given artist name.
+    Use this to recommend new music to the user.
+    '''
+    
+    url = "http://ws.audioscrobbler.com/2.0/"
+    params = {
+        'method': 'artist.getsimilar',
+        'limit': limit,
+        'artist': artist_name,
+        'api_key': LASTFM_CLIENT_ID,
+        'format': 'json'
+    }
+
+    response = requests.get(url,params=params)
+    data = response.json()
+
+    similar_data = data.get('similarartists', {})
+    artist_list = similar_data.get('artist', [])
+
+    clean_names = [artist['name'] for artist in artist_list]
+    return f"If you like {artist_name}, you might also enjoy: " + ", ".join(clean_names)
 
 
 if __name__ == "__main__":
