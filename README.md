@@ -69,6 +69,7 @@ This is because streaming STT is a long-running, high-cost API, and Google locks
 ### Setting Up Authentication
 
 You’ll need a **service account JSON key** from the Google Cloud Console.
+This service account must have the `Cloud Speech Client` role.
 
 Set the following environment variables in your `.env` file:
 ```
@@ -97,6 +98,7 @@ Electron reads `frontend/.env` directly, so no duplicate `frontend/electron/.env
 
 ### Run components manually
 
+- Load RAG Database: `python backend/src/services/llm/RAG_DB/loaddb.py` (Only needs to be done once)
 - Backend MCP server: `python backend/src/mcp_stack/server.py`
 - Backend MCP client (FastAPI): `fastapi dev backend/src/mcp_stack/client.py`
 - Frontend: `cd frontend/electron && npm start`
