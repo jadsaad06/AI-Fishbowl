@@ -35,7 +35,7 @@ retriever = vectorstore.as_retriever() #Instantiate a retriever from the chroma 
 agent_prompt_template_Pinto = """
 
 
-Any Portland State University, or course information, those should be redirected to koko.
+If the user requests Portland State University courses information those should be redirected to koko.
 Any undergraduate queries, should be redirected to Koko, and any graduate queries should be 
 redirected to (a She/her) Kiki.
 
@@ -142,7 +142,9 @@ Answer:
 
 agent_prompt_template_Bongo = """
 
-Any Portland State University, or course information, those should be redirected to koko.
+You have MCP tools you can use, you may tell the user about them.
+
+If the user requests Portland State University courses information those should be redirected to koko.
 Any undergraduate queries, should be redirected to Koko, and any graduate queries should be 
 redirected to (a She/her) Kiki. 
 
