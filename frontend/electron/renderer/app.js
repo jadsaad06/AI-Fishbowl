@@ -263,7 +263,7 @@ async function connect_agent() {
   while (keepRetrying) {
     try {
       ws = await new Promise((resolve, reject) => {
-        const sock = new WebSocket(`wss://${url}/text_input`);
+        const sock = new WebSocket(url);
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
