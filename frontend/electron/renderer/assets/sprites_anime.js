@@ -477,7 +477,7 @@ export class MicIndicator {
     };
 
     this.header = new PIXI.Text({
-      text: "Microphone Off",
+      text: "Mic Standby",
       style: {
         fontFamily: "Arial",
         fontSize: 18,
@@ -591,7 +591,7 @@ export class FunFactBox {
       x: 0,
       y: -160,
       bold: true,
-      shadowColor: "#eb9f8a",
+      shadowColor: "#000000",
       shadowBlur: 12,
     });
 

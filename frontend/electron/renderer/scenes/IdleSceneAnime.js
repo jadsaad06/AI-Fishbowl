@@ -75,7 +75,7 @@ export class IdleSceneAnime {
     );
     this.container.addChild(this.titleEnclosure.container);
 
-    this.micIndicator = new MicIndicator(app, 484, 100);
+    this.micIndicator = new MicIndicator(app, 484, 120);
     this.micIndicator.container.position.set(
       this.app.screen.width * 0.6,
       this.app.screen.height * 0.505,
@@ -134,6 +134,8 @@ export class IdleSceneAnime {
     }, 30000);
 
     this.responderDisplayContainer = new PIXI.Container();
+    this.activePromptContainer = new PIXI.Container();
+    this.container.addChild(this.activePromptContainer);
     this.container.addChild(this.responderDisplayContainer);
     this.container.addChild(this.factOverlay.container);
     this.container.addChild(this.infoOverlay.container);
@@ -144,6 +146,12 @@ export class IdleSceneAnime {
       this.responderDisplayContainer
         .removeChildren()
         .forEach((child) => child.destroy({ children: true }));
+      this.activePromptContainer
+        .removeChildren()
+        .forEach((child) => child.destroy({ children: true }));
+
+      this.startText = null;
+      this.startBox = null;
 
       if (responderId === null || responderId === undefined) return;
 
@@ -155,23 +163,48 @@ export class IdleSceneAnime {
       const displayData = {
         name: `${data.name}`,
         path: data.path,
-        bio: `Choose Someone Else:\nPress [1-5] OR ▲`,
+        bio: ``,
       };
 
       const activeFishCard = new ResponderEnclosure(
         displayData,
         20,
         0xffffff,
-        { width: 300, height: 410 },
+        { width: 300, height: 320 },
         { c1: "#ff2402", c2: "#ffff00" },
       );
 
       activeFishCard.container.position.set(
         this.app.screen.width * 0.4,
-        this.app.screen.height * 0.64,
+        this.app.screen.height * 0.68,
       );
 
       this.responderDisplayContainer.addChild(activeFishCard.container);
+
+      this.startText = new TypewriterText(
+        `TO GET STARTED, SAY:\n 'Hey ${data.name}'!`,
+        {
+          fontFamily: "Verdana",
+          fontSize: 18,
+          fill: "#ffff00",
+          fontWeight: "bold",
+          letterSpacing: 2,
+          align: "center",
+        },
+        { durationPerChar: 50 },
+      );
+
+      this.startBox = new GlassBox(20);
+      this.startText.container.addChildAt(this.startBox.graphics, 0);
+
+      this.startText.container.position.set(
+        this.app.screen.width * 0.4,
+        this.app.screen.height * 0.64 - 180,
+      );
+
+      this.activePromptContainer.addChild(this.startText.container);
+
+      this.startBox.reshape(this.startText.textObject);
     };
 
     this.unsubscribeResponder = subscribeResponder((id) =>
@@ -214,12 +247,21 @@ export class IdleSceneAnime {
       if (this.helpBox && this.helpText) {
         this.helpBox.reshape(this.helpText.textObject);
       }
+
+      this.activePromptContainer.children.forEach((promptContainer) => {
+        if (this.startBox && this.startText) {
+          this.startBox.reshape(this.startText.textObject);
+        }
+      });
     };
     this.app.ticker.add(this.updateLoop);
 
     const triggerHelpEffect = () => {
       this.helpBox.ripple("#1bdcf6");
       this.helpText.play();
+
+      this.startText.play();
+      this.startBox.ripple("#1bdcf6");
     };
 
     triggerHelpEffect();
@@ -239,6 +281,9 @@ export class IdleSceneAnime {
     if (this.micIndicator) this.micIndicator.destroy();
     if (this.responderDisplayContainer) {
       this.responderDisplayContainer.destroy({ children: true });
+    }
+    if (this.activePromptContainer) {
+      this.activePromptContainer.destroy({ children: true });
     }
 
     if (this.updateLoop) {
