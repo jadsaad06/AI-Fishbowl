@@ -27,6 +27,14 @@ import {
   RESPONDER_OPTIONS,
 } from "../app.js";
 
+const RESPONDER_COLORS = {
+  Pinto: "#ff7efb",
+  Mimi: "#00ff9d",
+  Bongo: "#ff9d5b",
+  Koko: "#acacac",
+  Kiki: "#ffffff",
+};
+
 export class IdleSceneAnime {
   constructor(app) {
     this.app = app;
@@ -160,6 +168,9 @@ export class IdleSceneAnime {
         RESPONDER_LORE[responderId - 1];
 
       if (!data) return;
+
+      const textColor = RESPONDER_COLORS[data.name] || "#ffff00";
+
       const displayData = {
         name: `${data.name}`,
         path: data.path,
@@ -186,10 +197,16 @@ export class IdleSceneAnime {
         {
           fontFamily: "Verdana",
           fontSize: 30,
-          fill: "#ffff00",
+          fill: textColor,
           fontWeight: "bold",
           letterSpacing: 2,
           align: "center",
+          stroke: "#000000",
+          strokeThickness: 4,
+          dropShadow: true,
+          dropShadowAlpha: 0.5,
+          dropShadowBlur: 4,
+          dropShadowDistance: 2,
         },
         { durationPerChar: 50 },
       );
@@ -202,10 +219,46 @@ export class IdleSceneAnime {
         this.app.screen.height * 0.575,
       );
 
-      this.activePromptContainer.addChild(this.startText.container);
+      this.helpText = new TypewriterText(
+        "Use Arrow Keys [▲ ▼ ◀ ▶] To Operate\n\n" +
+          `- Chat With Your Fish By Pressing K\n` +
+          `- Interact With System By Saying:\n` +
+          `   'Hey', 'Hello', 'Hi'\n` +
+          `- Select Your Own Fish:\n` +
+          `   ▶ Get To Know Your Fish!\n` +
+          `   ◀ Get To Know The System!\n` +
+          `   ▲ Choose Your Fish And Get Started!`,
+        {
+          fontFamily: "Verdana",
+          fontSize: 24,
+          fill: textColor,
+          fontWeight: "bold",
+          align: "left",
+          letterSpacing: 1,
+          stroke: "#000000",
+          strokeThickness: 4,
+          dropShadow: true,
+          dropShadowAlpha: 0.5,
+        },
+        { durationPerChar: 30 },
+      );
+
+      this.helpText.container.position.set(
+        this.app.screen.width * 0.7,
+        this.app.screen.height * 0.65,
+      );
+
+      this.helpBox = new GlassBox(25);
+      this.helpText.container.addChildAt(this.helpBox.graphics, 0);
+      this.activePromptContainer.addChild(
+        this.startText.container,
+        this.helpText.container,
+      );
 
       this.startText.play();
+      this.helpText.play();
       this.startBox.reshape(this.startText.textObject);
+      this.helpBox.reshape(this.helpText.textObject);
     };
 
     this.unsubscribeResponder = subscribeResponder((id) =>
@@ -215,58 +268,13 @@ export class IdleSceneAnime {
     const initialId = getResponder();
     if (initialId) this.updateActiveResponder(initialId);
 
-    this.helpText = new TypewriterText(
-      "Use Arrow Keys [▲ ▼ ◀ ▶] To Operate\n\n" +
-        `- Chat With Your Fish By Pressing K\n` +
-        `- Interact With System By Saying:\n` +
-        `   'Hey', 'Hello', 'Hi'\n` +
-        `- Select Your Own Fish:\n` +
-        `   ▶ Get To Know Your Fish!\n` +
-        `   ◀ Get To Know The System!\n` +
-        `   ▲ Choose Your Fish And Get Started!`,
-      {
-        fontFamily: "Verdana",
-        fontSize: 24,
-        fill: "#ffff00",
-        fontWeight: "bold",
-        align: "left",
-        letterSpacing: 1,
-      },
-      { durationPerChar: 30 },
-    );
-
-    this.helpText.container.position.set(
-      this.app.screen.width * 0.7,
-      this.app.screen.height * 0.65,
-    );
-    this.container.addChild(this.helpText.container);
-
-    this.helpBox = new GlassBox(25);
-    this.helpText.container.addChildAt(this.helpBox.graphics, 0);
-
     this.updateLoop = () => {
-      if (this.helpBox && this.helpText) {
+      if (this.startBox && this.startText)
+        this.startBox.reshape(this.startText.textObject);
+      if (this.helpBox && this.helpText)
         this.helpBox.reshape(this.helpText.textObject);
-      }
-
-      this.activePromptContainer.children.forEach((promptContainer) => {
-        if (this.startBox && this.startText) {
-          this.startBox.reshape(this.startText.textObject);
-        }
-      });
     };
     this.app.ticker.add(this.updateLoop);
-
-    const triggerHelpEffect = () => {
-      this.helpBox.ripple("#ff9100");
-      this.helpText.play();
-
-      this.startText.play();
-      this.startBox.ripple("#ff9100");
-    };
-
-    triggerHelpEffect();
-    this.helpInterval = setInterval(triggerHelpEffect, 30000);
 
     window.currentActiveScene = this;
   }
