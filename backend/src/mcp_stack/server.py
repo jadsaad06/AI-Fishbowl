@@ -13,13 +13,6 @@ mcp = FastMCP("ai-fishbowl-mcp")
 s = requests.sessions.Session()
 
 
-
-@mcp.tool() # simple testing tool
-def greeting() -> str:
-    """Return a simple greeting message."""
-    return "This message is from the MCP server!"
-
-
 @mcp.tool()
 def Long_Lat_Search(address : str) -> str: # Mcp tool for getting the geographic location (helpful tool for the actual weather api)
     """
@@ -132,6 +125,21 @@ def get_problem_by_tag(tag_slug : str, difficulty : str = "", limit : int = 5, s
     print(type(resp.json()))
 
     return json.dumps(resp.json())
+
+@mcp.tool()
+def get_dad_joke() -> str:
+    """
+    This tool is for grabbing dad jokes, if the dad joke is down, produce your own joke manually. 
+
+    returns : str
+    """
+    resp = s.get("https://icanhazdadjoke.com/", headers={
+        "Accept" : "text/plain"
+    })
+
+    return resp.text
+
+
 
 
 @mcp.tool()
