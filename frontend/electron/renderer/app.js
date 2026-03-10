@@ -72,7 +72,7 @@ export const RESPONDER_OPTIONS = [
       "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 2\n\n" +
       "- GREETING: 'Hey Mimi', 'Hi Mimi', 'Okay Mimi', 'Hello Mimi'\n\n" +
-      "- TOOLS: Web Search, Dad Jokes \n\n",
+      "- TOOLS: Web Search \n\n",
     path: "assets/images/responder_2.png",
     id: 2,
   },
@@ -82,7 +82,7 @@ export const RESPONDER_OPTIONS = [
       "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 3\n\n" +
       "- GREETING: 'Hey Bongo', 'Hi Bongo', 'Okay Bongo', 'Hello Bongo'\n\n" +
-      "- TOOLS: LeetCode, Weather \n\n",
+      "- TOOLS: LeetCode, Weather, Dad Jokes \n\n",
     path: "assets/images/responder_3.png",
     id: 3,
   },
@@ -170,7 +170,7 @@ export const RESPONDER_PROMPTS = {
     name: "Mimi",
     prompts: [
       "Examples of stuff I can help you with: \n",
-      " 1. Tell Me A Dad Joke",
+      " 1. Give Me The Recent Headlines From Reuters.",
       " 2. List AI Research Papers Published In The Last Month.",
       " 3. List Companies That Are Hiring Software Engineers.",
       " 4. Tell Me The Imporant Current Headlines.",
@@ -266,7 +266,7 @@ async function connect_agent() {
   while (keepRetrying) {
     try {
       ws = await new Promise((resolve, reject) => {
-        const sock = new WebSocket(`wss://${url}/text_input`);
+        const sock = new WebSocket(url);
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
