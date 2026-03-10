@@ -65,20 +65,20 @@ export class IdleSceneAnime {
         header: {
           fontSize: 64,
           fontFamily: "Verdana",
-          fontWeight: "italic",
+          fontWeight: "bold",
         },
       },
     );
     this.titleEnclosure.container.position.set(
       this.app.screen.width / 2,
-      this.app.screen.height * 0.3,
+      this.app.screen.height * 0.25,
     );
     this.container.addChild(this.titleEnclosure.container);
 
-    this.micIndicator = new MicIndicator(app, 484, 120);
+    this.micIndicator = new MicIndicator(app, 450, 120);
     this.micIndicator.container.position.set(
-      this.app.screen.width * 0.6,
-      this.app.screen.height * 0.505,
+      this.app.screen.width * 0.325,
+      this.app.screen.height * 0.725,
     );
     this.container.addChild(this.micIndicator.container);
 
@@ -168,24 +168,24 @@ export class IdleSceneAnime {
 
       const activeFishCard = new ResponderEnclosure(
         displayData,
-        20,
+        15,
         0xffffff,
-        { width: 300, height: 320 },
+        { width: 300, height: 330 },
         { c1: "#ff2402", c2: "#ffff00" },
       );
 
       activeFishCard.container.position.set(
-        this.app.screen.width * 0.4,
-        this.app.screen.height * 0.68,
+        this.app.screen.width * 0.5,
+        this.app.screen.height * 0.65,
       );
 
       this.responderDisplayContainer.addChild(activeFishCard.container);
 
       this.startText = new TypewriterText(
-        `TO GET STARTED, SAY:\n 'Hey ${data.name}'!`,
+        `To Get Started, Say:\n\n 'Hey ${data.name}'!`,
         {
           fontFamily: "Verdana",
-          fontSize: 18,
+          fontSize: 30,
           fill: "#ffff00",
           fontWeight: "bold",
           letterSpacing: 2,
@@ -198,12 +198,13 @@ export class IdleSceneAnime {
       this.startText.container.addChildAt(this.startBox.graphics, 0);
 
       this.startText.container.position.set(
-        this.app.screen.width * 0.4,
-        this.app.screen.height * 0.64 - 180,
+        this.app.screen.width * 0.325,
+        this.app.screen.height * 0.575,
       );
 
       this.activePromptContainer.addChild(this.startText.container);
 
+      this.startText.play();
       this.startBox.reshape(this.startText.textObject);
     };
 
@@ -224,19 +225,19 @@ export class IdleSceneAnime {
         `   ◀ Get To Know The System!\n` +
         `   ▲ Choose Your Fish And Get Started!`,
       {
-        fontFamily: "Garamond",
-        fontSize: 20,
+        fontFamily: "Verdana",
+        fontSize: 24,
         fill: "#ffff00",
         fontWeight: "bold",
         align: "left",
-        letterSpacing: 3,
+        letterSpacing: 1,
       },
       { durationPerChar: 30 },
     );
 
     this.helpText.container.position.set(
-      this.app.screen.width * 0.6,
-      this.app.screen.height * 0.71,
+      this.app.screen.width * 0.7,
+      this.app.screen.height * 0.65,
     );
     this.container.addChild(this.helpText.container);
 
@@ -257,11 +258,11 @@ export class IdleSceneAnime {
     this.app.ticker.add(this.updateLoop);
 
     const triggerHelpEffect = () => {
-      this.helpBox.ripple("#1bdcf6");
+      this.helpBox.ripple("#ff9100");
       this.helpText.play();
 
       this.startText.play();
-      this.startBox.ripple("#1bdcf6");
+      this.startBox.ripple("#ff9100");
     };
 
     triggerHelpEffect();

@@ -565,7 +565,7 @@ export class MicIndicator {
     });
 
     if (active) {
-      this.glassBox.ripple("#00ffea");
+      this.glassBox.ripple("#ff9100");
     }
   }
 
