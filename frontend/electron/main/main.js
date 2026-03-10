@@ -156,7 +156,7 @@ function startServices() {
       if (currentAppState === "idle") {
         const responderMap = {
           pinto: 1,
-          jimbo: 2,
+          mimi: 2,
           bongo: 3,
           koko: 4,
           kiki: 5,

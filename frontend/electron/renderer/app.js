@@ -30,7 +30,7 @@ export const RESPONDER_LORE = [
     id: 1,
   },
   {
-    name: "Fava",
+    name: "Mimi",
     bio: "- She's A little rough around the edges, but such is life on the Atlantic Coast.\n- Banished by the East Coast Fish Union for being a bit too competitive.\n- Moved to Oregon to start fresh in 2010, but she's grumpier than back then.\n- DOES NOT LIKE FLORIDA\n- Still very sharp though.",
     path: "assets/images/responder_2.png",
     id: 2,
@@ -67,11 +67,11 @@ export const RESPONDER_OPTIONS = [
     id: 1,
   },
   {
-    name: "Fava",
+    name: "Mimi",
     bio:
       "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 2\n\n" +
-      "- GREETING: 'Hey Fava', 'Hi Fava', 'Okay Fava', 'Hello Fava'\n\n" +
+      "- GREETING: 'Hey Mimi', 'Hi Mimi', 'Okay Mimi', 'Hello Mimi'\n\n" +
       "- TOOLS: Web Search, Dad Jokes \n\n",
     path: "assets/images/responder_2.png",
     id: 2,
@@ -167,7 +167,7 @@ export const RESPONDER_PROMPTS = {
     ],
   },
   2: {
-    name: "Fava",
+    name: "Mimi",
     prompts: [
       "Examples of stuff I can help you with: \n",
       " 1. Tell Me A Dad Joke",
