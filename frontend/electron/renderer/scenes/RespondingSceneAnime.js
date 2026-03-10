@@ -1,7 +1,11 @@
 import * as PIXI from "pixi.js";
 import { getResponder } from "../state/store.js";
 import { BackgroundRandomizer, createResponder } from "../assets/sprites.js";
-import { TypewriterText, ModernBox } from "../assets/sprites_anime.js";
+import {
+  TypewriterText,
+  ModernBox,
+  GlassBox,
+} from "../assets/sprites_anime.js";
 import { RESPONDERS, BACKGROUNDS } from "../app.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 
@@ -65,6 +69,32 @@ export class RespondingSceneAnime {
     this.syncGroup.addChild(this.typewriter.container);
 
     this.typewriter.setText(initialSubtitles || testSubtitles);
+
+    this.micOffContainer = new PIXI.Container();
+
+    const micOffText = new PIXI.Text("MIC OFF", {
+      fontFamily: "Verdana",
+      fontSize: 24,
+      fill: "#000000",
+      fontWeight: "bold",
+      stroke: "#000000",
+      strokeThickness: 4,
+      dropShadow: true,
+      dropShadowAlpha: 0.5,
+    });
+    micOffText.anchor.set(0.5);
+
+    this.micOffBox = new GlassBox(15);
+    this.micOffContainer.addChild(this.micOffBox.graphics);
+    this.micOffContainer.addChild(micOffText);
+
+    this.micOffContainer.position.set(
+      this.app.screen.width / 2,
+      app.screen.height * 0.25,
+    );
+
+    this.container.addChild(this.micOffContainer);
+    this.micOffBox.reshape(micOffText);
 
     //this.updateSubtitles(initialSubtitles || testSubtitles);
 
