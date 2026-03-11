@@ -1,7 +1,3 @@
-import pathlib
-import websockets
-import asyncio
-import time
 import sys
 import tts_functions
 
