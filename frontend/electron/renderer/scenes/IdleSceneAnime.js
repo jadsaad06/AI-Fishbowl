@@ -85,7 +85,7 @@ export class IdleSceneAnime {
 
     this.micIndicator = new MicIndicator(app, 450, 120);
     this.micIndicator.container.position.set(
-      this.app.screen.width * 0.325,
+      this.app.screen.width * 0.3,
       this.app.screen.height * 0.725,
     );
     this.container.addChild(this.micIndicator.container);
@@ -215,7 +215,7 @@ export class IdleSceneAnime {
       this.startText.container.addChildAt(this.startBox.graphics, 0);
 
       this.startText.container.position.set(
-        this.app.screen.width * 0.325,
+        this.app.screen.width * 0.3,
         this.app.screen.height * 0.575,
       );
 
@@ -244,7 +244,7 @@ export class IdleSceneAnime {
       );
 
       this.helpText.container.position.set(
-        this.app.screen.width * 0.7,
+        this.app.screen.width * 0.75,
         this.app.screen.height * 0.65,
       );
 
