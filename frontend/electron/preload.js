@@ -36,6 +36,9 @@ contextBridge.exposeInMainWorld("fishbowl", {
   requestResponderChange: (id) =>
     ipcRenderer.send("request-responder-change", id),
 
+  onMicState: (cb) =>
+    ipcRenderer.on("mic-state-changed", (_, payload) => cb(payload)),
+
   config: {
     gcpUrl: process.env.GCP_MCP_URL,
     apiNinjasKey: process.env.API_NINJAS_KEY,

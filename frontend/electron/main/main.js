@@ -30,11 +30,12 @@ function createWindow() {
     width: 1920,
     height: 1080,
     fullscreen: true,
-    kiosk: true,
+    kiosk: false,
     webPreferences: {
       preload: path.join(__dirname, "../preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      devTools: true,
     },
   });
 
@@ -155,7 +156,7 @@ function startServices() {
       if (currentAppState === "idle") {
         const responderMap = {
           pinto: 1,
-          jimbo: 2,
+          mimi: 2,
           bongo: 3,
           koko: 4,
           kiki: 5,
@@ -189,9 +190,14 @@ function startServices() {
     }
 
     if (out.includes("EVENT:MIC_STARTED")) {
+      win.webContents.send("mic-state-changed", { active: true });
       if (currentAppState === "speech") {
         transitionState("listening");
       }
+    }
+
+    if (out.includes("EVENT:MIC_STOPPED")) {
+      win.webContents.send("mic-state-changed", { active: false });
     }
   });
 

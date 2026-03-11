@@ -6,11 +6,28 @@ let currentState = "idle";
 let currentSubtitles = "";
 let currentResponder = 1;
 let currentPrompt = "";
+let currentMicActive = false;
 // Set of callback functions that want to be notified when the state changes
 const listeners = new Set();
 const subtitleListeners = new Set();
 const promptListeners = new Set();
 const responderListeners = new Set();
+const micListeners = new Set();
+
+export function setMicActive(active) {
+  if (currentMicActive === active) return;
+  currentMicActive = active;
+  micListeners.forEach((cb) => cb(currentMicActive));
+}
+
+export function getMicActive() {
+  return currentMicActive;
+}
+
+export function subscribeMic(cb) {
+  micListeners.add(cb);
+  return () => micListeners.delete(cb);
+}
 
 export function setResponder(num) {
   if (currentResponder === num) return;

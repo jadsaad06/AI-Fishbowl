@@ -1,11 +1,12 @@
 import * as PIXI from "pixi.js";
-import { getResponder } from "../state/store.js";
+import { getResponder, subscribeMic, getMicActive } from "../state/store.js";
 import { BackgroundRandomizer, createResponder } from "../assets/sprites.js";
 import {
   PulseText,
   ModernBox,
   TypewriterText,
   GlassBox,
+  MicIndicator,
 } from "../assets/sprites_anime.js";
 import {
   RESPONDERS,
@@ -24,7 +25,7 @@ export class SpeechSceneAnime {
     this.container.addChild(this.bg.container);
 
     this.syncGroup = new PIXI.Container();
-    this.syncGroup.position.set(app.screen.width * 0.1, app.screen.height / 2);
+    this.syncGroup.position.set(app.screen.width * 0.25, app.screen.height / 2);
     this.container.addChild(this.syncGroup);
 
     const selectedID = getResponder();
@@ -32,6 +33,7 @@ export class SpeechSceneAnime {
     const responderPath = RESPONDERS[responderIndex];
 
     this.responder = createResponder(app, responderPath, 350);
+    this.responder.anchor.set(0.5);
     this.responder.position.set(0, 0);
     this.syncGroup.addChild(this.responder);
 
@@ -61,7 +63,7 @@ export class SpeechSceneAnime {
       },
     );
     this.pulseText.textObject.anchor.set(0, 0.5);
-    this.pulseText.container.position.set(250, 40);
+    this.pulseText.container.position.set(200, 40);
 
     this.promptBox = new GlassBox(40);
     this.pulseText.container.addChildAt(this.promptBox.graphics, 0);
@@ -114,6 +116,19 @@ export class SpeechSceneAnime {
     this.backBox = new GlassBox(20);
     this.backText.container.addChildAt(this.backBox.graphics, 0);
 
+    this.micIndicator = new MicIndicator(app, 450, 120);
+    this.micIndicator.container.position.set(
+      this.app.screen.width * 0.85,
+      this.app.screen.height * 0.15,
+    );
+    this.container.addChild(this.micIndicator.container);
+
+    this.unsubscribeMic = subscribeMic((active) => {
+      this.micIndicator.setVoiceActive(active);
+    });
+
+    this.micIndicator.setVoiceActive(getMicActive());
+
     this.updateLoop = () => {
       if (this.promptBox && this.pulseText) {
         this.promptBox.reshape(this.pulseText.textObject);
@@ -159,7 +174,7 @@ export class SpeechSceneAnime {
   }
 
   initAnimations() {
-    const finalX = this.app.screen.width * 0.15;
+    const finalX = this.app.screen.width * 0.25;
     const finalY = this.app.screen.height / 2;
 
     anime({
@@ -192,6 +207,7 @@ export class SpeechSceneAnime {
     if (this.listeningText) this.listeningText.destroy();
     if (this.backText) this.backText.destroy();
     if (this.pulseText) this.pulseText.destroy();
+    if (this.micIndicator) this.micIndicator.destroy();
     if (this.container && !this.container.destroyed) {
       this.container.destroy({ children: true });
     }

@@ -339,10 +339,12 @@ export class GlassBox extends ModernBox {
   }
 
   reshape(targets, fixedSize = null) {
-    const target = Array.isArray(targets) ? targets[0] : targets;
-    if (target && target.text === "") {
-      this.graphics.clear();
-      return;
+    if (targets !== null) {
+      const target = Array.isArray(targets) ? targets[0] : targets;
+      if (target && target.text === "") {
+        this.graphics.clear();
+        return;
+      }
     }
 
     super.reshape(targets, fixedSize);
@@ -461,6 +463,118 @@ export class GlassBox extends ModernBox {
   }
 }
 
+export class MicIndicator {
+  constructor(app, width = 300, height = 100) {
+    this.app = app;
+    this.container = new PIXI.Container();
+    this.isActive = false;
+
+    this.waveProps = {
+      amplitude: 0,
+      phase: 0,
+      frequency: 0.1,
+      speed: 0.15,
+    };
+
+    this.header = new PIXI.Text({
+      text: "Mic Standby",
+      style: {
+        fontFamily: "Arial",
+        fontSize: 18,
+        fill: "#ffff00",
+        fontWeight: "bold",
+        letterSpacing: 1,
+      },
+    });
+    this.header.anchor.set(0.5, 0.5);
+    this.header.y = -height / 2 + 30;
+
+    this.waveOffset = height / 4;
+
+    this.waveGraphics = new PIXI.Graphics();
+    this.glassBox = new GlassBox(30);
+
+    this.container.addChild(this.glassBox.graphics);
+    this.container.addChild(this.header);
+    this.container.addChild(this.waveGraphics);
+
+    this.width = width;
+    this.height = height;
+    this.glassBox.reshape([], { width: this.width, height: this.height });
+
+    this.app.ticker.add(this.update, this);
+  }
+
+  update(ticker) {
+    if (this.waveGraphics.destroyed) return;
+
+    this.waveGraphics.clear();
+    this.waveGraphics.poly(this.calculateWavePoints());
+    this.waveGraphics.stroke({
+      width: 4,
+      color: this.isActive ? "#37ff24" : "#f70101",
+      alpha: 0.8,
+    });
+
+    this.waveProps.phase += this.waveProps.speed * (this.isActive ? 1 : 0.2);
+  }
+
+  calculateWavePoints() {
+    const points = [];
+    const segments = 60;
+    const waveWidth = this.width - 60;
+    const startX = -waveWidth / 2;
+
+    for (let i = 0; i <= segments; i++) {
+      const x = startX + (i / segments) * waveWidth;
+
+      const variation = this.isActive ? Math.random() * 0.2 + 0.9 : 0.1;
+      const y =
+        Math.sin(i * this.waveProps.frequency + this.waveProps.phase) *
+          this.waveProps.amplitude *
+          variation +
+        Math.sin(
+          i * this.waveProps.frequency * 1.7 + this.waveProps.phase * 1.3,
+        ) *
+          this.waveProps.amplitude *
+          0.3;
+      points.push(x, y + this.waveOffset);
+    }
+
+    return points;
+  }
+
+  setVoiceActive(active) {
+    if (this.isActive === active) return;
+    this.isActive = active;
+
+    this.header.text = active ? "Collecting Input..." : "Mic Standby";
+    this.header.style = {
+      fontFamily: "Arial",
+      fontSize: 18,
+      fill: this.isActive ? "#ffff00" : "#eef071",
+      fontWeight: "bold",
+      letterSpacing: 1,
+    };
+
+    anime({
+      targets: this.waveProps,
+      amplitude: active ? 20 : 0,
+      duration: 400,
+      easing: "easeOutElastic(1, .6)",
+    });
+
+    if (active) {
+      this.glassBox.ripple("#ff9100");
+    }
+  }
+
+  destroy() {
+    this.app.ticker.remove(this.update);
+    this.container.destroy({ children: true });
+  }
+}
+
 export class FunFactBox {
   constructor(app, factsList = []) {
     this.app = app;
@@ -477,7 +591,7 @@ export class FunFactBox {
       x: 0,
       y: -160,
       bold: true,
-      shadowColor: "#eb9f8a",
+      shadowColor: "#000000",
       shadowBlur: 12,
     });
 
@@ -495,7 +609,7 @@ export class FunFactBox {
     );
     this.typewriter.container.position.set(0, 20);
 
-    this.box = new GlassBox(24);
+    this.box = new GlassBox(40);
     this.box.graphics.position.set(0, 0);
 
     this.container.addChild(this.box.graphics);
@@ -506,8 +620,8 @@ export class FunFactBox {
   }
 
   _reshapeBox() {
-    const size = { width: 650, height: 450 };
-    this.box.reshape(this.typewriter.textObject, size);
+    const size = { width: 800, height: 500 };
+    this.box.reshape(null, size);
   }
 
   applyFact(text) {
@@ -734,12 +848,18 @@ export class SlidingOverlay {
     });
   }
 
-  rollout() {
+  attachContent(displayObject, x, y) {
+    this.panel.addChild(displayObject);
+    displayObject.position.set(x, y);
+  }
+
+  rollout(onOpen) {
     if (this.isOpen) return;
     this.isOpen = true;
     this.container.zIndex = 100;
-
     this.animatePanel(this.openPos);
+
+    if (onOpen) onOpen();
   }
 
   rollin() {

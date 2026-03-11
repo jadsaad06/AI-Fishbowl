@@ -222,7 +222,7 @@ class OLED:
         role = page[0] if len(page) > 0 else ""
         creator = page[1] if len(page) > 1 else ""
 
-        self.add_line("AI  Fishbowl ,  Created By:", 1)
+        self.add_line("Coral  Net ,  Created By:", 1)
         self.add_line("", 2)
         self.add_line(creator, 3)
         self.add_line(role, 4)
