@@ -1,70 +1,6 @@
 [
   {
     "id": 1,
-    "name": "kiki",
-    "wake_phrases": [
-      "hey kiki",
-      "hi kiki",
-      "hello kiki",
-      "okay kiki",
-      "ok kiki",
-
-      "kiki",
-      "key key",
-      "kee kee",
-      "keekee",
-      "ki ki",
-      "kee key",
-      "kiki?",
-      "kiki.",
-
-      "hey key key",
-      "hi key key",
-      "hello key key",
-
-      "kiki assistant",
-      "kiki fish",
-      "kiki please",
-
-      "kicky",
-      "keaky",
-      "keke",
-      "keke?",
-      "kiki hey"
-    ]
-  },
-  {
-    "id": 2,
-    "name": "jimbo",
-    "wake_phrases": [
-      "hey jimbo",
-      "hi jimbo",
-      "hello jimbo",
-      "okay jimbo",
-      "ok jimbo",
-
-      "jimbo",
-      "jim bo",
-      "jim bow",
-      "gymbo",
-      "gym bo",
-      "jim beau",
-      "jimbow",
-      "jimbo?",
-
-      "hey gymbo",
-      "hi gymbo",
-
-      "jimbo assistant",
-      "jimbo please",
-
-      "jumbo",
-      "jim bro",
-      "jinbo"
-    ]
-  },
-  {
-    "id": 3,
     "name": "pinto",
     "wake_phrases": [
       "hey pinto",
@@ -92,6 +28,72 @@
       "beanto",
       "pinta",
       "pinto hey"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "mimi",
+    "wake_phrases": [
+      "hey mimi",
+      "hi mimi",
+      "hello mimi",
+      "okay mimi",
+      "ok mimi",
+      "hey meemee",
+      "hey mee mee",
+      "hi meemee",
+      "hi mee mee",
+      "hello me me",
+      "hello mee mee",
+      "hi me me",
+      "hey me me",
+      "okay me me",
+      "ok me me",
+
+      "mimi",
+      "mee mee",
+      "me me",
+      "meemee",
+      "mi mi",
+      "mii mii",
+      "mee me",
+      "mimi?",
+
+      "hey me mee",
+      "hi mimi",
+
+      "mimi assistant",
+      "mimi please"
+    ]
+  },
+  {
+    "id": 3,
+    "name": "bongo",
+    "wake_phrases": [
+      "hey bongo",
+      "hi bongo",
+      "hello bongo",
+      "okay bongo",
+      "ok bongo",
+
+      "bongo",
+      "bon go",
+      "bungo",
+      "bong go",
+      "bongo?",
+      "bongo.",
+
+      "hey bon go",
+      "hi bon go",
+
+      "bongo assistant",
+      "bongo please",
+
+      "pongo",
+      "mongo",
+      "bonko",
+      "bengo",
+      "bong oh"
     ]
   },
   {
@@ -129,32 +131,36 @@
   },
   {
     "id": 5,
-    "name": "bongo",
+    "name": "kiki",
     "wake_phrases": [
-      "hey bongo",
-      "hi bongo",
-      "hello bongo",
-      "okay bongo",
-      "ok bongo",
+      "hey kiki",
+      "hi kiki",
+      "hello kiki",
+      "okay kiki",
+      "ok kiki",
 
-      "bongo",
-      "bon go",
-      "bungo",
-      "bong go",
-      "bongo?",
-      "bongo.",
+      "kiki",
+      "key key",
+      "kee kee",
+      "keekee",
+      "ki ki",
+      "kee key",
+      "kiki?",
+      "kiki.",
 
-      "hey bon go",
-      "hi bon go",
+      "hey key key",
+      "hi key key",
+      "hello key key",
 
-      "bongo assistant",
-      "bongo please",
+      "kiki assistant",
+      "kiki fish",
+      "kiki please",
 
-      "pongo",
-      "mongo",
-      "bonko",
-      "bengo",
-      "bong oh"
+      "kicky",
+      "keaky",
+      "keke",
+      "keke?",
+      "kiki hey"
     ]
   }
 ]

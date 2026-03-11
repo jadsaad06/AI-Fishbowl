@@ -1,7 +1,12 @@
 import * as PIXI from "pixi.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 import { BackgroundManager, FishSwarm } from "../assets/sprites.js";
-import { getResponder, subscribeResponder } from "../state/store.js";
+import {
+  getResponder,
+  subscribeResponder,
+  subscribeMic,
+  getMicActive,
+} from "../state/store.js";
 
 import {
   TypewriterText,
@@ -11,6 +16,7 @@ import {
   FunFactBox,
   SlidingOverlay,
   ResponderEnclosure,
+  MicIndicator,
 } from "../assets/sprites_anime.js";
 import {
   BACKGROUNDS,
@@ -20,6 +26,14 @@ import {
   CONTROLS,
   RESPONDER_OPTIONS,
 } from "../app.js";
+
+const RESPONDER_COLORS = {
+  Pinto: "#ff7efb",
+  Mimi: "#00ff9d",
+  Bongo: "#ff9d5b",
+  Koko: "#acacac",
+  Kiki: "#ffffff",
+};
 
 export class IdleSceneAnime {
   constructor(app) {
@@ -59,31 +73,49 @@ export class IdleSceneAnime {
         header: {
           fontSize: 64,
           fontFamily: "Verdana",
-          fontWeight: "italic",
+          fontWeight: "bold",
         },
       },
     );
     this.titleEnclosure.container.position.set(
       this.app.screen.width / 2,
-      this.app.screen.height * 0.3,
+      this.app.screen.height * 0.25,
     );
     this.container.addChild(this.titleEnclosure.container);
 
-    // this.funFactBox = new FunFactBox(app, [
-    //   "The first computer bug was an actual bug — a moth found in a relay.",
-    //   "Ada Lovelace is considered the first programmer.",
-    //   "The first 1GB hard drive weighed 550 lbs and cost $40,000.",
-    // ]);
-    // this.funFactBox.setPosition(
-    //   (app.screen.width / 2) * 0.8,
-    //   app.screen.height * 0.6,
-    // );
-    // this.container.addChild(this.funFactBox.container);
+    this.micIndicator = new MicIndicator(app, 450, 120);
+    this.micIndicator.container.position.set(
+      this.app.screen.width * 0.3,
+      this.app.screen.height * 0.725,
+    );
+    this.container.addChild(this.micIndicator.container);
 
-    // this.funFactBox.updateFunFact();
-    // this.funFactInterval = setInterval(() => {
-    //   this.funFactBox.updateFunFact();
-    // }, 10000);
+    this.unsubscribeMic = subscribeMic((active) => {
+      this.micIndicator.setVoiceActive(active);
+    });
+
+    this.micIndicator.setVoiceActive(getMicActive());
+
+    this.factOverlay = new SlidingOverlay(app, {
+      side: "top",
+      tabText: "⬇ RANDOM FACT ⬇",
+      closeHint: "▲ Up Arrow To Close",
+      bgColor: "#000000",
+      bgAlpha: 0.92,
+      animationDuration: 1000,
+    });
+
+    this.funFactBox = new FunFactBox(app, [
+      "The first computer bug was an actual bug — a moth found in a relay.",
+      "Ada Lovelace is considered the first programmer.",
+      "The first 1GB hard drive weighed 550 lbs and cost $40,000.",
+    ]);
+
+    this.factOverlay.attachContent(
+      this.funFactBox.container,
+      app.screen.width / 2,
+      app.screen.height / 2,
+    );
 
     this.infoOverlay = new InfoOverlay(app, RESPONDER_LORE, {
       side: "left",
@@ -110,7 +142,10 @@ export class IdleSceneAnime {
     }, 30000);
 
     this.responderDisplayContainer = new PIXI.Container();
+    this.activePromptContainer = new PIXI.Container();
+    this.container.addChild(this.activePromptContainer);
     this.container.addChild(this.responderDisplayContainer);
+    this.container.addChild(this.factOverlay.container);
     this.container.addChild(this.infoOverlay.container);
     this.container.addChild(this.optionsOverlay.container);
     this.container.addChild(this.controlsOverlay.container);
@@ -119,6 +154,12 @@ export class IdleSceneAnime {
       this.responderDisplayContainer
         .removeChildren()
         .forEach((child) => child.destroy({ children: true }));
+      this.activePromptContainer
+        .removeChildren()
+        .forEach((child) => child.destroy({ children: true }));
+
+      this.startText = null;
+      this.startBox = null;
 
       if (responderId === null || responderId === undefined) return;
 
@@ -127,26 +168,97 @@ export class IdleSceneAnime {
         RESPONDER_LORE[responderId - 1];
 
       if (!data) return;
+
+      const textColor = RESPONDER_COLORS[data.name] || "#ffff00";
+
       const displayData = {
         name: `${data.name}`,
         path: data.path,
-        bio: `Choose Someone Else:\nPress [1-5] OR ▲`,
+        bio: ``,
       };
 
       const activeFishCard = new ResponderEnclosure(
         displayData,
-        20,
+        15,
         0xffffff,
-        { width: 300, height: 400 },
+        { width: 300, height: 330 },
         { c1: "#ff2402", c2: "#ffff00" },
       );
 
       activeFishCard.container.position.set(
-        this.app.screen.width * 0.6,
+        this.app.screen.width * 0.5,
         this.app.screen.height * 0.65,
       );
 
       this.responderDisplayContainer.addChild(activeFishCard.container);
+
+      this.startText = new TypewriterText(
+        `To Get Started, Say:\n\n 'Hey ${data.name}'!`,
+        {
+          fontFamily: "Verdana",
+          fontSize: 30,
+          fill: textColor,
+          fontWeight: "bold",
+          letterSpacing: 2,
+          align: "center",
+          stroke: "#000000",
+          strokeThickness: 4,
+          dropShadow: true,
+          dropShadowAlpha: 0.5,
+          dropShadowBlur: 4,
+          dropShadowDistance: 2,
+        },
+        { durationPerChar: 50 },
+      );
+
+      this.startBox = new GlassBox(20);
+      this.startText.container.addChildAt(this.startBox.graphics, 0);
+
+      this.startText.container.position.set(
+        this.app.screen.width * 0.3,
+        this.app.screen.height * 0.575,
+      );
+
+      this.helpText = new TypewriterText(
+        "Use Arrow Keys [▲ ▼ ◀ ▶] To Operate\n\n" +
+          `- Chat With Your Fish By Pressing K\n` +
+          `- Interact With System By Saying:\n` +
+          `   'Hey', 'Hello', 'Hi'\n` +
+          `- Select Your Own Fish:\n` +
+          `   ▶ Get To Know Your Fish!\n` +
+          `   ◀ Get To Know The System!\n` +
+          `   ▲ Choose Your Fish And Get Started!`,
+        {
+          fontFamily: "Verdana",
+          fontSize: 24,
+          fill: textColor,
+          fontWeight: "bold",
+          align: "left",
+          letterSpacing: 1,
+          stroke: "#000000",
+          strokeThickness: 4,
+          dropShadow: true,
+          dropShadowAlpha: 0.5,
+        },
+        { durationPerChar: 30 },
+      );
+
+      this.helpText.container.position.set(
+        this.app.screen.width * 0.75,
+        this.app.screen.height * 0.65,
+      );
+
+      this.helpBox = new GlassBox(25);
+      this.helpText.container.addChildAt(this.helpBox.graphics, 0);
+      this.activePromptContainer.addChild(
+        this.startText.container,
+        this.helpText.container,
+      );
+
+      this.startText.play();
+      this.helpText.play();
+      this.startBox.reshape(this.startText.textObject);
+      this.helpBox.reshape(this.helpText.textObject);
     };
 
     this.unsubscribeResponder = subscribeResponder((id) =>
@@ -156,47 +268,13 @@ export class IdleSceneAnime {
     const initialId = getResponder();
     if (initialId) this.updateActiveResponder(initialId);
 
-    this.helpText = new TypewriterText(
-      "Use Arrow Keys [▲ ▼ ◀ ▶] To Operate\n\n" +
-        `Speak To Fish By Saying:\n` +
-        `   'Hey', 'Hello', 'Hi' To Your Fish\n` +
-        `Chat With Your Fish By Pressing K\n` +
-        `   ▶ Get To Know Your Fish!\n` +
-        `   ◀ Get To Know The System!\n` +
-        `   ▲ Choose Your Fish And Get Started!`,
-      {
-        fontFamily: "Garamond",
-        fontSize: 24,
-        fill: "#ebee40",
-        fontWeight: "bold",
-        align: "left",
-      },
-      { durationPerChar: 30 },
-    );
-
-    this.helpText.container.position.set(
-      this.app.screen.width * 0.4,
-      this.app.screen.height * 0.65,
-    );
-    this.container.addChild(this.helpText.container);
-
-    this.helpBox = new GlassBox(25);
-    this.helpText.container.addChildAt(this.helpBox.graphics, 0);
-
     this.updateLoop = () => {
-      if (this.helpBox && this.helpText) {
+      if (this.startBox && this.startText)
+        this.startBox.reshape(this.startText.textObject);
+      if (this.helpBox && this.helpText)
         this.helpBox.reshape(this.helpText.textObject);
-      }
     };
     this.app.ticker.add(this.updateLoop);
-
-    const triggerHelpEffect = () => {
-      this.helpBox.ripple("#1bdcf6");
-      this.helpText.play();
-    };
-
-    triggerHelpEffect();
-    this.helpInterval = setInterval(triggerHelpEffect, 30000);
 
     window.currentActiveScene = this;
   }
@@ -205,9 +283,16 @@ export class IdleSceneAnime {
     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
     if (this.helpInterval) clearInterval(this.helpInterval);
     if (this.funFactInterval) clearInterval(this.funFactInterval);
+    if (this.factOverlay) this.factOverlay.destroy();
+    if (this.funFactBox) this.funFactBox.destroy();
     if (this.unsubscribeResponder) this.unsubscribeResponder();
+    if (this.unsubscribeMic) this.unsubscribeMic();
+    if (this.micIndicator) this.micIndicator.destroy();
     if (this.responderDisplayContainer) {
       this.responderDisplayContainer.destroy({ children: true });
+    }
+    if (this.activePromptContainer) {
+      this.activePromptContainer.destroy({ children: true });
     }
 
     if (this.updateLoop) {
