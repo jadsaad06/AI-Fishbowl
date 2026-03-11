@@ -1,0 +1,8 @@
+# Combined Python dependencies for AI Fishbowl.
+# Install with: pip install -r requirements.txt
+
+-r backend/requirements.txt
+-r hardware/requirements.txt
+
+# Optional Jetson-only case hardware dependencies:
+# -r hardware/src/case-hardware/requirements.txt

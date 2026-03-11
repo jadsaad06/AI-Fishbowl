@@ -123,6 +123,8 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
 
 
         while not stop_agent.is_set():
+            app.state.total_sessions = len(pinto_servers_urls) + len(jimbo_servers_urls) + len(bongo_servers_urls)
+
             pinto_sessions = []
             jimbo_sessions = []
             bongo_sessions = []
@@ -132,22 +134,31 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                  async with AsyncExitStack() as stack:
 
                     for fish, mcp_urls in fish_grouping.items():
+
                         for mcp_url in mcp_urls:
-                            if "smithery" in mcp_url:
-                                read, write, _ = await stack.enter_async_context(streamable_http_client(url=mcp_url, http_client=http_client)) # Add the context manager into the stack, leaving the session open for the context manager function which is asynchronous, and grab read and write streams between the server and client
-                            else:
-                                read, write, _ = await stack.enter_async_context(streamable_http_client(url=mcp_url)) # Add the context manager into the stack, leaving the session open for the context manager function which is asynchronous, and grab read and write streams between the server and client
+                            try:
+                                print("Attemping to connect: " + mcp_url)
+                                if "smithery" in mcp_url:
+                                    read, write, _ = await stack.enter_async_context(streamable_http_client(url=mcp_url, http_client=http_client)) # Add the context manager into the stack, leaving the session open for the context manager function which is asynchronous, and grab read and write streams between the server and client
+                                else:
+                                    read, write, _ = await stack.enter_async_context(streamable_http_client(url=mcp_url)) # Add the context manager into the stack, leaving the session open for the context manager function which is asynchronous, and grab read and write streams between the server and client
 
-                            session = await stack.enter_async_context(ClientSession(read, write)) # Add the context manager into the stack leaving the session open, and create a connection between the server and client
+                                session = await stack.enter_async_context(ClientSession(read, write)) # Add the context manager into the stack leaving the session open, and create a connection between the server and client
 
-                            await session.initialize() # Create the handshake between the server and client
+                                await session.initialize() # Create the handshake between the server and client
+                                    
+                                if fish == "pinto":
+                                    pinto_sessions.append(session)
+                                elif fish == "jimbo":
+                                    jimbo_sessions.append(session)
+                                elif fish == "bongo":
+                                    bongo_sessions.append(session)
                                 
-                            if fish == "pinto":
-                                pinto_sessions.append(session)
-                            elif fish == "jimbo":
-                                jimbo_sessions.append(session)
-                            elif fish == "bongo":
-                                bongo_sessions.append(session)
+                            except Exception as e:
+                                print("Unable to connect: " + mcp_url)
+                                app.state.total_sessions -= 1
+                                print(e)
+                                continue
 
                     pinto_tools = []
                     jimbo_tools = []
@@ -155,9 +166,9 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                     
                     for s in pinto_sessions:
                         tools = await load_mcp_tools(s)
+
                         
                         if pinto_permission == "true":
-                            print("yessy ess")
                             pinto_tools.extend(tools)
                         else:
                             for tool in tools:
@@ -203,7 +214,10 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                         print("ping ok")
                         await asyncio.sleep(60) # Take a 1 minute break interval to avoid flooding
 
-            except Exception as e: # If the session ping was not successful, or some other issue occured, we assume that the MCP server disconnected, and print the error.
+            except* httpx.HTTPStatusError:
+                print("MCP server is currently rate limited.")
+                
+            except* Exception as e: # If the session ping was not successful, or some other issue occured, we assume that the MCP server disconnected, and print the error.
                 print("MCP Server connection failed, trying again")
                 traceback.print_exc()                
 
