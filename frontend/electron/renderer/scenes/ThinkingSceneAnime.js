@@ -72,7 +72,7 @@ export class ThinkingSceneAnime {
     }, 1500);
 
     this.userPrompt = new TypewriterText(
-      "Thinking..",
+      "Mic Off, Thinking...",
       {
         fontFamily: "Roboto",
         fontSize: 32,

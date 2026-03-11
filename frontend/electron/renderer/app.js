@@ -12,6 +12,7 @@ import {
   getState,
   setResponder,
   getResponder,
+  setMicActive,
 } from "./state/store.js";
 import { setScene, currentScene } from "./scenes/index.js";
 import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
@@ -29,8 +30,8 @@ export const RESPONDER_LORE = [
     id: 1,
   },
   {
-    name: "Jimbo",
-    bio: "- A little rough around the edges, but such is life on the Atlantic Coast.\n- Banished by the East Coast Fish Union for being a bit too competitive.\n- Moved to Oregon to start fresh in 2010, but he's grumpier than back then.\n- DOES NOT LIKE FLORIDA\n- Still very sharp though.",
+    name: "Mimi",
+    bio: "- She's A little rough around the edges, but such is life on the Atlantic Coast.\n- Banished by the East Coast Fish Union for being a bit too competitive.\n- Moved to Oregon to start fresh in 2010, but she's grumpier than back then.\n- DOES NOT LIKE FLORIDA\n- Still very sharp though.",
     path: "assets/images/responder_2.png",
     id: 2,
   },
@@ -66,12 +67,12 @@ export const RESPONDER_OPTIONS = [
     id: 1,
   },
   {
-    name: "Jimbo",
+    name: "Mimi",
     bio:
       "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 2\n\n" +
-      "- GREETING: 'Hey Jimbo', 'Hi Jimbo', 'Okay Jimbo', 'Hello Jimbo'\n\n" +
-      "- TOOLS: Web Search, Dad Jokes \n\n",
+      "- GREETING: 'Hey Mimi', 'Hi Mimi', 'Okay Mimi', 'Hello Mimi'\n\n" +
+      "- TOOLS: Web Search \n\n",
     path: "assets/images/responder_2.png",
     id: 2,
   },
@@ -81,7 +82,7 @@ export const RESPONDER_OPTIONS = [
       "-----------------------------------------------------------\n\n" +
       "- FISH NUMBER: 3\n\n" +
       "- GREETING: 'Hey Bongo', 'Hi Bongo', 'Okay Bongo', 'Hello Bongo'\n\n" +
-      "- TOOLS: LeetCode, Weather \n\n",
+      "- TOOLS: LeetCode, Weather, Dad Jokes \n\n",
     path: "assets/images/responder_3.png",
     id: 3,
   },
@@ -111,6 +112,8 @@ export const CONTROLS = [
   {
     name: "TO SPEAK",
     bio:
+      "- Just Say 'Hey' or 'Hi' To Speak To Anyone Without Choosing\n\n" +
+      "- To Choose Your Own Fish,\n" +
       "- View Fish Stories With ▶ And Pick Your Favorite\n\n" +
       "- View Available Tools and Controls For Your Fish ▲\n\n" +
       "- Greet Your Fish with Hey, Hi, Hello <Fish Name> \n\n" +
@@ -164,10 +167,10 @@ export const RESPONDER_PROMPTS = {
     ],
   },
   2: {
-    name: "Jimbo",
+    name: "Mimi",
     prompts: [
       "Examples of stuff I can help you with: \n",
-      " 1. Tell Me A Dad Joke",
+      " 1. Give Me The Recent Headlines From Reuters.",
       " 2. List AI Research Papers Published In The Last Month.",
       " 3. List Companies That Are Hiring Software Engineers.",
       " 4. Tell Me The Imporant Current Headlines.",
@@ -335,6 +338,7 @@ async function init() {
     await PIXI.Assets.load("assets/images/ocean_diver.png");
     await PIXI.Assets.load("assets/images/listening_fish_cropped.png");
     await PIXI.Assets.load("assets/images/thinking_fish.png");
+    await PIXI.Assets.load("assets/images/mic_mute.png");
 
     /** Displays the application document */
     await app.init({
@@ -369,6 +373,10 @@ async function init() {
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send("PERSONALIZATION: " + responderId);
         }
+      });
+
+      window.fishbowl.onMicState(({ active }) => {
+        setMicActive(active);
       });
 
       window.fishbowl.onUserPrompt((text) => {
@@ -470,7 +478,8 @@ function setupKeyboardInput() {
     const activeScene = window.currentActiveScene;
     if (!activeScene) return;
 
-    const { optionsOverlay, infoOverlay, controlsOverlay } = activeScene;
+    const { optionsOverlay, infoOverlay, controlsOverlay, factOverlay } =
+      activeScene;
 
     if (optionsOverlay?.isOpen) {
       switch (e.key) {
@@ -496,6 +505,11 @@ function setupKeyboardInput() {
       return;
     }
 
+    if (factOverlay?.isOpen) {
+      if (e.key === "ArrowUp") factOverlay.rollin();
+      return;
+    }
+
     if (infoOverlay?.isOpen) {
       if (e.key === "ArrowLeft") infoOverlay.rollin();
       return;
@@ -515,6 +529,11 @@ function setupKeyboardInput() {
         break;
       case "ArrowLeft":
         controlsOverlay?.rollout();
+        break;
+      case "ArrowDown":
+        factOverlay?.rollout(() => {
+          activeScene.funFactBox.updateFunFact();
+        });
         break;
       case "k":
         e.preventDefault();
