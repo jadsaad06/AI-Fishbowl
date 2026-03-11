@@ -59,7 +59,7 @@ PINTO_PERM_TOOLS = {
     "get_route"
 }
 
-mimi_PERM_TOOLS = {
+MIMI_PERM_TOOLS = {
     "get-dad-joke",
     "web_search_exa",
     "company_research_exa"
@@ -189,7 +189,7 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                             mimi_tools.extend(tools)
                         else:
                             for tool in tools:
-                                if tool.name in mimi_PERM_TOOLS:
+                                if tool.name in MIMI_PERM_TOOLS:
                                     mimi_tools.append(tool)
 
                     for s in bongo_sessions:
