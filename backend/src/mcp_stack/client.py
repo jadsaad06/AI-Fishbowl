@@ -134,8 +134,16 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                  async with AsyncExitStack() as stack:
 
                     for fish, mcp_urls in fish_grouping.items():
+                        
+                        if not mcp_urls or mcp_urls[0] == '':
+                            continue
+                        
+                        
 
                         for mcp_url in mcp_urls:
+                            if not mcp_url.startswith(("http://", "https://")):
+                                print("Invalid URL, skipping MCP Server: " + mcp_url)
+                                continue
                             try:
                                 print("Attemping to connect: " + mcp_url)
                                 if "smithery" in mcp_url:
@@ -214,12 +222,12 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                         print("ping ok")
                         await asyncio.sleep(60) # Take a 1 minute break interval to avoid flooding
 
-            except* httpx.HTTPStatusError:
+            except httpx.HTTPStatusError:
                 print("MCP server is currently rate limited.")
                 
-            except* Exception as e: # If the session ping was not successful, or some other issue occured, we assume that the MCP server disconnected, and print the error.
+            except Exception as e: # If the session ping was not successful, or some other issue occured, we assume that the MCP server disconnected, and print the error.
                 print("MCP Server connection failed, trying again")
-                traceback.print_exc()                
+                traceback.print_exc()
 
             finally: # We finally set the agent to no object since the connection between the MCP server and client is gone, so we don't know what MCP server tools we may have anymore if we consider a new connection.
                 app.state.agent_Pinto = None

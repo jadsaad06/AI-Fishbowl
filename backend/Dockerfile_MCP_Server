@@ -14,7 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./src/mcp_stack ./src/mcp_stack
 
-COPY ./src/services/llm ./src/services/llm
 
 #Make that ur working directory
 WORKDIR /app/src/mcp_stack
