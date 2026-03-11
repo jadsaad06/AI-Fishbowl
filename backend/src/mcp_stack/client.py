@@ -50,7 +50,7 @@ for i in range(len(bongo_servers_urls)):
 
 
 pinto_permission = os.getenv("PINTO_ALLOW_ALL", "true").lower()
-mimi_permission = os.getenv("mimi_ALLOW_ALL", "false").lower()
+mimi_permission = os.getenv("MIMI_ALLOW_ALL", "false").lower()
 bongo_permission = os.getenv("BONGO_ALLOW_ALL", "true").lower()
 
 PINTO_PERM_TOOLS = {
