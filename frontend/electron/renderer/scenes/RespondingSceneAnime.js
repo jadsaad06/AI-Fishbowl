@@ -72,29 +72,24 @@ export class RespondingSceneAnime {
 
     this.micOffContainer = new PIXI.Container();
 
-    const micOffText = new PIXI.Text("MIC OFF", {
-      fontFamily: "Verdana",
-      fontSize: 24,
-      fill: "#000000",
-      fontWeight: "bold",
-      stroke: "#000000",
-      strokeThickness: 4,
-      dropShadow: true,
-      dropShadowAlpha: 0.5,
-    });
-    micOffText.anchor.set(0.5);
+    this.micMuteBox = new GlassBox(12);
 
-    this.micOffBox = new GlassBox(15);
-    this.micOffContainer.addChild(this.micOffBox.graphics);
-    this.micOffContainer.addChild(micOffText);
+    const muteIcon = PIXI.Sprite.from("assets/images/mic_mute.png");
+    muteIcon.anchor.set(0.5);
+    muteIcon.width = 80;
+    muteIcon.height = 80;
+
+    this.micOffContainer.addChild(this.micMuteBox.graphics);
+    this.micOffContainer.addChild(muteIcon);
 
     this.micOffContainer.position.set(
       this.app.screen.width / 2,
-      app.screen.height * 0.25,
+      this.app.screen.height * 0.1,
     );
 
     this.container.addChild(this.micOffContainer);
-    this.micOffBox.reshape(micOffText);
+
+    this.micMuteBox.reshape(muteIcon);
 
     //this.updateSubtitles(initialSubtitles || testSubtitles);
 
