@@ -67,8 +67,6 @@ def add_documents(vectorstore, chunks, n):
 def load_db(vectorstore):
     # Gets all the relevent URLs from the CS department landing page,
     # scrapes them, chunks them, then adds them to vector database
-    path_name = os.getenv("PATH_NAME")
-    print(f"Path name: {path_name}")
     website = f"https://web.cs.pdx.edu"
     headers = {
         'User-Agent' : 'PDXAcademicClient/pdx-cs-ask'
@@ -81,9 +79,8 @@ def load_db(vectorstore):
     links = set() # Initialize a set, avoid duplicating links
     for a in soup.find_all('a', href=True): # find all anchor tags, so we loop through each tag to find the link reference
         href = a['href'] #Grab the link
-        if path_name in href: #if computer-science is within the string of the href
-            full_url = urljoin(website, href) #join the URL base + the href path
-            links.add(full_url) #add it to the set of links
+        full_url = urljoin(website, href) #join the URL base + the href path
+        links.add(full_url) #add it to the set of links
 
     links.update([""
     "https://www.pdx.edu/gradschool/graduate-candidate-deadlines",
