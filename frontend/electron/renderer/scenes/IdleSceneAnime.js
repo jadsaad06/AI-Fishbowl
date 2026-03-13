@@ -1,5 +1,15 @@
+/**
+ * File for the landing page of the Coral Net application.
+ *
+ * Contains animations for all sprites, images, assets, menus, and staggers displayed on the first scene of the application launch.
+ *    1. Coral Net Title.
+ *    2. Current Responder Image Box.
+ *    3. Mic Activity Indicator.
+ *    4. Controls Box.
+ *    5. Pullout Menus.
+ */
+
 import * as PIXI from "pixi.js";
-import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 import { BackgroundManager, FishSwarm } from "../assets/sprites.js";
 import {
   getResponder,
@@ -27,6 +37,10 @@ import {
   RESPONDER_OPTIONS,
 } from "../app.js";
 
+/**
+ * Used for changing the text color used in the
+ * "Say Hey <fish name> to get started" box and the controls box.
+ */
 const RESPONDER_COLORS = {
   Pinto: "#ff7efb",
   Mimi: "#00ff9d",
@@ -56,10 +70,19 @@ export class IdleSceneAnime {
     this.swarmUpdate = () => this.swarm.update();
     PIXI.Ticker.shared.add(this.swarmUpdate);
 
+    /**
+     * Update Name Here to change the title of the application
+     */
     const titleData = {
       name: "CORAL NET",
     };
 
+    /**
+     * Changes Available Here:
+     *    1. Title Box Size
+     *    2. Title Text Gradient Colors
+     *    3. Title Text Style, Size etc.
+     */
     this.titleEnclosure = new ResponderEnclosure(
       titleData,
       40,
@@ -77,12 +100,17 @@ export class IdleSceneAnime {
         },
       },
     );
+
+    // Change the title text and box position on the screen here. Needs trial and error.
     this.titleEnclosure.container.position.set(
       this.app.screen.width / 2,
       this.app.screen.height * 0.25,
     );
     this.container.addChild(this.titleEnclosure.container);
 
+    /**
+     * Mic activity indictor box can differ in size, and position only.
+     */
     this.micIndicator = new MicIndicator(app, 450, 120);
     this.micIndicator.container.position.set(
       this.app.screen.width * 0.3,
@@ -96,6 +124,7 @@ export class IdleSceneAnime {
 
     this.micIndicator.setVoiceActive(getMicActive());
 
+    // Pullout menu for random facts. Displayed when down arrow is pressed.
     this.factOverlay = new SlidingOverlay(app, {
       side: "top",
       tabText: "⬇ RANDOM FACT ⬇",
@@ -117,12 +146,14 @@ export class IdleSceneAnime {
       app.screen.height / 2,
     );
 
+    // Pullout menu for the fish stories. Displayed when right arrow is pressed.
     this.infoOverlay = new InfoOverlay(app, RESPONDER_LORE, {
       side: "left",
       tabText: "F\nI\nS\nH\n\nS\nT\nO\nR\nI\nE\nS\n\n▶▶",
       closeHint: "◀ Left Arrow To Close",
     });
 
+    // Pullout menu for the get started section, displayed when up arrow is pressed.
     this.optionsOverlay = new InfoOverlay(this.app, RESPONDER_OPTIONS, {
       side: "bottom",
       tabText: "GET STARTED HERE\n▲",
@@ -131,6 +162,7 @@ export class IdleSceneAnime {
       type: "carousel",
     });
 
+    // Pullout menu for the controls section, displayed when left arrow is pressed
     this.controlsOverlay = new InfoOverlay(app, CONTROLS, {
       side: "right",
       tabText: "C\nO\nN\nT\nR\nO\nL\nS\n\n◀◀",
@@ -150,6 +182,8 @@ export class IdleSceneAnime {
     this.container.addChild(this.optionsOverlay.container);
     this.container.addChild(this.controlsOverlay.container);
 
+    // This calls the subscriber store and receives updates for the current responder.
+    // Updates in real-time when a responder is changed or invoked with speech.
     this.updateActiveResponder = (responderId) => {
       this.responderDisplayContainer
         .removeChildren()
@@ -177,6 +211,11 @@ export class IdleSceneAnime {
         bio: ``,
       };
 
+      /**
+       * Changes Available Here:
+       *    1. Active Fish Box Size
+       *    2. Active Fish Name Gradient Colors
+       */
       const activeFishCard = new ResponderEnclosure(
         displayData,
         15,
@@ -185,6 +224,7 @@ export class IdleSceneAnime {
         { c1: "#ff2402", c2: "#ffff00" },
       );
 
+      // Change active fish box position on the screen here
       activeFishCard.container.position.set(
         this.app.screen.width * 0.5,
         this.app.screen.height * 0.65,
@@ -192,6 +232,12 @@ export class IdleSceneAnime {
 
       this.responderDisplayContainer.addChild(activeFishCard.container);
 
+      /**
+       * Changes Available Here:
+       *    1. Start Box Size
+       *    2. Start Text Colors
+       *    3. Start Text Style, Size etc.
+       */
       this.startText = new TypewriterText(
         `To Get Started, Say:\n\n 'Hey ${data.name}'!`,
         {
@@ -214,6 +260,7 @@ export class IdleSceneAnime {
       this.startBox = new GlassBox(20);
       this.startText.container.addChildAt(this.startBox.graphics, 0);
 
+      // Update start text and box position on the screen here
       this.startText.container.position.set(
         this.app.screen.width * 0.3,
         this.app.screen.height * 0.575,
@@ -279,6 +326,7 @@ export class IdleSceneAnime {
     window.currentActiveScene = this;
   }
 
+  // Important: This destroy functions cleans up all animations at state changes and prevents memory leaks.
   destroy() {
     if (this.shuffleInterval) clearInterval(this.shuffleInterval);
     if (this.helpInterval) clearInterval(this.helpInterval);
