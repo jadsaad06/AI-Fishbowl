@@ -1,3 +1,13 @@
+/**
+ * This file contains the animations that are spawned when an agent response is received and the responding state is invoked.
+ * It only spawns when the Text To Speech functionality is active. Which is an opaque dependency. Refer to tts_wrapper.py when debugging state invokations.
+ *
+ * It spawns the chosen responder, with subtitles received via the Inter Process Communication handler, and uses the TypewriterText class to type out the subtitles
+ * in human speech speed to imitate subtitle streaming.
+ *
+ * It automatically closes and gets cleaned up once the Text to Speech model prints the TTS_SPEECH_ENDED flag from the child process.
+ */
+
 import * as PIXI from "pixi.js";
 import { getResponder } from "../state/store.js";
 import { BackgroundRandomizer, createResponder } from "../assets/sprites.js";
