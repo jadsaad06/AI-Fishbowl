@@ -3,7 +3,7 @@ import pathlib
 import asyncio
 
 async def main():
-    print("Input fish ID number:\n1. Pinto \n2. Jimbo \n3. Bongo \n4. Koko \n5. Kiki\n")
+    print("Input fish ID number:\n1. Pinto \n2. Mimi \n3. Bongo \n4. Koko \n5. Kiki\n")
     personality_id = str(input())
     print("Listening for input in incoming.txt... (Ctrl+C to stop)")
 
