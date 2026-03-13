@@ -1,3 +1,8 @@
+/**
+ * This file contains the animations of the keyboard scene which can be accessed by pressing K on the idle state.
+ * It spawns a bobbling responder which is chosen from the state store, a box that contains example prompts that
+ * utilize the tools of the chosen responder, and instructions for going back and proceeding.
+ */
 import * as PIXI from "pixi.js";
 import { subscribePrompt, getResponder } from "../state/store.js";
 import {
@@ -183,44 +188,3 @@ export class KeyboardScene {
     this.container.destroy({ children: true });
   }
 }
-
-// export class KeyboardScene {
-//   constructor(app) {
-//     this.container = new PIXI.Container();
-
-//     const promptBox = new PIXI.Graphics();
-//     promptBox.beginFill(0x00f000, 0.6);
-//     promptBox.drawRoundedRect(
-//       0,
-//       app.screen.height - 240,
-//       app.screen.width,
-//       120,
-//       20,
-//     );
-//     promptBox.endFill();
-
-//     this.container.addChild(promptBox);
-
-//     this.text = new PIXI.Text({
-//       text: "",
-//       style: {
-//         fill: "#ffffff",
-//         fontSize: 28,
-//         wordWrap: true,
-//         wordWrapWidth: app.screen.width - 60,
-//       },
-//     });
-
-//     this.text.position.set(30, app.screen.height - 90);
-//     this.container.addChild(this.text);
-
-//     this.unsubscribe = subscribePrompt((prompt) => {
-//       this.text.text = `> ${prompt}_`;
-//     });
-//   }
-
-//   destroy(app) {
-//     this.unsubscribe?.();
-//     this.container.destroy({ children: true });
-//   }
-// }
