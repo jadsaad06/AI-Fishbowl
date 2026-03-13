@@ -1,3 +1,15 @@
+/**
+ * This file contains the animations for the thinking scene that is invoked when the user prompt from
+ * the speech state or the keyboard state is successfully sent to the MCP agent.
+ *
+ * It spawns a fish with multiple Diver sprites swimming around it, displaying multiple "thinking indicators"
+ * that imitate loading. Since this can be displayed for an undeterministic amount of time, the thinking indicators
+ * are set on shuffle and update every second.
+ *
+ * The state also displays that the microphone is off.
+ *
+ * It is automatically cleaned up and destroyed to spawn the responding state after the socket receives the agent response.
+ */
 import * as PIXI from "pixi.js";
 import {
   BackgroundRandomizer,
