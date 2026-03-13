@@ -1,3 +1,10 @@
+/**
+ * This file contains the animations and renders for the listening scene.
+ *
+ * It spawns a background, a fish, and multiple enhanced fish sprites from the sprites.js file.
+ * It displays the instructions to the user to ask their question, and contains ripple effects to
+ * display that the VAD system is active.
+ */
 import * as PIXI from "pixi.js";
 import {
   BackgroundManager,
