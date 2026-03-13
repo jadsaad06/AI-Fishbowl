@@ -1,3 +1,14 @@
+/**
+ * The Electron Main Process. Node runs this process and creates a BrowserWindow
+ * instance. This file is also responsible for communicating with the backend services.
+ *
+ * Backend Services:
+ *  1. Speech To Text Child Process communication.
+ *  2. Text to Speech Child Process communication.
+ *
+ * Contains state machine logic and is the authoratative source for current state, current
+ * responder, and the current user prompt.
+ */
 const { app, BrowserWindow, ipcMain } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
@@ -9,6 +20,7 @@ app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication");
 app.commandLine.appendSwitch("log-level", "3");
 
 // Create a global reference of the kiosk window to maintain a single source of truth for the current state
+// The current state is idle by default, and the default responder is set to 1:Pinto.
 let win;
 let currentAppState = "idle";
 let activateInputState = "speech";
@@ -30,7 +42,7 @@ function createWindow() {
     width: 1920,
     height: 1080,
     fullscreen: true,
-    kiosk: false,
+    kiosk: true,
     webPreferences: {
       preload: path.join(__dirname, "../preload.js"),
       contextIsolation: true,
@@ -42,13 +54,13 @@ function createWindow() {
   win.loadFile(path.join(__dirname, "../renderer/index.html"));
 }
 
-function updateUIState(newState) {
-  console.log("State Transition: ", newState);
-  if (win) {
-    win.webContents.send("ui-state-changed", newState);
-  }
-}
-
+/**
+ * All requests to switch states from all instances call this function.
+ * If the state change is invalid, the request is not sent to the frontend.
+ * Also guardrails the exit functionality from speech state from sending residual input to the agent.
+ * @param {newState} newState
+ * @returns
+ */
 function transitionState(newState) {
   if (currentAppState === newState) return;
 
@@ -72,6 +84,16 @@ function transitionState(newState) {
   }
 }
 
+/**
+ * This function is called when a responder change is requested.
+ * It validates the responder change, checks whether the application state is
+ * idle to change responders, and executes the change.
+ *
+ * This change is forced onto the application window to prevent mismatches
+ * in processing.
+ * @param {*} responderId
+ * @returns
+ */
 function setResponderIfAllowed(responderId) {
   console.log("Attempting responder change:", responderId);
 
@@ -102,15 +124,17 @@ function setResponderIfAllowed(responderId) {
  * Electron's Inter-Process Communication Handler.
  * This allows the main process to listen for changes via the frontend (conveyed by the renderer process)
  * and also allows sending backend processes done by Node back to the renderer process.
- * If ipcRenderer sends a message on the "set-ui-state" channel, this callback runs.
- * The main process updates the UI state from the "set-ui-state" channel in the backend, and forwards the update
- * back to the renderer process via the "ui-state-changed" channel. The changes are now reflected on the frontend.
+ *
+ * request-state-transition opens a context bridge with the frontend through the handler initialized in preload.js
+ * This context bridge will receive state requests and will call the transitionState function to verify whether the
+ * change is valid.
+ *
+ * The keyboard-input handler opens a backend receiver for the keyboard prompt is necessary. This is a backup handler in case
+ * the prompt needs to be sent to the agent from the main process instead of the renderer process (app.js).
+ *
+ * request-responder-change opens a context bridge with the frontend for changing the current responder and calls
+ * the setResponderIfAllowed function to verify whether the responder change is valid at that instance.
  */
-// ipcMain.on("set-ui-state", (event, newState) => {
-//   console.log("State change requested:", newState);
-//   currentAppState = newState;
-//   win.webContents.send("ui-state-changed", newState);
-// });
 
 ipcMain.on("request-state-transition", (_, requestedState) => {
   console.log("Renderer requested state:", requestedState);
@@ -125,15 +149,32 @@ ipcMain.on("request-state-transition", (_, requestedState) => {
 
   transitionState(requestedState);
 });
+
 ipcMain.on("keyboard-prompt", (_, text) => {
   console.log("Keyboard input received:", text);
-  // Forward text to Michel ###########
 });
 
 ipcMain.on("request-responder-change", (_, responderId) => {
   setResponderIfAllowed(responderId);
 });
 
+/**
+ * Spawns the text to speech and speech to text scripts as child processes. Node can
+ * read and write to standard input and output for child processes if flush is set to true,
+ * this enables communication via flags.
+ *
+ * Speech to Text:
+ *    1. Conveys any captured input through the STT Captured: flag
+ *    2. Conveys what the current responder from the 'hey bob' functionality is chosen through the WAKE: flag
+ *    3. Sends the transcript of the user prompt through the [Transcript]: flag
+ *    4. Sends MIC_STARTED and MIC_STOPPED flags for mic indicator animations.
+ *
+ * Text to Speech:
+ *    1. Any TTS output is logged for debugging.
+ *    2. Prints a TTS_SPEECH_STARTED flag when the voice is active.
+ *    3. Prints a TTS_SPEECH_STOPPED flag when the audio has finished.
+ *    4. Receives the personality id for the voice through the agent.
+ */
 function startServices() {
   stt = spawn("python", [
     "-u",
