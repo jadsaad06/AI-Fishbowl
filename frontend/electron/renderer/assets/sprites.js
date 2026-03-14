@@ -1,3 +1,9 @@
+/**
+ * This file creates and maintains generic classes for individual animations used in the scene renders.
+ * It is responsible for adding the time-based effects and geometric effects that control the positions
+ * of a sprite on the screen at a certain time instance and a certain application state instance.
+ */
+
 import * as PIXI from "pixi.js";
 import {
   BACKGROUNDS,
@@ -6,6 +12,11 @@ import {
   RESPONDERS,
 } from "../app.js";
 
+/**
+ * Creates a texture of an image to set as a background in a scene.
+ * @param {image path} path
+ * @returns
+ */
 export async function createBackground(
   path = "./assets/images/background_2.png",
 ) {
@@ -14,6 +25,13 @@ export async function createBackground(
   return background;
 }
 
+/**
+ * Uses the createBackground() and receives a list of images to select and display them as a slideshow
+ * based on a specified time interval.
+ *
+ * The next() function for this class can be called inside a timeout interval, which can periodically upate the scene
+ * background if necessary.
+ */
 export class BackgroundManager {
   constructor(app, texturePaths) {
     this.app = app;
@@ -47,6 +65,12 @@ export class BackgroundManager {
   }
 }
 
+/**
+ * Similar to the BackgroundManager class, this class receives a list of image paths
+ * and then randomly chooses a background to display.
+ *
+ * The image is shuffled and the shuffle interval can be specified in the calling routine.
+ */
 export class BackgroundRandomizer {
   constructor(app, texturePaths) {
     this.app = app;

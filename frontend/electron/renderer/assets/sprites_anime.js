@@ -1,8 +1,23 @@
+/**
+ * This file also creates sprites, textures, and animation renders similar to sprites.js
+ * However, this file also integrates the animeJS framework into the Coral Net animations.
+ *
+ * It contains text options, bounding background boxes, pullout menus, and more.
+ */
 import * as PIXI from "pixi.js";
 import { RESPONDERS, RESPONDER_LORE } from "../app.js";
 import { subscribeResponder, getResponder } from "../state/store.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
 
+/**
+ * This gradient text allows the calling routine to define the text style required for the gradient,
+ * and applies two colors into a gradient to the provided text.
+ *
+ * For the gradient, a canvas document needs to be created inside the staged scene, and needs the gradient overlay
+ * set on the canvas. The canvas is then exported as a PIXI Texture to display onto the application.
+ *
+ * Since it is a pre-generated canvas, the text is static and cannot be animated with moving features.
+ */
 export class GradientText {
   constructor(options = {}) {
     const {
@@ -102,6 +117,12 @@ export class GradientText {
   }
 }
 
+/**
+ * This text type allows the calling routine to apply pulsing and strobing effects to a given text and
+ * its bounding box.
+ *
+ * It can increase and decrease in size, transparency, and can apply default text styles to all pulsing animations.
+ */
 export class PulseText {
   constructor(text = "", style = {}, options = {}) {
     this.options = {
@@ -162,6 +183,13 @@ export class PulseText {
   }
 }
 
+/**
+ * This text class allows the calling routine to invoke a text type that imitates a typewriter
+ * where the next character in the displayed text is staggered and appears character by character
+ * based on a specified per char duration speed.
+ *
+ * This is used to display subtitles, print instructions and controls, and so on.
+ */
 export class TypewriterText {
   constructor(text = "", style = {}, options = {}) {
     this.fullText = text;
@@ -263,6 +291,14 @@ export class TypewriterText {
   }
 }
 
+/**
+ * A simple box implementation that can be used as a high contrast background for
+ * text objects, images, cards, and so on.
+ *
+ * Generic class that is made to encapsulate any objects or sprites created in the rest of the file.
+ * The reshape function automatically refits the box to the given object with a specified padding
+ * going between the content and the bounding box.
+ */
 export class ModernBox {
   constructor(padding = 30, color = 0x5ebd9d, alpha = 0.9) {
     this.graphics = new PIXI.Graphics();
@@ -331,6 +367,13 @@ export class ModernBox {
   }
 }
 
+/**
+ * A specialized version of ModernBox that applies transparent background and highlight
+ * effects to a ModernBox object to make it look like a glass box, which is used to imitate
+ * an aquarium or to display background objects.
+ *
+ * Also has ripple functionality that can generate periodic rippling animations originating from the bounding box.
+ */
 export class GlassBox extends ModernBox {
   constructor(padding = 30) {
     super(padding, 0xffffff, 0.1);
@@ -463,6 +506,17 @@ export class GlassBox extends ModernBox {
   }
 }
 
+/**
+ * Mic Indicator class that uses MIC_STARTED and MIC_STOPPED events from the main process
+ * to display mic activity on the frontend to let the user know when the mic is picking up their
+ * input and when it is not.
+ *
+ * This is not a generic class and it only applies when the Speech To Text backend process is spawned
+ * and functional in the main process pipeline.
+ *
+ * It uses randomized sine wave animations to imitate random frequency input for the voice detection and then
+ * leverages the events to change the text based on input status (Standby/Listening).
+ */
 export class MicIndicator {
   constructor(app, width = 300, height = 100) {
     this.app = app;
@@ -575,6 +629,14 @@ export class MicIndicator {
   }
 }
 
+/**
+ * This random fact generator box spawns in the idle state on the arrow down key press.
+ * It has nested API calls for multiple sequential fallbacks to ensure that the facts never stop generating.
+ *
+ * It calls on Ninjas, Wikipedia, OpenTDB, or as a final fallback, calls on a local repository of fun facts.
+ *
+ * The facts are bounded in a fixed size GlassBox object, and has a GradientText title.
+ */
 export class FunFactBox {
   constructor(app, factsList = []) {
     this.app = app;
@@ -705,6 +767,15 @@ export class FunFactBox {
   }
 }
 
+/**
+ * A generic class for pullout menu backgrounds, that allows the calling routine
+ * to define a bouncing tab label that contains a fullscreen background that is tucked away
+ * in the specified side of the screen, with a label that overflows on the screen and bounces.
+ *
+ * This would allow an arrow keypress to pullout a menu and roll it back when done viewing. It also
+ * allows a close hint text to be displayed at a chosen position, which enables operating instructions
+ * for the content displayed on the pullout menus.
+ */
 export class SlidingOverlay {
   constructor(
     app,
@@ -883,6 +954,12 @@ export class SlidingOverlay {
   }
 }
 
+/**
+ * Creates a card for a responder specifically, where there is a header for the name, an allocated space
+ * on the card for the responder's image, and a subtext section where the responder information can be displayed.
+ *
+ * It creates the card inside a GlassBox object and is thus transparent.
+ */
 export class ResponderEnclosure {
   constructor(
     data,
@@ -979,6 +1056,15 @@ export class ResponderEnclosure {
   }
 }
 
+/**
+ * This is a specialized implementation of the pullout menu section that leverages
+ * the SlidingOverlay's rollout and rollin functionality along with the tab label and the closing
+ * instructions section it provides, and adds several ResponderEnclosures to the overlay to populate
+ * the pullout menu with cards containing content about the responders.
+ *
+ * It also implements a carousel that uses left and right arrow key presses to navigate among the
+ * populated cards, while hiding the next and previous cards.
+ */
 export class InfoOverlay extends SlidingOverlay {
   constructor(app, data, config) {
     super(app, config);
@@ -1104,6 +1190,12 @@ export class InfoOverlay extends SlidingOverlay {
   }
 }
 
+/**
+ * Scales the given sprite according to the given dimensions
+ * @param {*} sprite
+ * @param {*} maxWidth
+ * @param {*} maxHeight
+ */
 function fitSprite(sprite, maxWidth, maxHeight) {
   const scale = Math.min(
     maxWidth / sprite.texture.width,
