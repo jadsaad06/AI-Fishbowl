@@ -111,7 +111,7 @@ export class IdleSceneAnime {
     /**
      * Mic activity indictor box can differ in size, and position only.
      */
-    this.micIndicator = new MicIndicator(app, 450, 120);
+    this.micIndicator = new MicIndicator(app, 428, 120);
     this.micIndicator.container.position.set(
       this.app.screen.width * 0.3,
       this.app.screen.height * 0.725,

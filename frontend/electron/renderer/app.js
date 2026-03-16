@@ -172,8 +172,8 @@ export const CONTROLS = [
       "- Hardware - Daniel Schuster\n\n" +
       "- Speech To Text - Joseph Bec\n\n" +
       "- Model Context Protocol (MCP) - Michel Karam, Sal Ambriz\n\n" +
-      "- Speech To Text - Henry Mcdowell\n\n" +
-      "- Frontend/Animations - Satvik Mudgal\n\n\n\n" +
+      "- Text To Speech - Henry Mcdowell\n\n" +
+      "- Frontend/Animations - Satvik Mudgal\n\n\n" +
       "- The Devs know they promised an animated fish...\n" +
       "We took the proposal to the fish, but they referred us to their emloyees - The seahorses\n",
   },
@@ -289,7 +289,7 @@ const app = new PIXI.Application();
 console.log(BACKGROUNDS);
 
 const url = window.fishbowl.config.gcpUrl;
-const TOS_THRESHOLD = 10000;
+const TOS_THRESHOLD = 60000;
 
 let ws = null;
 let keepRetrying = false;
@@ -297,6 +297,7 @@ let fullAgentResponse = "";
 let responseTimeout = null;
 let currentSessionId = 0;
 let tosTimer = null;
+let tosAutoexitTimer = null;
 
 // Sets timeout to the socket connection and retries the connection after the timeout has elapsed.
 function sleep(ms) {
@@ -400,12 +401,25 @@ async function init() {
     if (window.fishbowl) {
       window.fishbowl.onStateChange((newState) => {
         console.log("IPC Received State:", newState);
+        setState(newState);
         if (newState === "idle") {
           resetTOSTimer();
-        } else {
-          if (tosTimer) clearTimeout(tosTimer);
+
+          if (tosAutoexitTimer) {
+            clearTimeout(tosAutoexitTimer);
+            tosAutoexitTimer = null;
+          }
         }
-        setState(newState);
+
+        if (newState === "tos") {
+          if (tosAutoexitTimer) clearTimeout(tosAutoexitTimer);
+
+          tosAutoexitTimer = setTimeout(() => {
+            if (getState() === "tos") {
+              window.fishbowl.requestState("idle");
+            }
+          }, 30000);
+        }
       });
 
       window.fishbowl.onAgentResponse((text) => {
@@ -517,18 +531,21 @@ function setupKeyboardInput() {
       if (currentState === "speech") {
         window.fishbowl.requestState("idle");
         return;
+      } else if (currentState === "tos") {
+        window.fishbowl.requestState("idle");
+        return;
+      } else {
+        currentSessionId++;
+        console.log("Session Invalidated. New ID:", currentSessionId);
+        setPrompt("");
+        fullAgentResponse = "";
+        if (responseTimeout) {
+          clearTimeout(responseTimeout);
+          responseTimeout = null;
+        }
+        window.fishbowl.requestState("idle");
+        return;
       }
-
-      currentSessionId++;
-      console.log("Session Invalidated. New ID:", currentSessionId);
-      setPrompt("");
-      fullAgentResponse = "";
-      if (responseTimeout) {
-        clearTimeout(responseTimeout);
-        responseTimeout = null;
-      }
-      window.fishbowl.requestState("idle");
-      return;
     }
 
     if (currentState === "idle") {
@@ -657,14 +674,14 @@ function setupKeyboardInput() {
 function resetTOSTimer() {
   if (tosTimer) clearTimeout(tosTimer);
 
-  if (getState() === "idle") {
+  const currentState = getState();
+
+  if (currentState === "idle") {
     tosTimer = setTimeout(() => {
       console.log("System idle for 60s. Triggering TOS");
-      window.fishbowl.requestState("tos");
-
-      setTimeout(() => {
-        window.fishbowl.requestState("idle");
-      }, 10000);
+      if (getState() === "idle") {
+        window.fishbowl.requestState("tos");
+      }
     }, TOS_THRESHOLD);
   }
 }
