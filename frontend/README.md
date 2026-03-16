@@ -60,3 +60,10 @@
 3. If the animations are overlapping or are mashed together, change the resolution of your display to 1920x1080.
 4. If the application is not responding, and is perpetually thinking, press `Ctrl/Cmd + Shift + I` to open the dev tools, and check the console for the text `WS connected`. If the web socket is not connected, the server is down, retry after 10 minutes.
 5. If the responder does not spawn correctly, ensure that the microphone is placed in an area that can pick up vocals clearly, and is not in an environment with significant interference.
+
+## Citations
+
+- Images and sprites downloaded from:
+  - Freepik: https://www.freepik.com/log-in?client_id=freepik&lang=en&cb_url=https%3A%2F%2Fwww.freepik.com%2Fhome-auth
+  - PNGTree: https://pngtree.com/
+  - Adobe Stock: https://stock.adobe.com/
