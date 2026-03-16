@@ -9,6 +9,7 @@ import { RespondingSceneAnime } from "./RespondingSceneAnime.js";
 import { SpeechSceneAnime } from "./SpeechSceneAnime.js";
 import { ErrorScene } from "./ErrorScene.js";
 import { KeyboardScene } from "./KeyboardScene.js";
+import { TOSScene } from "./TOSScene.js";
 import { getSubtitles } from "../state/store.js";
 
 // Tracks currently displayed scene
@@ -30,6 +31,9 @@ export function setScene(app, state) {
   switch (state) {
     case "idle":
       currentScene = new IdleSceneAnime(app);
+      break;
+    case "tos":
+      currentScene = new TOSScene(app);
       break;
     case "speech":
       currentScene = new SpeechSceneAnime(app);

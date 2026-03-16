@@ -41,8 +41,8 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1920,
     height: 1080,
-    fullscreen: true,
-    kiosk: true,
+    fullscreen: false,
+    kiosk: false,
     webPreferences: {
       preload: path.join(__dirname, "../preload.js"),
       contextIsolation: true,
@@ -67,6 +67,10 @@ function transitionState(newState) {
   if (newState === "idle") {
     currentSessionId++;
     console.log(`Session Reset. Current ID: ${currentSessionId}`);
+  }
+
+  if (newState === "tos") {
+    console.log("Displaying Terms of Service");
   }
 
   console.log(`State Transition: ${currentAppState} -> ${newState}`);

@@ -289,12 +289,14 @@ const app = new PIXI.Application();
 console.log(BACKGROUNDS);
 
 const url = window.fishbowl.config.gcpUrl;
+const TOS_THRESHOLD = 10000;
 
 let ws = null;
 let keepRetrying = false;
 let fullAgentResponse = "";
 let responseTimeout = null;
 let currentSessionId = 0;
+let tosTimer = null;
 
 // Sets timeout to the socket connection and retries the connection after the timeout has elapsed.
 function sleep(ms) {
@@ -398,6 +400,11 @@ async function init() {
     if (window.fishbowl) {
       window.fishbowl.onStateChange((newState) => {
         console.log("IPC Received State:", newState);
+        if (newState === "idle") {
+          resetTOSTimer();
+        } else {
+          if (tosTimer) clearTimeout(tosTimer);
+        }
         setState(newState);
       });
 
@@ -421,6 +428,7 @@ async function init() {
       });
 
       window.fishbowl.onMicState(({ active }) => {
+        resetTOSTimer();
         setMicActive(active);
       });
 
@@ -477,6 +485,7 @@ async function init() {
 
     /** Default landing page initialization */
     setScene(app, "idle");
+    resetTOSTimer();
     setupKeyboardInput();
   } catch (error) {
     console.error("Failed to initialize PIXI application:", error);
@@ -498,6 +507,7 @@ async function init() {
  */
 function setupKeyboardInput() {
   window.addEventListener("keydown", (e) => {
+    resetTOSTimer();
     if (e.metaKey || e.ctrlKey || e.altKey) return;
 
     const currentState = getState();
@@ -641,6 +651,21 @@ function setupKeyboardInput() {
       default:
         if (e.key.length === 1) setPrompt(getPrompt() + e.key);
     }
+  }
+}
+
+function resetTOSTimer() {
+  if (tosTimer) clearTimeout(tosTimer);
+
+  if (getState() === "idle") {
+    tosTimer = setTimeout(() => {
+      console.log("System idle for 60s. Triggering TOS");
+      window.fishbowl.requestState("tos");
+
+      setTimeout(() => {
+        window.fishbowl.requestState("idle");
+      }, 10000);
+    }, TOS_THRESHOLD);
   }
 }
 
