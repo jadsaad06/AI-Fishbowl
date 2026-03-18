@@ -109,7 +109,7 @@ export function subscribeResponder(cb) {
  * @returns
  */
 export function setPrompt(text) {
-  currentPrompt = text;
+  currentPrompt = text.slice(0, 200);
   promptListeners.forEach((cb) => cb(currentPrompt));
 }
 

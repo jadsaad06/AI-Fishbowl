@@ -109,7 +109,7 @@ export class KeyboardScene {
     this.backText.container.addChildAt(this.backBox.graphics, 0);
 
     const margin = 40;
-    const boxHeight = 80;
+    const boxHeight = 130;
     this.promptBox = new PIXI.Graphics()
       .fill({ color: 0x1a1a1a, alpha: 0.85 })
       .stroke({ width: 2, color: 0x00f000 })
@@ -119,20 +119,46 @@ export class KeyboardScene {
     this.container.addChild(this.promptBox);
 
     this.text = new PIXI.Text({
-      text: "> Ready to type...",
+      text: "\n > Ready to type...",
       style: {
         fontFamily: "monospace",
         fill: "#fff652",
         fontSize: 24,
+        wordWrap: true,
+        wordWrapWidth: app.screen.width - margin * 2 - 40,
       },
     });
 
-    this.text.position.set(20, boxHeight / 2 - this.text.height / 2);
     this.promptBox.addChild(this.text);
 
+    this.charCounter = new PIXI.Text({
+      text: "0 / 200",
+      style: {
+        fontFamily: "monospace",
+        fill: "#aaaaaa",
+        fontSize: 16,
+      },
+    });
+
+    this.charCounter.anchor.set(1, 1);
+    this.charCounter.position.set(
+      app.screen.width - margin * 2 - 10,
+      boxHeight - 8,
+    );
+
+    this.promptBox.addChild(this.charCounter);
+
     this.unsubscribe = subscribePrompt((prompt) => {
-      this.text.text = `> ${prompt}_`;
-      this.text.y = boxHeight / 2 - this.text.height / 2;
+      this.text.text = ` > ${prompt}_`;
+      this.text.y = Math.max(
+        10,
+        (this.promptBox.height - this.text.height) / 2,
+      );
+
+      const count = prompt.length;
+      this.charCounter.text = `${count} / 200`;
+      this.charCounter.fill =
+        count >= 180 ? "#ff4444" : count >= 140 ? "#ffaa00" : "#aaaaaa";
     });
 
     this.updateLoop = () => {
