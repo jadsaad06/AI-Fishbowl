@@ -109,7 +109,8 @@ export function subscribeResponder(cb) {
  * @returns
  */
 export function setPrompt(text) {
-  currentPrompt = text.slice(0, 200);
+  const truncated = text.replace(/\S{101, }/g, (word) => word.slice(0, 100));
+  currentPrompt = truncated.slice(0, 200);
   promptListeners.forEach((cb) => cb(currentPrompt));
 }
 

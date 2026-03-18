@@ -666,7 +666,16 @@ function setupKeyboardInput() {
         setPrompt(getPrompt().slice(0, -1));
         break;
       default:
-        if (e.key.length === 1) setPrompt(getPrompt() + e.key);
+        if (e.key.length === 1) {
+          const current = getPrompt();
+          const words = current.split(" ");
+
+          const lastWord = words[words.length - 1];
+
+          if (lastWord.length >= 100) return;
+
+          setPrompt(current + e.key);
+        }
     }
   }
 }
