@@ -8,7 +8,6 @@ WHISPER_ROOT="$HOME/whisper.cpp"
 WHISPER_BIN="$WHISPER_ROOT/build/bin/whisper-server"
 WHISPER_MODEL="$WHISPER_ROOT/models/ggml-base.en.bin"
 
-TTS_ENV="$ROOT/backend/src/services/tts/.env"
 STT_ENV="$ROOT/backend/src/services/stt/.env"
 LLM_ENV="$ROOT/backend/src/services/llm/.env"
 SCREEN_PID=""
@@ -29,7 +28,6 @@ fi
 load_envs() {
 	echo "*****Loading .env files..."
 	local env_files=(
-		"$TTS_ENV"
 		"$STT_ENV"
 		"$LLM_ENV"
 	)

@@ -1,8 +1,7 @@
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 
-from services.llm.QUERY_CHAIN.query import agent_prompt_template_Pinto, agent_prompt_template_Jimbo, agent_prompt_template_Bongo, get_context, agent_prompt_template_koko, agent_prompt_template_kiki
-from langchain.chat_models import init_chat_model
+from services.llm.QUERY_CHAIN.query import agent_prompt_template_Pinto, agent_prompt_template_Mimi, agent_prompt_template_Bongo, get_context, agent_prompt_template_koko, agent_prompt_template_kiki
 from langchain.agents import create_agent
 from langchain_mcp_adapters.tools import load_mcp_tools
 
@@ -22,14 +21,14 @@ load_dotenv()
 
 
 pinto_servers_urls = os.getenv("PINTO_MCP_SERVERS")
-jimbo_servers_urls = os.getenv("JIMBO_MCP_SERVERS")
+mimi_servers_urls = os.getenv("MIMI_MCP_SERVERS")
 bongo_servers_urls = os.getenv("BONGO_MCP_SERVERS")
 
 
 
 pinto_servers_urls = pinto_servers_urls.split(",")
 
-jimbo_servers_urls = jimbo_servers_urls.split(",")
+mimi_servers_urls = mimi_servers_urls.split(",")
 
 bongo_servers_urls = bongo_servers_urls.split(",")
 
@@ -39,9 +38,9 @@ for i in range(len(pinto_servers_urls)):
     print(pinto_servers_urls[i])
 
 print("------------")
-print("JIMBO'S MCP SERVERS")
-for i in range(len(jimbo_servers_urls)):
-    print(jimbo_servers_urls[i])
+print("MIMI'S MCP SERVERS")
+for i in range(len(mimi_servers_urls)):
+    print(mimi_servers_urls[i])
 
 print("------------")
 print("BONGO's MCP SERVERS")
@@ -51,7 +50,7 @@ for i in range(len(bongo_servers_urls)):
 
 
 pinto_permission = os.getenv("PINTO_ALLOW_ALL", "true").lower()
-jimbo_permission = os.getenv("JIMBO_ALLOW_ALL", "false").lower()
+mimi_permission = os.getenv("MIMI_ALLOW_ALL", "false").lower()
 bongo_permission = os.getenv("BONGO_ALLOW_ALL", "true").lower()
 
 PINTO_PERM_TOOLS = {
@@ -60,7 +59,7 @@ PINTO_PERM_TOOLS = {
     "get_route"
 }
 
-JIMBO_PERM_TOOLS = {
+MIMI_PERM_TOOLS = {
     "get-dad-joke",
     "web_search_exa",
     "company_research_exa"
@@ -73,7 +72,7 @@ BONGO_PERM_TOOLS = {
 
 fish_grouping = {
     "pinto" : pinto_servers_urls,
-    "jimbo" : jimbo_servers_urls,
+    "mimi" : mimi_servers_urls,
     "bongo" : bongo_servers_urls
 }
 
@@ -113,7 +112,7 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
     stop_agent = asyncio.Event() # Create an event object to alert asyncio tasks that an event occured. 
     app.state.ws_sessions = {} #Dict object (hash map) to hold multiple websocket connections. {websocket, curr_agent, conversation}
     app.state.agent_Pinto = None
-    app.state.agent_Jimbo = None
+    app.state.agent_mimi = None
     app.state.agent_Bongo = None
     app.state.agent_koko = None
     app.state.agent_kiki = None
@@ -123,10 +122,10 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
 
 
         while not stop_agent.is_set():
-            app.state.total_sessions = len(pinto_servers_urls) + len(jimbo_servers_urls) + len(bongo_servers_urls)
+            app.state.total_sessions = len(pinto_servers_urls) + len(mimi_servers_urls) + len(bongo_servers_urls)
 
             pinto_sessions = []
-            jimbo_sessions = []
+            mimi_sessions = []
             bongo_sessions = []
 
 
@@ -134,8 +133,16 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                  async with AsyncExitStack() as stack:
 
                     for fish, mcp_urls in fish_grouping.items():
+                        
+                        if not mcp_urls or mcp_urls[0] == '':
+                            continue
+                        
+                        
 
                         for mcp_url in mcp_urls:
+                            if not mcp_url.startswith(("http://", "https://")):
+                                print("Invalid URL, skipping MCP Server: " + mcp_url)
+                                continue
                             try:
                                 print("Attemping to connect: " + mcp_url)
                                 if "smithery" in mcp_url:
@@ -149,8 +156,8 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                                     
                                 if fish == "pinto":
                                     pinto_sessions.append(session)
-                                elif fish == "jimbo":
-                                    jimbo_sessions.append(session)
+                                elif fish == "mimi":
+                                    mimi_sessions.append(session)
                                 elif fish == "bongo":
                                     bongo_sessions.append(session)
                                 
@@ -161,7 +168,7 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                                 continue
 
                     pinto_tools = []
-                    jimbo_tools = []
+                    mimi_tools = []
                     bongo_tools = []
                     
                     for s in pinto_sessions:
@@ -175,15 +182,15 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                                 if tool.name in PINTO_PERM_TOOLS:
                                     pinto_tools.append(tool)
 
-                    for s in jimbo_sessions:
+                    for s in mimi_sessions:
                         tools = await load_mcp_tools(s)
                         
-                        if jimbo_permission == "true":
-                            jimbo_tools.extend(tools)
+                        if mimi_permission == "true":
+                            mimi_tools.extend(tools)
                         else:
                             for tool in tools:
-                                if tool.name in JIMBO_PERM_TOOLS:
-                                    jimbo_tools.append(tool)
+                                if tool.name in MIMI_PERM_TOOLS:
+                                    mimi_tools.append(tool)
 
                     for s in bongo_sessions:
                         tools = await load_mcp_tools(s)
@@ -195,10 +202,10 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                                 if tool.name in BONGO_PERM_TOOLS:
                                     bongo_tools.append(tool)                                                        
                         
-                    total_sessions = pinto_sessions + jimbo_sessions + bongo_sessions
+                    total_sessions = pinto_sessions + mimi_sessions + bongo_sessions
 
                     app.state.agent_Pinto = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Pinto, tools=pinto_tools) # Create a simple answerful agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
-                    app.state.agent_Jimbo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Jimbo, tools=jimbo_tools) # Create a mad sarcastic agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
+                    app.state.agent_mimi = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Mimi, tools=mimi_tools) # Create a mad sarcastic agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
                     app.state.agent_Bongo = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_Bongo, tools=bongo_tools) # Create a shy agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
                     app.state.agent_koko = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_koko, tools=[get_context]) # Create a undergraduate advisor agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
                     app.state.agent_kiki = create_agent(model="google_genai:gemini-2.5-flash", system_prompt=agent_prompt_template_kiki, tools=[get_context]) # Create a graduate advisor agent consisting of the gemini 2.5 flash llm, system prompt, and MCP tools
@@ -214,16 +221,16 @@ async def run_client(app: FastAPI): # An async function to work with the MCP ser
                         print("ping ok")
                         await asyncio.sleep(60) # Take a 1 minute break interval to avoid flooding
 
-            except* httpx.HTTPStatusError:
+            except httpx.HTTPStatusError:
                 print("MCP server is currently rate limited.")
                 
-            except* Exception as e: # If the session ping was not successful, or some other issue occured, we assume that the MCP server disconnected, and print the error.
+            except Exception as e: # If the session ping was not successful, or some other issue occured, we assume that the MCP server disconnected, and print the error.
                 print("MCP Server connection failed, trying again")
-                traceback.print_exc()                
+                traceback.print_exc()
 
             finally: # We finally set the agent to no object since the connection between the MCP server and client is gone, so we don't know what MCP server tools we may have anymore if we consider a new connection.
                 app.state.agent_Pinto = None
-                app.state.agent_Jimbo = None
+                app.state.agent_mimi = None
                 app.state.agent_Bongo = None
                 app.state.agent_koko = None
                 app.state.agent_kiki = None
@@ -299,7 +306,7 @@ async def ws_text_input(ws : WebSocket):
                     curr_session["personality_id"] = "1"
                     continue
                 case "PERSONALIZATION: 2":
-                    curr_session["curr_agent"] = app.state.agent_Jimbo
+                    curr_session["curr_agent"] = app.state.agent_mimi
                     curr_session["conversation"] = []
                     curr_session["personality_id"] = "2"
                     continue
