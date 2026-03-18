@@ -1,5 +1,13 @@
 /**
  * Main application file for the Electron renderer process. (Frontend)
+ *
+ * This file is responsible for:
+ *    1. All communications with the backend and the main process through the preload context bridge.
+ *    2. Receiving all backend updates and displaying in formatted frontend changes.
+ *    3. Initlializing, loading, and storing all assets necessary for animations.
+ *    4. Communicating with the MCP agent through a WebSocket for sending prompts and receiving responses.
+ *    5. Receiving all inputs from the keyboard since keyboard input needs to be instantly displayed on the frontend.
+ *    6. Centralizing all frontend state transitions, bridging keyboard input with the states, and relaying changes in scene files to the main process.
  */
 import * as PIXI from "pixi.js";
 import anime from "https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.es.js";
@@ -19,9 +27,17 @@ import { ThinkingSceneAnime } from "./scenes/ThinkingSceneAnime.js";
 import { ListeningSceneAnime } from "./scenes/ListeningSceneAnime.js";
 import { RespondingSceneAnime } from "./scenes/RespondingSceneAnime.js";
 
+/**
+ * BACKGROUNDS and SPEECH_BACKGROUNDS constant can contain any number of image filepaths for wallpapers
+ * Note: These backgrounds will be shuffled at specific intervals in the scene animation files.
+ */
 export const BACKGROUNDS = ["assets/images/idle_hd_2.jpg"];
 export const SPEECH_BACKGROUNDS = ["assets/images/glass_box_main.jpg"];
 
+/**
+ * Contains the information that is displayed in the FISH STORIES section from the RIGHT ARROW KEY menu.
+ * To update personalities and stories, change this constant.
+ */
 export const RESPONDER_LORE = [
   {
     name: "Pinto",
@@ -55,6 +71,10 @@ export const RESPONDER_LORE = [
   },
 ];
 
+/**
+ * Contains the information that is displayed in the GET STARTED section from the ARROW UP menu.
+ * To update available tools, change this constant.
+ */
 export const RESPONDER_OPTIONS = [
   {
     name: "Pinto",
@@ -108,6 +128,10 @@ export const RESPONDER_OPTIONS = [
   },
 ];
 
+/**
+ * Contains the information that is displayed in the CONTROLS section from the LEFT ARROW KEY menu.
+ * To update the controls, change this constant.
+ */
 export const CONTROLS = [
   {
     name: "TO SPEAK",
@@ -148,13 +172,17 @@ export const CONTROLS = [
       "- Hardware - Daniel Schuster\n\n" +
       "- Speech To Text - Joseph Bec\n\n" +
       "- Model Context Protocol (MCP) - Michel Karam, Sal Ambriz\n\n" +
-      "- Speech To Text - Henry Mcdowell\n\n" +
-      "- Frontend/Animations - Satvik Mudgal\n\n\n\n" +
+      "- Text To Speech - Henry Mcdowell\n\n" +
+      "- Frontend/Animations - Satvik Mudgal\n\n\n" +
       "- The Devs know they promised an animated fish...\n" +
       "We took the proposal to the fish, but they referred us to their emloyees - The seahorses\n",
   },
 ];
 
+/**
+ * Contains the information that is displayed in the Speech and Keyboard state Example Prompts.
+ * To update example prompts according to tools, change this constant.
+ */
 export const RESPONDER_PROMPTS = {
   1: {
     name: "Pinto",
@@ -208,6 +236,9 @@ export const RESPONDER_PROMPTS = {
   },
 };
 
+/**
+ * Backup example prompts in case tools are unavailable.
+ */
 export const FALLBACK_PROMPTS = {
   name: "Your Companion",
   prompts: [
@@ -219,6 +250,9 @@ export const FALLBACK_PROMPTS = {
   ],
 };
 
+/**
+ * File paths for all animated fish used in the backgrounds.
+ */
 export const ANIMATED_FISH = [
   "assets/images/fish_blue.png",
   "assets/images/fish_brown.png",
@@ -229,6 +263,9 @@ export const ANIMATED_FISH = [
   "assets/images/fish_grey.png",
 ];
 
+/**
+ * File paths for all high definition fish used in the backgrounds.
+ */
 export const ENHANCED_FISH = [
   "assets/images/Red_Fish_AnarkaliArt.png",
   "assets/images/animated_fish_1.png",
@@ -236,6 +273,9 @@ export const ENHANCED_FISH = [
   "assets/images/fish_tuna.png",
 ];
 
+/**
+ * File paths for all responders.
+ */
 export const RESPONDERS = [
   "assets/images/responder_1.png",
   "assets/images/responder_2.png",
@@ -249,17 +289,31 @@ const app = new PIXI.Application();
 console.log(BACKGROUNDS);
 
 const url = window.fishbowl.config.gcpUrl;
+const TOS_THRESHOLD = 60000;
 
 let ws = null;
 let keepRetrying = false;
 let fullAgentResponse = "";
 let responseTimeout = null;
 let currentSessionId = 0;
+let tosTimer = null;
+let tosAutoexitTimer = null;
 
+// Sets timeout to the socket connection and retries the connection after the timeout has elapsed.
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Asynchronous socket connection process that retries connecting with the MCP agent after specified intervals.
+ * Fetches the MCP Agent URL from the environment file, which can be locally hosted or on the cloud.
+ *
+ * Contains a check to see if the connection has been established.
+ * Contains a check to see if the current session is active, in case user presses ESC, the stale prompt is aborted.
+ * Receives the agent response and uses it to set the subtitles shown in the Responding State.
+ *
+ * Strips the agent response of all reasoning and context information.
+ */
 async function connect_agent() {
   keepRetrying = true;
 
@@ -270,7 +324,6 @@ async function connect_agent() {
 
         sock.addEventListener("open", () => {
           console.log("WS connected");
-          //sock.send("Hello man!");
           resolve(sock);
         });
 
@@ -281,7 +334,6 @@ async function connect_agent() {
 
           if (responseTimeout) clearTimeout(responseTimeout);
 
-          //responseTimeout = setTimeout(() => {
           if (sessionIdAtArrival !== currentSessionId) {
             console.log("Aborting TTS trigger: Session is Stale, ESC invoked.");
             fullAgentResponse = "";
@@ -299,12 +351,8 @@ async function connect_agent() {
             window.fishbowl.sendToTTS(layer4);
           }
           fullAgentResponse = "";
-          //}, 500);
-          //setScene(app, "responding");
         });
 
-        // either error or close => treat as failed/ended connection
-        // sock.addEventListener("error", () => reject(new Error("WS error")));
         sock.addEventListener("close", () => reject(new Error("WS closed")));
       });
 
@@ -319,8 +367,6 @@ async function connect_agent() {
     }
   }
 }
-
-let infoOverlay;
 
 /**
  * Initializes the PIXI application, sets up IPC listeners for state changes,
@@ -347,6 +393,8 @@ async function init() {
     document.body.appendChild(app.canvas);
 
     /**
+     * All frontend changes are relayed to the main process, and all main process updates are handled below.
+     *
      * If the main process broadcasts a new UI state, this IPC listener is triggered.
      * After trigger, it updates the local state store with the new state received via subscription.
      */
@@ -354,6 +402,24 @@ async function init() {
       window.fishbowl.onStateChange((newState) => {
         console.log("IPC Received State:", newState);
         setState(newState);
+        if (newState === "idle") {
+          resetTOSTimer();
+
+          if (tosAutoexitTimer) {
+            clearTimeout(tosAutoexitTimer);
+            tosAutoexitTimer = null;
+          }
+        }
+
+        if (newState === "tos") {
+          if (tosAutoexitTimer) clearTimeout(tosAutoexitTimer);
+
+          tosAutoexitTimer = setTimeout(() => {
+            if (getState() === "tos") {
+              window.fishbowl.requestState("idle");
+            }
+          }, 30000);
+        }
       });
 
       window.fishbowl.onAgentResponse((text) => {
@@ -376,6 +442,7 @@ async function init() {
       });
 
       window.fishbowl.onMicState(({ active }) => {
+        resetTOSTimer();
         setMicActive(active);
       });
 
@@ -432,14 +499,29 @@ async function init() {
 
     /** Default landing page initialization */
     setScene(app, "idle");
+    resetTOSTimer();
     setupKeyboardInput();
   } catch (error) {
     console.error("Failed to initialize PIXI application:", error);
   }
 }
 
+/**
+ * Adds a keyboard listener to the current application window.
+ * This ensures that keyboard input is only collected when there is a frontend application window displayed,
+ * preventing keyboard interference when backend processes initialize.
+ *
+ * Allows individual states to access the keyboard and perform operations based on keyboard activity.
+ *
+ * Also contains the logic for sending any prompt received by typing through the keyboard to the MCP agent via the
+ * socket connection initialized in connect_agent
+ *
+ * To facilitate this, a global socket instance is maintained, and the connection is kept asynchronous to prevent
+ * interference with other animations and state transitions.
+ */
 function setupKeyboardInput() {
   window.addEventListener("keydown", (e) => {
+    resetTOSTimer();
     if (e.metaKey || e.ctrlKey || e.altKey) return;
 
     const currentState = getState();
@@ -449,18 +531,21 @@ function setupKeyboardInput() {
       if (currentState === "speech") {
         window.fishbowl.requestState("idle");
         return;
+      } else if (currentState === "tos") {
+        window.fishbowl.requestState("idle");
+        return;
+      } else {
+        currentSessionId++;
+        console.log("Session Invalidated. New ID:", currentSessionId);
+        setPrompt("");
+        fullAgentResponse = "";
+        if (responseTimeout) {
+          clearTimeout(responseTimeout);
+          responseTimeout = null;
+        }
+        window.fishbowl.requestState("idle");
+        return;
       }
-
-      currentSessionId++;
-      console.log("Session Invalidated. New ID:", currentSessionId);
-      setPrompt("");
-      fullAgentResponse = "";
-      if (responseTimeout) {
-        clearTimeout(responseTimeout);
-        responseTimeout = null;
-      }
-      window.fishbowl.requestState("idle");
-      return;
     }
 
     if (currentState === "idle") {
@@ -581,169 +666,44 @@ function setupKeyboardInput() {
         setPrompt(getPrompt().slice(0, -1));
         break;
       default:
-        if (e.key.length === 1) setPrompt(getPrompt() + e.key);
+        if (e.key.length === 1) {
+          const current = getPrompt();
+          const words = current.split(" ");
+
+          const lastWord = words[words.length - 1];
+
+          if (lastWord.length >= 100) return;
+
+          setPrompt(current + e.key);
+        }
     }
   }
 }
 
-// function setupKeyboardInput() {
-//   window.addEventListener("keydown", (e) => {
-//     if (e.metaKey || e.ctrlKey || e.altKey) return;
+function resetTOSTimer() {
+  if (tosTimer) clearTimeout(tosTimer);
 
-//     if (
-//       e.key === "Escape" &&
-//       getState() !== "thinking" &&
-//       getState() !== "responding"
-//     ) {
-//       currentSessionId++;
-//       console.log("Session Invalidated. New ID:", currentSessionId);
-//       setPrompt("");
-//       fullAgentResponse = "";
-//       if (responseTimeout) {
-//         clearTimeout(responseTimeout);
-//         responseTimeout = null;
-//       }
+  const currentState = getState();
 
-//       window.fishbowl.requestState("idle");
-//       return;
-//     }
+  if (currentState === "idle") {
+    tosTimer = setTimeout(() => {
+      console.log("System idle for 60s. Triggering TOS");
+      if (getState() === "idle") {
+        window.fishbowl.requestState("tos");
+      }
+    }, TOS_THRESHOLD);
+  }
+}
 
-//     const currentState = getState();
-
-//     if (currentState === "idle") {
-//       const activeScene = window.currentActiveScene;
-//       if (!activeScene) return;
-
-//       const { optionsOverlay, infoOverlay, controlsOverlay } = activeScene;
-
-//       if (optionsOverlay?.isOpen) {
-//         switch (e.key) {
-//           case "ArrowDown":
-//             optionsOverlay.rollin();
-//             return;
-//           case "ArrowRight":
-//             optionsOverlay.next();
-//             return;
-//           case "ArrowLeft":
-//             optionsOverlay.prev();
-//             return;
-//           case "Enter":
-//             const selectedFish = optionsOverlay.getSelectedData();
-//             if (selectedFish && selectedFish.id !== getResponder()) {
-//               console.log("Carousel Selection Confirmed:", selectedFish.name);
-//               window.fishbowl.requestResponderChange(selectedFish.id);
-
-//               optionsOverlay.rollin();
-//             }
-//         }
-//         return;
-//       }
-
-//       if (infoOverlay?.isOpen) {
-//         if (e.key === "ArrowLeft") {
-//           infoOverlay.rollin();
-//           return;
-//         }
-//         return;
-//       }
-
-//       if (controlsOverlay?.isOpen) {
-//         if (e.key === "ArrowRight") {
-//           controlsOverlay.rollin();
-//           return;
-//         }
-//         return;
-//       }
-
-//       switch (e.key) {
-//         case "ArrowUp":
-//           optionsOverlay.rollout();
-//           break;
-
-//         case "ArrowRight":
-//           infoOverlay?.rollout();
-//           break;
-
-//         case "ArrowLeft":
-//           controlsOverlay?.rollout();
-//           break;
-//       }
-//     }
-
-//     if (currentState === "keyboard") {
-//       if (e.key === "Enter") {
-//         const prompt = getPrompt().trim();
-//         if (!prompt) return;
-
-//         console.log("Keyboard Prompt Submitted:", prompt);
-//         if (ws && ws.readyState == WebSocket.OPEN) {
-//           ws.send(prompt);
-//         } else {
-//           console.log("Agent is not connected to the web server");
-//         }
-
-//         // ------- SEND PROMPT TO MCP FROM HERE (Michel) -------------
-//         setPrompt("");
-//         window.fishbowl.requestState("thinking");
-//         return;
-//       }
-
-//       if (e.key === "Backspace") {
-//         setPrompt(getPrompt().slice(0, -1));
-//         return;
-//       }
-
-//       if (e.key.length === 1) {
-//         setPrompt(getPrompt() + e.key);
-//       }
-//     } else {
-//       if (
-//         (e.key === "1" ||
-//           e.key === "2" ||
-//           e.key === "3" ||
-//           e.key === "4" ||
-//           e.key === "5") &&
-//         currentState === "idle"
-//       ) {
-//         if (getResponder() === Number(e.key)) {
-//           return;
-//         } else {
-//           window.fishbowl.requestResponderChange(Number(e.key));
-//           console.log("Responder selected:", e.key);
-//         }
-
-//         return;
-//       }
-
-//       if (e.key.toLowerCase() === "r") {
-//         const randomID = Math.floor(Math.random() * 3) + 1;
-//         if (getResponder() === Number(randomID)) {
-//           return;
-//         } else {
-//           console.log("Responder selected:", randomID);
-//           window.fishbowl.requestResponderChange(randomID);
-//         }
-
-//         return;
-//       }
-
-//       if (e.key.toLowerCase() === "k" && currentState === "idle") {
-//         e.preventDefault();
-//         window.fishbowl.requestState("keyboard");
-//         return;
-//       }
-
-//       if (e.key === "Escape" && currentState === "speech") {
-//         window.fishbowl.requestState("idle");
-//         return;
-//       }
-//     }
-//   });
-// }
-
+/**
+ * Asynchronously initializes all parameters and connections, loads all sprites, images, and assets, and displays the application window.
+ */
 async function run_all() {
   await init();
   await connect_agent();
 }
 
+/**
+ * Invokes the frontend.
+ */
 run_all();

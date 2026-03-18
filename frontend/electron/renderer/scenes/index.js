@@ -2,17 +2,14 @@
  * Scene manager for the PIXI landing page.
  * Based on the current application state, it initializes and switches between different scenes.
  */
-//import { IdleScene } from "./IdleScene.js";
 import { IdleSceneAnime } from "./IdleSceneAnime.js";
 import { ListeningSceneAnime } from "./ListeningSceneAnime.js";
 import { ThinkingSceneAnime } from "./ThinkingSceneAnime.js";
 import { RespondingSceneAnime } from "./RespondingSceneAnime.js";
 import { SpeechSceneAnime } from "./SpeechSceneAnime.js";
-//import { ListeningScene } from "./ListeningScene.js";
-// import { ThinkingScene } from "./ThinkingScene.js";
-// import { RespondingScene } from "./RespondingScene.js";
 import { ErrorScene } from "./ErrorScene.js";
 import { KeyboardScene } from "./KeyboardScene.js";
+import { TOSScene } from "./TOSScene.js";
 import { getSubtitles } from "../state/store.js";
 
 // Tracks currently displayed scene
@@ -34,6 +31,9 @@ export function setScene(app, state) {
   switch (state) {
     case "idle":
       currentScene = new IdleSceneAnime(app);
+      break;
+    case "tos":
+      currentScene = new TOSScene(app);
       break;
     case "speech":
       currentScene = new SpeechSceneAnime(app);
@@ -58,5 +58,6 @@ export function setScene(app, state) {
       currentScene = new IdleSceneAnime(app);
   }
 
+  // Adds the selected scene to the application, prevents the need for adding the scene to the application inside the scene files.
   app.stage.addChild(currentScene.container);
 }

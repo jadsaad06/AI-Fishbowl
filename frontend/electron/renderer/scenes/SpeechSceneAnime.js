@@ -1,3 +1,9 @@
+/**
+ * This file contains the animations of the speech scene which can be accessed by saying "Hey <fish name>" on the idle state.
+ * It spawns a bobbling responder which is chosen from the state store, a box that contains example prompts that
+ * utilize the tools of the chosen responder, and instructions for going back and proceeding.
+ */
+
 import * as PIXI from "pixi.js";
 import { getResponder, subscribeMic, getMicActive } from "../state/store.js";
 import { BackgroundRandomizer, createResponder } from "../assets/sprites.js";
