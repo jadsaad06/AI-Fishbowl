@@ -81,9 +81,24 @@ class HybridTranscriber:
                 # The server returns JSON like { "text": "..." }
                 text = result.get("text", "").strip()
                 if text:
-                    # Often whisper.cpp outputs [BLANK_AUDIO] or similar, filter if needed
-                    print(f"[Local Server]: {text}", file=sys.stderr)
-                    return text
+                    # Strip Whisper's blank/silence markers from the text
+                    import re
+                    cleaned = re.sub(
+                        r'\[blank[_\s]?audio\]|\[silence\]|\(blank[_\s]?audio\)|\(silence\)|\*blank[_\s]?audio\*|\*silence\*',
+                        '',
+                        text,
+                        flags=re.IGNORECASE
+                    ).strip()
+                    
+                    if not cleaned:
+                        print(f"[Local Server] Filtered blank audio only: {text}", flush=True)
+                        return None
+                    
+                    if cleaned != text:
+                        print(f"[Local Server] Stripped markers: '{text}' -> '{cleaned}'", flush=True)
+                    
+                    print(f"[Local Server]: {cleaned}", file=sys.stderr)
+                    return cleaned
             else:
                 print(f"[Local Server] Error {response.status_code}: {response.text}", file=sys.stderr)
 
