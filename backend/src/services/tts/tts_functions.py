@@ -104,16 +104,18 @@ def speak_text(text: str, personality_id: str):
     if not text or not text.strip():
         return
 
+    print(f"[DEBUG TTS] speak_text called, text length: {len(text)} chars", flush=True)
     _load_model(personality_id)
 
     start_time = time.monotonic()
 
-    print("Streaming TTS")
+    print("[DEBUG TTS] Starting audio stream generation...", flush=True)
 
     # copy_state=True keeps each text chunk independent and avoids premature cutoff on long utterances.
     chunks = tts_model.generate_audio_stream(voice_state, text, copy_state=True)
     buffer = []
 
+    print("[DEBUG TTS] Pre-buffering chunks...", flush=True)
     # Buffer only a small number of chunks to smooth playback startup.
     for _ in range(PREBUFFER_CHUNKS):
         try:
@@ -121,6 +123,7 @@ def speak_text(text: str, personality_id: str):
         except StopIteration:
             break
 
+    print(f"[DEBUG TTS] Pre-buffered {len(buffer)} chunks, opening audio stream...", flush=True)
     stream, p = _play_audio_stream(tts_model.sample_rate)
 
     chunk_count = 0
@@ -135,10 +138,13 @@ def speak_text(text: str, personality_id: str):
             audio = chunk.detach().cpu().numpy()
             _write_audio_chunk(stream, audio)
             chunk_count += 1
+            if chunk_count % 10 == 0:
+                print(f"[DEBUG TTS] Processed {chunk_count} chunks...", flush=True)
     finally:
+        print(f"[DEBUG TTS] Cleaning up audio stream after {chunk_count} chunks", flush=True)
         stream.stop_stream()
         stream.close()
         p.terminate()
 
     generation_done = time.monotonic()
-    print(f"TTS streaming completed in {generation_done - start_time:.2f}s ({chunk_count} chunks)")
+    print(f"[DEBUG TTS] Completed in {generation_done - start_time:.2f}s ({chunk_count} chunks)", flush=True)
