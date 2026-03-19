@@ -20,14 +20,13 @@ def main():
             print("PERSONALITY:", personality_id)
 
             if text_to_speak:
-                print_flush(f"[DEBUG TTS WRAPPER] Received text ({len(text_to_speak)} chars): {text_to_speak[:100]}...")
                 print_flush("TTS_SPEECH_STARTED")
                 try:
                     tts_functions.speak_text(text_to_speak, personality_id)
                 except Exception as e:
-                    print_flush(f"[DEBUG TTS WRAPPER] Exception: {e}")
+                    print(f"Error in tts_functions: {e}", file=sys.stderr)
                     import traceback
-                    traceback.print_exc()
+                    traceback.print_exc(file=sys.stderr)
                 print_flush("TTS_SPEECH_ENDED")
 
 if __name__ == "__main__":

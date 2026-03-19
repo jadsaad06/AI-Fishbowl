@@ -9,6 +9,8 @@ PREBUFFER_CHUNKS = 1
 
 tts_model = None
 voice_state = None
+_pyaudio_instance = None
+_output_device_index = None
 
 
 def _resolve_runtime_device() -> torch.device:
@@ -96,18 +98,14 @@ def _find_output_device(p):
     try:
         default_info = p.get_default_output_device_info()
         default_name = default_info.get("name", "").lower()
-        default_index = default_info.get("index")
-        print(f"[DEBUG TTS]   System default: {default_info['name']} (index {default_index})", flush=True)
         
         # If default is not a problematic device, use it
         if not any(avoid in default_name for avoid in avoid_keywords):
-            print(f"[DEBUG TTS]   -> Using system default", flush=True)
             return None  # None means use default
-    except Exception as e:
-        print(f"[DEBUG TTS]   Could not get default device: {e}", flush=True)
+    except Exception:
+        pass
     
     # Default is problematic (tegra-dlink), find an alternative
-    print("[DEBUG TTS]   Default device is problematic, scanning for alternatives...", flush=True)
     device_count = p.get_device_count()
     fallback_device = None
     
@@ -123,12 +121,9 @@ def _find_output_device(p):
             # Skip problematic devices
             if any(avoid in name for avoid in avoid_keywords):
                 continue
-                
-            print(f"[DEBUG TTS]   Found alternative: {info['name']} (index {i})", flush=True)
             
             # Prefer HDMI, USB speakers, etc.
             if any(pref in name for pref in preferred_keywords):
-                print(f"[DEBUG TTS]   -> Selected preferred device: {info['name']}", flush=True)
                 return i
             
             if fallback_device is None:
@@ -137,37 +132,31 @@ def _find_output_device(p):
         except Exception:
             continue
     
-    if fallback_device is not None:
-        info = p.get_device_info_by_index(fallback_device)
-        print(f"[DEBUG TTS]   -> Using fallback device: {info['name']}", flush=True)
-    
     return fallback_device
 
 
+def _get_pyaudio():
+    """Get or create a persistent PyAudio instance."""
+    global _pyaudio_instance, _output_device_index
+    
+    if _pyaudio_instance is None:
+        _pyaudio_instance = pyaudio.PyAudio()
+        _output_device_index = _find_output_device(_pyaudio_instance)
+    
+    return _pyaudio_instance, _output_device_index
+
+
 def _play_audio_stream(sample_rate: int):
-    print("[DEBUG TTS] Creating PyAudio instance...", flush=True)
-    p = pyaudio.PyAudio()
+    p, output_device_index = _get_pyaudio()
     
-    # Find a suitable output device
-    print("[DEBUG TTS] Selecting output device...", flush=True)
-    output_device_index = _find_output_device(p)
-    
-    print(f"[DEBUG TTS] Opening output stream at {sample_rate}Hz...", flush=True)
-    try:
-        stream = p.open(
-            format=pyaudio.paInt16,
-            channels=1,
-            rate=sample_rate,
-            output=True,
-            output_device_index=output_device_index,
-            frames_per_buffer=4096,
-        )
-        print("[DEBUG TTS] Output stream opened successfully", flush=True)
-    except Exception as e:
-        print(f"[DEBUG TTS] Failed to open stream: {e}", flush=True)
-        p.terminate()
-        raise
-    return stream, p
+    stream = p.open(
+        format=pyaudio.paInt16,
+        channels=1,
+        rate=sample_rate,
+        output=True,
+        output_device_index=output_device_index,
+    )
+    return stream
 
 
 def _write_audio_chunk(stream, audio: np.ndarray):
@@ -180,18 +169,14 @@ def speak_text(text: str, personality_id: str):
     if not text or not text.strip():
         return
 
-    print(f"[DEBUG TTS] speak_text called, text length: {len(text)} chars", flush=True)
     _load_model(personality_id)
 
-    start_time = time.monotonic()
-
-    print("[DEBUG TTS] Starting audio stream generation...", flush=True)
+    print("Streaming TTS")
 
     # copy_state=True keeps each text chunk independent and avoids premature cutoff on long utterances.
     chunks = tts_model.generate_audio_stream(voice_state, text, copy_state=True)
     buffer = []
 
-    print("[DEBUG TTS] Pre-buffering chunks...", flush=True)
     # Buffer only a small number of chunks to smooth playback startup.
     for _ in range(PREBUFFER_CHUNKS):
         try:
@@ -199,8 +184,7 @@ def speak_text(text: str, personality_id: str):
         except StopIteration:
             break
 
-    print(f"[DEBUG TTS] Pre-buffered {len(buffer)} chunks, opening audio stream...", flush=True)
-    stream, p = _play_audio_stream(tts_model.sample_rate)
+    stream = _play_audio_stream(tts_model.sample_rate)
 
     chunk_count = 0
 
@@ -214,22 +198,16 @@ def speak_text(text: str, personality_id: str):
             audio = chunk.detach().cpu().numpy()
             _write_audio_chunk(stream, audio)
             chunk_count += 1
-            if chunk_count % 10 == 0:
-                print(f"[DEBUG TTS] Processed {chunk_count} chunks...", flush=True)
         
         # Wait for audio buffer to drain before closing
         time.sleep(0.3)
         
     finally:
-        print(f"[DEBUG TTS] Cleaning up audio stream after {chunk_count} chunks", flush=True)
         stream.stop_stream()
         stream.close()
-        p.terminate()
 
-    generation_done = time.monotonic()
-    print(f"[DEBUG TTS] Completed in {generation_done - start_time:.2f}s ({chunk_count} chunks)", flush=True)
+    print(f"TTS streaming completed ({chunk_count} chunks)")
     
     # Clear GPU memory on Jetson to prevent buildup
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-        print("[DEBUG TTS] Cleared CUDA cache", flush=True)
