@@ -216,6 +216,10 @@ def speak_text(text: str, personality_id: str):
             chunk_count += 1
             if chunk_count % 10 == 0:
                 print(f"[DEBUG TTS] Processed {chunk_count} chunks...", flush=True)
+        
+        # Wait for audio buffer to drain before closing
+        time.sleep(0.3)
+        
     finally:
         print(f"[DEBUG TTS] Cleaning up audio stream after {chunk_count} chunks", flush=True)
         stream.stop_stream()
