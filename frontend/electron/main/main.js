@@ -13,7 +13,13 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const { start } = require("repl");
-require('dotenv').config({ path: __dirname + '/../../.env' });
+require('dotenv').config({
+  path: path.join(__dirname, '..', '..', '.env'),
+});
+require('dotenv').config({
+  path: path.join(__dirname, '..', '..', '..', 'backend', '.env'),
+  override: true,
+});
 
 const GCP_URL = process.env.GCP_MCP_URL;
 app.commandLine.appendSwitch("disable-features", "AutofillServerCommunication");
@@ -187,6 +193,10 @@ function startServices() {
       "../../../backend/src/services/stt/Test/test_transcribe.py",
     ),
   ]);
+
+  stt.stderr.on("data", (data) => {
+    console.log("[STT STDERR]: " + data.toString());
+  });
 
   stt.stdout.on("data", (data) => {
     const out = data.toString();

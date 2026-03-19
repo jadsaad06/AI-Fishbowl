@@ -18,7 +18,8 @@ from google.cloud import speech
 
 from mic_stream import MicrophoneStream
 
-load_dotenv()
+_ENV_PATH = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '.env'))
+load_dotenv(_ENV_PATH, override=True)
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 DEFAULT_MIC_NAME = os.getenv("MIC_NAME", "LavMicro")
