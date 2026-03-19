@@ -83,14 +83,90 @@ def _load_model(personality_id):
     print("Voice state loaded.", flush=True)
 
 
+def _find_output_device(p):
+    """
+    Find a suitable output device.
+    - On Windows/Mac: Use system default (usually correct)
+    - On Jetson/Linux: Avoid tegra-dlink devices that can cause hangs
+    """
+    avoid_keywords = ["tegra-dlink", "admaif"]
+    preferred_keywords = ["hdmi", "usb", "speaker", "headphone"]
+    
+    # First, check if the default device is okay
+    try:
+        default_info = p.get_default_output_device_info()
+        default_name = default_info.get("name", "").lower()
+        default_index = default_info.get("index")
+        print(f"[DEBUG TTS]   System default: {default_info['name']} (index {default_index})", flush=True)
+        
+        # If default is not a problematic device, use it
+        if not any(avoid in default_name for avoid in avoid_keywords):
+            print(f"[DEBUG TTS]   -> Using system default", flush=True)
+            return None  # None means use default
+    except Exception as e:
+        print(f"[DEBUG TTS]   Could not get default device: {e}", flush=True)
+    
+    # Default is problematic (tegra-dlink), find an alternative
+    print("[DEBUG TTS]   Default device is problematic, scanning for alternatives...", flush=True)
+    device_count = p.get_device_count()
+    fallback_device = None
+    
+    for i in range(device_count):
+        try:
+            info = p.get_device_info_by_index(i)
+            name = info.get("name", "").lower()
+            max_output = info.get("maxOutputChannels", 0)
+            
+            if max_output <= 0:
+                continue
+            
+            # Skip problematic devices
+            if any(avoid in name for avoid in avoid_keywords):
+                continue
+                
+            print(f"[DEBUG TTS]   Found alternative: {info['name']} (index {i})", flush=True)
+            
+            # Prefer HDMI, USB speakers, etc.
+            if any(pref in name for pref in preferred_keywords):
+                print(f"[DEBUG TTS]   -> Selected preferred device: {info['name']}", flush=True)
+                return i
+            
+            if fallback_device is None:
+                fallback_device = i
+                
+        except Exception:
+            continue
+    
+    if fallback_device is not None:
+        info = p.get_device_info_by_index(fallback_device)
+        print(f"[DEBUG TTS]   -> Using fallback device: {info['name']}", flush=True)
+    
+    return fallback_device
+
+
 def _play_audio_stream(sample_rate: int):
+    print("[DEBUG TTS] Creating PyAudio instance...", flush=True)
     p = pyaudio.PyAudio()
-    stream = p.open(
-        format=pyaudio.paInt16,
-        channels=1,
-        rate=sample_rate,
-        output=True,
-    )
+    
+    # Find a suitable output device
+    print("[DEBUG TTS] Selecting output device...", flush=True)
+    output_device_index = _find_output_device(p)
+    
+    print(f"[DEBUG TTS] Opening output stream at {sample_rate}Hz...", flush=True)
+    try:
+        stream = p.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=sample_rate,
+            output=True,
+            output_device_index=output_device_index,
+            frames_per_buffer=4096,
+        )
+        print("[DEBUG TTS] Output stream opened successfully", flush=True)
+    except Exception as e:
+        print(f"[DEBUG TTS] Failed to open stream: {e}", flush=True)
+        p.terminate()
+        raise
     return stream, p
 
 
@@ -148,3 +224,8 @@ def speak_text(text: str, personality_id: str):
 
     generation_done = time.monotonic()
     print(f"[DEBUG TTS] Completed in {generation_done - start_time:.2f}s ({chunk_count} chunks)", flush=True)
+    
+    # Clear GPU memory on Jetson to prevent buildup
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        print("[DEBUG TTS] Cleared CUDA cache", flush=True)
