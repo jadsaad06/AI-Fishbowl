@@ -553,6 +553,13 @@ function setupKeyboardInput() {
       return;
     }
 
+    if (currentState === "tos") {
+      if (e.key === "t") {
+        window.fishbowl.requestState("idle");
+        return;
+      }
+    }
+
     if (currentState === "keyboard") {
       handleKeyboardKeys(e);
       return;
@@ -619,6 +626,10 @@ function setupKeyboardInput() {
         factOverlay?.rollout(() => {
           activeScene.funFactBox.updateFunFact();
         });
+        break;
+      case "t":
+        e.preventDefault();
+        window.fishbowl.requestState("tos");
         break;
       case "k":
         e.preventDefault();
