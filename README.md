@@ -91,4 +91,6 @@ Architectural decisions, interfaces, and documentation may evolve as the project
 
 *AI Fishbowl demonstrates how conversational AI can be embedded into immersive, character-driven installations for educational environments.*
 
+Want to get to know the system a little deeper? Checkout the wiki [here](https://github.com/jadsaad06/AI-Fishbowl/wiki)!
+
 
