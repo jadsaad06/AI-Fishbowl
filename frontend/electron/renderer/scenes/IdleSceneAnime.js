@@ -111,10 +111,10 @@ export class IdleSceneAnime {
     /**
      * Mic activity indictor box can differ in size, and position only.
      */
-    this.micIndicator = new MicIndicator(app, 428, 120);
+    this.micIndicator = new MicIndicator(app, 420, 120);
     this.micIndicator.container.position.set(
-      this.app.screen.width * 0.3,
-      this.app.screen.height * 0.725,
+      this.app.screen.width * 0.25,
+      this.app.screen.height * 0.75,
     );
     this.container.addChild(this.micIndicator.container);
 
@@ -166,7 +166,8 @@ export class IdleSceneAnime {
     this.controlsOverlay = new InfoOverlay(app, CONTROLS, {
       side: "right",
       tabText: "C\nO\nN\nT\nR\nO\nL\nS\n\n◀◀",
-      closeHint: "Right Arrow To Close ▶",
+      closeHint:
+        "PRESS T ON MENU TO VIEW TERMS OF SERVICE\n\nRight Arrow To Close ▶",
     });
 
     this.shuffleInterval = setInterval(() => {
@@ -239,12 +240,12 @@ export class IdleSceneAnime {
        *    3. Start Text Style, Size etc.
        */
       this.startText = new TypewriterText(
-        `To Get Started, Say:\n\n 'Hey ${data.name}'!`,
+        `To Get Started, Say:\n\n 'Hey ${data.name}'\nOR\nPress K To Use Keyboard!`,
         {
           fontFamily: "Verdana",
-          fontSize: 30,
+          fontSize: 22,
           fill: textColor,
-          fontWeight: "bold",
+          fontWeight: "italic",
           letterSpacing: 2,
           align: "center",
           stroke: "#000000",
@@ -262,22 +263,21 @@ export class IdleSceneAnime {
 
       // Update start text and box position on the screen here
       this.startText.container.position.set(
-        this.app.screen.width * 0.3,
+        this.app.screen.width * 0.25,
         this.app.screen.height * 0.575,
       );
 
       this.helpText = new TypewriterText(
-        "Use Arrow Keys [▲ ▼ ◀ ▶] To Operate\n\n" +
-          `- Chat With Your Fish By Pressing K\n` +
-          `- Interact With System By Saying:\n` +
-          `   'Hey', 'Hello', 'Hi'\n` +
+        "▶ Press T To View Terms Of Service ◀\n\n" +
+          "Use Arrow Keys [▲ ▼ ◀ ▶] To Operate\n\n" +
           `- Select Your Own Fish:\n` +
           `   ▶ Get To Know Your Fish!\n` +
           `   ◀ Get To Know The System!\n` +
-          `   ▲ Choose Your Fish And Get Started!`,
+          `   ▲ Choose Your Fish And Get Started!\n` +
+          `   ▼ Generate A Random Fact!`,
         {
           fontFamily: "Verdana",
-          fontSize: 24,
+          fontSize: 22,
           fill: textColor,
           fontWeight: "bold",
           align: "left",
