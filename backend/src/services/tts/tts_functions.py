@@ -1,5 +1,6 @@
 import time
 import os
+import atexit
 import numpy as np
 import pyaudio
 from pocket_tts import TTSModel
@@ -9,6 +10,89 @@ PREBUFFER_CHUNKS = 1
 
 tts_model = None
 voice_state = None
+
+
+class AudioStreamManager:
+    """
+    Manages a persistent PyAudio stream to avoid repeated open/close cycles.
+    The stream remains open between speak_text calls and is only recreated
+    if the sample rate changes or the stream becomes invalid.
+    """
+
+    def __init__(self):
+        self._pyaudio: pyaudio.PyAudio | None = None
+        self._stream: pyaudio.Stream | None = None
+        self._current_sample_rate: int | None = None
+
+    def _ensure_pyaudio(self):
+        if self._pyaudio is None:
+            self._pyaudio = pyaudio.PyAudio()
+
+    def _is_stream_valid(self) -> bool:
+        if self._stream is None:
+            return False
+        try:
+            return self._stream.is_active() or not self._stream.is_stopped()
+        except Exception:
+            return False
+
+    def get_stream(self, sample_rate: int) -> pyaudio.Stream:
+        self._ensure_pyaudio()
+
+        if self._stream is not None and self._current_sample_rate == sample_rate:
+            if self._is_stream_valid():
+                if self._stream.is_stopped():
+                    self._stream.start_stream()
+                return self._stream
+            else:
+                self._close_stream()
+
+        if self._current_sample_rate != sample_rate:
+            self._close_stream()
+
+        self._stream = self._pyaudio.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=sample_rate,
+            output=True,
+        )
+        self._current_sample_rate = sample_rate
+        return self._stream
+
+    def _close_stream(self):
+        if self._stream is not None:
+            try:
+                if not self._stream.is_stopped():
+                    self._stream.stop_stream()
+                self._stream.close()
+            except Exception:
+                pass
+            self._stream = None
+
+    def drain_and_pause(self):
+        """Call after finishing playback to let the buffer drain, then pause."""
+        if self._stream is not None:
+            try:
+                time.sleep(0.05)
+                if not self._stream.is_stopped():
+                    self._stream.stop_stream()
+            except Exception:
+                pass
+
+    def shutdown(self):
+        """Clean up all resources. Called on application exit."""
+        self._close_stream()
+        if self._pyaudio is not None:
+            try:
+                self._pyaudio.terminate()
+            except Exception:
+                pass
+            self._pyaudio = None
+        self._current_sample_rate = None
+
+
+_audio_manager = AudioStreamManager()
+atexit.register(_audio_manager.shutdown)
 
 
 def _resolve_runtime_device() -> torch.device:
@@ -83,19 +167,7 @@ def _load_model(personality_id):
     print("Voice state loaded.", flush=True)
 
 
-def _play_audio_stream(sample_rate: int):
-    p = pyaudio.PyAudio()
-    stream = p.open(
-        format=pyaudio.paInt16,
-        channels=1,
-        rate=sample_rate,
-        output=True,
-    )
-    return stream, p
-
-
 def _write_audio_chunk(stream, audio: np.ndarray):
-    # Convert float32 [-1, 1] to int16 [-32768, 32767]
     audio_int16 = (audio * 32767).astype(np.int16)
     stream.write(audio_int16.tobytes())
 
@@ -110,18 +182,16 @@ def speak_text(text: str, personality_id: str):
 
     print("Streaming TTS")
 
-    # copy_state=True keeps each text chunk independent and avoids premature cutoff on long utterances.
     chunks = tts_model.generate_audio_stream(voice_state, text, copy_state=True)
     buffer = []
 
-    # Buffer only a small number of chunks to smooth playback startup.
     for _ in range(PREBUFFER_CHUNKS):
         try:
             buffer.append(next(chunks))
         except StopIteration:
             break
 
-    stream, p = _play_audio_stream(tts_model.sample_rate)
+    stream = _audio_manager.get_stream(tts_model.sample_rate)
 
     chunk_count = 0
 
@@ -136,9 +206,7 @@ def speak_text(text: str, personality_id: str):
             _write_audio_chunk(stream, audio)
             chunk_count += 1
     finally:
-        stream.stop_stream()
-        stream.close()
-        p.terminate()
+        _audio_manager.drain_and_pause()
 
     generation_done = time.monotonic()
     print(f"TTS streaming completed in {generation_done - start_time:.2f}s ({chunk_count} chunks)")
