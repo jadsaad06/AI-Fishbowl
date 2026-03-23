@@ -11,6 +11,27 @@ PREBUFFER_CHUNKS = 1
 tts_model = None
 voice_state = None
 
+def warm_up():
+    print("Warming up TTS...", flush=True)
+
+    _load_model("1")
+
+    dummy_text = "Warming up"
+
+    chunks = tts_model.generate_audio_stream(
+        voice_state,
+        dummy_text,
+        copy_state=True
+    )
+
+    for _ in range(2):
+        try:
+            chunk = next(chunks)
+            _ = chunk.detach().cpu().numpy()
+        except StopIteration:
+            break
+
+    print("TTS warm-up complete.", flush=True)
 
 class AudioStreamManager:
     """
