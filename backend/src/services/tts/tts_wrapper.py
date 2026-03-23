@@ -5,6 +5,8 @@ def print_flush(text):
     print(text, flush=True)
 
 def main():
+    tts_functions.warm_up()
+
     for line in sys.stdin:
         if "MCP-AGENT-RESPONSE:" in line:
             payload = line.replace("MCP-AGENT-RESPONSE:", "").strip()
